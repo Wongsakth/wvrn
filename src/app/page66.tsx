@@ -237,92 +237,21 @@ export default function HomePage() {
       </section>
 
       {/* ── FOLLOWING SECTION ── */}
-      {isLoggedIn && followedArtistInfo.size > 0 && (
+      {isLoggedIn && followedIds.size > 0 && (
         <section style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Heart size={14} style={{ color: 'var(--accent)', fill: 'var(--accent)' }} />
-                <span className="text-[13px] font-medium text-primary">ศิลปินที่ติดตาม</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full text-muted"
-                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                  {followedArtistInfo.size} คน
-                </span>
-              </div>
-              <button onClick={() => window.location.href = '/artists'}
-                className="text-[12px] flex items-center gap-1"
-                style={{ color: 'var(--accent)' }}>
-                จัดการ <ChevronRight size={12} />
-              </button>
+            <div className="flex items-center gap-2 mb-3">
+              <Heart size={14} style={{ color: 'var(--accent)', fill: 'var(--accent)' }} />
+              <span className="text-[13px] font-medium text-primary">ศิลปินที่ติดตาม</span>
+              <span className="text-[11px] text-muted">— งานที่กำลังจะมา</span>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {Array.from(followedArtistInfo.entries()).map(([artistId, artist]) => {
-                const nextEvent = events
-                  .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => a.id === artistId))
-                  .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
-                const daysLeft = nextEvent ? differenceInDays(new Date(nextEvent.start_date), new Date()) : null
-                const isToday  = daysLeft === 0
-                const isSoon   = daysLeft !== null && daysLeft <= 7
-
-                return (
-                  <div key={artistId}
-                    className="rounded-xl overflow-hidden"
-                    style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-
-                    {/* Artist row */}
-                    <div
-                      onClick={() => { window.location.href = `/artists/${artistId}` }}
-                      className="flex items-center gap-3 p-3 cursor-pointer transition-all"
-                      style={{ borderBottom: nextEvent ? '1px solid var(--border)' : 'none' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      {artist?.image_url
-                        ? <img src={artist.image_url} alt={artist.name}
-                            className="w-9 h-9 rounded-full object-cover shrink-0" />
-                        : <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-medium"
-                            style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
-                            {artist?.name?.slice(0,2)}
-                          </div>
-                      }
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-primary truncate">{artist?.name}</p>
-                        {artist?.name_en && <p className="text-[10px] text-muted truncate">{artist.name_en}</p>}
-                      </div>
-                      <Heart size={11} style={{ color: 'var(--accent)', fill: 'var(--accent)', flexShrink: 0 }} />
-                    </div>
-
-                    {/* Next event */}
-                    {nextEvent ? (
-                      <div
-                        onClick={() => { window.location.href = `/events/${nextEvent.id}` }}
-                        className="p-3 cursor-pointer transition-all"
-                        style={{
-                          background: isToday ? 'rgba(232,0,58,.06)' : 'var(--surface-2)',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.opacity = '.8')}
-                        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-medium"
-                            style={{ color: isToday ? '#E8003A' : isSoon ? '#EF9F27' : 'var(--accent)' }}>
-                            {isToday ? 'วันนี้!' : daysLeft === 1 ? 'พรุ่งนี้' : `อีก ${daysLeft} วัน`}
-                          </span>
-                          {nextEvent.start_time && (
-                            <span className="text-[10px] text-muted">{nextEvent.start_time.slice(0,5)} น.</span>
-                          )}
-                        </div>
-                        <p className="text-[12px] font-medium text-primary truncate mb-0.5">{nextEvent.title}</p>
-                        <p className="text-[10px] text-muted truncate">{nextEvent.venue?.name}</p>
-                      </div>
-                    ) : (
-                      <div className="px-3 py-2.5 text-center"
-                        style={{ background: 'var(--surface-2)', borderTop: '1px dashed var(--border)' }}>
-                        <p className="text-[11px] text-muted">ยังไม่มีงานที่กำลังจะมา</p>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+              {events
+                .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => followedIds.has(a.id)))
+                .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+                .slice(0, 3)
+                .map(ev => <FollowingMiniCard key={ev.id} event={ev} followedIds={followedIds} />)
+              }
             </div>
           </div>
         </section>
