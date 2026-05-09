@@ -1,0 +1,14 @@
+# ─── Supabase ──────────────────────────────────────────────
+# Get these from: Supabase Dashboard > Project Settings > API
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Service role key — NEVER expose to client, server-only
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+# ─── App ────────────────────────────────────────────────────
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=WVRN
+
+# ─── LINE Notify (Phase 2) ──────────────────────────────────
+# LINE_NOTIFY_TOKEN=your_line_notify_token

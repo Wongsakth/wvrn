@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────
+   WVRN THEME SYSTEM
+   Each theme sets CSS vars — components use
+   var(--accent), var(--surface-X), etc.
+───────────────────────────────────────── */
+
+/* ── Festival (default / dark) ── */
+[data-theme="festival"], :root {
+  --accent:       #FFD700;
+  --accent-muted: rgba(255,215,0,.1);
+  --accent-2:     #A78BFA;
+  --surface-0:    #06040F;
+  --surface-1:    #0A0618;
+  --surface-2:    #110D28;
+  --surface-3:    #1A1240;
+  --border:       rgba(255,255,255,.08);
+  --border-md:    rgba(255,255,255,.13);
+  --text-primary: #F0EEF8;
+  --text-secondary:#9080C0;
+  --text-muted:   #4A3878;
+  --card-radius:  12px;
+  --nav-blur:     blur(12px);
+  color-scheme: dark;
+}
+
+/* ── Dark ── */
+[data-theme="dark"] {
+  --accent:       #A78BFA;
+  --accent-muted: rgba(167,139,250,.1);
+  --accent-2:     #818CF8;
+  --surface-0:    #0D0D14;
+  --surface-1:    #111119;
+  --surface-2:    #1A1A26;
+  --surface-3:    #22223A;
+  --border:       rgba(255,255,255,.07);
+  --border-md:    rgba(255,255,255,.12);
+  --text-primary: #F0EEF8;
+  --text-secondary:#9090B0;
+  --text-muted:   #505070;
+  color-scheme: dark;
+}
+
+/* ── Pastel ── */
+[data-theme="pastel"] {
+  --accent:       #D4537E;
+  --accent-muted: rgba(212,83,126,.08);
+  --accent-2:     #7F77DD;
+  --surface-0:    #FDF8FB;
+  --surface-1:    #FFFFFF;
+  --surface-2:    #FFF5F8;
+  --surface-3:    #FBEAF0;
+  --border:       rgba(212,83,126,.1);
+  --border-md:    rgba(212,83,126,.18);
+  --text-primary: #3D1F2C;
+  --text-secondary:#9A6678;
+  --text-muted:   #C9A0B0;
+  color-scheme: light;
+}
+
+/* ── Vivid / Teen ── */
+[data-theme="vivid"] {
+  --accent:       #FF3CAC;
+  --accent-muted: rgba(255,60,172,.08);
+  --accent-2:     #00D4FF;
+  --surface-0:    #FAFAFA;
+  --surface-1:    #FFFFFF;
+  --surface-2:    #F5F5F5;
+  --surface-3:    #FFE8F6;
+  --border:       rgba(0,0,0,.07);
+  --border-md:    rgba(0,0,0,.12);
+  --text-primary: #111111;
+  --text-secondary:#555555;
+  --text-muted:   #AAAAAA;
+  color-scheme: light;
+}
+
+/* ── Earth ── */
+[data-theme="earth"] {
+  --accent:       #7C5C3A;
+  --accent-muted: rgba(124,92,58,.08);
+  --accent-2:     #5A8A4A;
+  --surface-0:    #F7F3EE;
+  --surface-1:    #FBF8F4;
+  --surface-2:    #F0EAE0;
+  --surface-3:    #EDE0D0;
+  --border:       rgba(124,92,58,.12);
+  --border-md:    rgba(124,92,58,.2);
+  --text-primary: #2C1F0E;
+  --text-secondary:#7A6248;
+  --text-muted:   #B5A28A;
+  color-scheme: light;
+}
+
+/* ── Rock ── */
+[data-theme="rock"] {
+  --accent:       #E8003A;
+  --accent-muted: rgba(232,0,58,.08);
+  --accent-2:     #FF6B00;
+  --surface-0:    #0A0A0A;
+  --surface-1:    #111111;
+  --surface-2:    #181818;
+  --surface-3:    #222222;
+  --border:       rgba(255,255,255,.06);
+  --border-md:    rgba(255,255,255,.1);
+  --text-primary: #F5F5F5;
+  --text-secondary:#888888;
+  --text-muted:   #444444;
+  color-scheme: dark;
+}
+
+/* ─────────────────────────────────────────
+   BASE STYLES
+───────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+body {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  transition: background .25s, color .2s;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 3px; }
+
+/* ─────────────────────────────────────────
+   UTILITY CLASSES
+───────────────────────────────────────── */
+@layer components {
+
+  /* Surfaces */
+  .surface-0 { background: var(--surface-0); }
+  .surface-1 { background: var(--surface-1); }
+  .surface-2 { background: var(--surface-2); }
+  .surface-3 { background: var(--surface-3); }
+
+  /* Border */
+  .border-theme    { border-color: var(--border); }
+  .border-theme-md { border-color: var(--border-md); }
+
+  /* Text */
+  .text-primary   { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-muted     { color: var(--text-muted); }
+  .text-accent    { color: var(--accent); }
+
+  /* Card */
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius, 12px);
+  }
+  .card-hover {
+    @apply card transition-all duration-150;
+  }
+  .card-hover:hover {
+    border-color: var(--border-md);
+    transform: translateY(-1px);
+  }
+
+  /* Button */
+  .btn-accent {
+    background: var(--accent);
+    color: var(--surface-0);
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    transition: opacity .15s, transform .1s;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-accent:hover  { opacity: .88; }
+  .btn-accent:active { transform: scale(.97); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-muted);
+  }
+
+  /* Input */
+  .input-theme {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    width: 100%;
+    transition: border-color .15s;
+  }
+  .input-theme:focus  { border-color: var(--accent); }
+  .input-theme::placeholder { color: var(--text-muted); }
+
+  /* Tag / Badge */
+  .tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+  }
+  .tag-pop      { background: rgba(167,139,250,.15); color: #A78BFA; }
+  .tag-rock     { background: rgba(239,159,39,.15);  color: #EF9F27; }
+  .tag-free     { background: rgba(93,202,165,.15);  color: #5DCAA5; }
+  .tag-indie    { background: rgba(255,215,0,.12);   color: #FFD700; }
+  .tag-festival { background: rgba(232,0,58,.12);    color: #E8003A; }
+  .tag-hiphop   { background: rgba(255,60,172,.12);  color: #FF3CAC; }
+  .tag-jazz     { background: rgba(55,138,221,.15);  color: #85B7EB; }
+  .tag-confirm  { background: rgba(29,158,117,.15);  color: #5DCAA5; }
+  .tag-cancel   { background: rgba(232,75,74,.15);   color: #E24B4A; }
+  .tag-sold     { background: rgba(186,117,23,.15);  color: #EF9F27; }
+  .tag-pending  { background: rgba(186,117,23,.15);  color: #EF9F27; }
+}
