@@ -35,9 +35,18 @@ export default function ProfilePage() {
     if (!user) return
     const r = user.user_metadata?.role ?? user.app_metadata?.role ?? 'user'
     setRole(r)
+
+    const getVenueFollowsCount = async () => {
+      try {
+        return await sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id)
+      } catch {
+        return { count: 0 }
+      }
+    }
+
     Promise.all([
       sb.from('follows').select('id', { count: 'exact' }).eq('user_id', user.id),
-      sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id).catch(() => ({ count: 0 })),
+      getVenueFollowsCount(),
       sb.from('event_attendance').select('id,status').eq('user_id', user.id),
     ]).then(([ar, vr, at]) => {
       const att = (at as any).data || []
