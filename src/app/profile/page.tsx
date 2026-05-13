@@ -37,7 +37,7 @@ export default function ProfilePage() {
     setRole(r)
     Promise.all([
       sb.from('follows').select('id', { count: 'exact' }).eq('user_id', user.id),
-      sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id).catch(() => ({ count: 0 })),
+      sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('event_attendance').select('id,status').eq('user_id', user.id),
     ]).then(([ar, vr, at]) => {
       const att = (at as any).data || []
@@ -47,7 +47,7 @@ export default function ProfilePage() {
         going:    att.filter((a: any) => a.status === 'going').length,
         attended: att.filter((a: any) => a.status === 'attended').length,
       })
-    })
+    }).catch(() => {})
   }, [user])
 
   async function handleChangePassword() {

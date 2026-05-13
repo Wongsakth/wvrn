@@ -63,7 +63,6 @@ export default function VenuesPage() {
     if (!user) { setFollowedIds(new Set()); return }
     sb.from('venue_follows').select('venue_id').eq('user_id', user.id)
       .then(({ data }) => setFollowedIds(new Set((data || []).map((f: any) => f.venue_id))))
-      .catch(() => {}) // table อาจยังไม่มี
   }, [user])
 
   async function toggleFollow(venueId: string, venueName: string) {

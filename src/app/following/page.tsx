@@ -31,7 +31,7 @@ export default function FollowingPage() {
       const today = new Date().toISOString().slice(0, 10)
       const [arRes, vRes, goRes] = await Promise.all([
         sb.from('follows').select('artist:artists(id,name,name_en,image_url,genres)').eq('user_id', user!.id),
-        sb.from('venue_follows').select('venue:venues(id,name,province)').eq('user_id', user!.id).catch(() => ({ data: [] })),
+        sb.from('venue_follows').select('venue:venues(id,name,province)').eq('user_id', user!.id),
         sb.from('event_attendance')
           .select('status, event:events(id,title,start_date,start_time,venue:venues(name))')
           .eq('user_id', user!.id),
