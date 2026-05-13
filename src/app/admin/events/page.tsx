@@ -51,7 +51,10 @@ const EMPTY_FORM = {
   poster_url: '', is_free: false, province: 'กรุงเทพมหานคร',
   artist_ids: [] as string[],
   artist_orders: {} as Record<string, number>,
-  artist_times:  {} as Record<string, string>, // artist_id → start_time
+  artist_times:  {} as Record<string, string>,
+  ticket_sale_start:    '',   // datetime-local
+  ticket_sale_end:      '',   // datetime-local
+  ticket_announce_date: '',   // date
 }
 
 export default function EventsAdminPage() {
@@ -137,6 +140,9 @@ export default function EventsAdminPage() {
       artist_ids:      sortedArtistIds,
       artist_orders:   orders,
       artist_times:    times,
+      ticket_sale_start:    ev.ticket_sale_start ? ev.ticket_sale_start.slice(0,16) : '',
+      ticket_sale_end:      ev.ticket_sale_end   ? ev.ticket_sale_end.slice(0,16)   : '',
+      ticket_announce_date: ev.ticket_announce_date ?? '',
     })
     setShowForm(true)
   }
@@ -163,6 +169,9 @@ export default function EventsAdminPage() {
         poster_url:       form.poster_url.trim()   || null,
         is_free:          form.is_free,
         province:         form.province,
+        ticket_sale_start:    form.ticket_sale_start    || null,
+        ticket_sale_end:      form.ticket_sale_end      || null,
+        ticket_announce_date: form.ticket_announce_date || null,
       }
 
       let eventId = editTarget?.id
@@ -575,6 +584,25 @@ export default function EventsAdminPage() {
                   <input value={form.ticket_url} onChange={e => setForm(f => ({ ...f, ticket_url: e.target.value }))}
                     placeholder="https://..." className="input-theme text-[13px]" />
                 </Field>
+                <div className="grid grid-cols-1 gap-3 mt-3">
+                  <Field label="📅 วันประกาศขายบัตร">
+                    <input type="date" value={form.ticket_announce_date}
+                      onChange={e => setForm(f => ({ ...f, ticket_announce_date: e.target.value }))}
+                      className="input-theme text-[13px]" />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="🎟 เริ่มจำหน่ายบัตร">
+                      <input type="datetime-local" value={form.ticket_sale_start}
+                        onChange={e => setForm(f => ({ ...f, ticket_sale_start: e.target.value }))}
+                        className="input-theme text-[13px]" />
+                    </Field>
+                    <Field label="🔚 สิ้นสุดจำหน่าย">
+                      <input type="datetime-local" value={form.ticket_sale_end}
+                        onChange={e => setForm(f => ({ ...f, ticket_sale_end: e.target.value }))}
+                        className="input-theme text-[13px]" />
+                    </Field>
+                  </div>
+                </div>
               </Section>
 
               {/* Details */}
