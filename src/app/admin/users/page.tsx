@@ -33,9 +33,10 @@ export default function AdminUsersPage() {
         const { data: p } = await sb.from('profiles').select('role').eq('id', user.id).single()
         setMyRole(p?.role ?? 'user')
       }
-      const { data } = await sb.from('profiles')
-        .select('id, role, created_at, user:id(email, raw_user_meta_data)')
+      const { data, error } = await sb.from('user_profiles')
+        .select('id, role, created_at, email, full_name, avatar_url')
         .order('created_at', { ascending: false })
+      if (error) throw error
       setUsers(data || [])
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
@@ -63,8 +64,8 @@ export default function AdminUsersPage() {
   const isSuperAdmin = myRole === 'super_admin'
 
   const filtered = users.filter(u => {
-    const email = u.user?.email ?? ''
-    const name  = u.user?.raw_user_meta_data?.full_name ?? ''
+    const email = u.email ?? ''
+    const name  = u.full_name ?? ''
     if (roleFilter && u.role !== roleFilter) return false
     if (search && !email.toLowerCase().includes(search.toLowerCase()) &&
         !name.toLowerCase().includes(search.toLowerCase())) return false
@@ -124,10 +125,10 @@ export default function AdminUsersPage() {
         <div className="flex flex-col gap-2">
           {filtered.map(u => {
             const conf   = roleConf(u.role)
-            const email  = u.user?.email ?? '—'
-            const name   = u.user?.raw_user_meta_data?.full_name ?? ''
-            const avatar = u.user?.raw_user_meta_data?.avatar_url ?? ''
-            const isSelf = false
+            const email  = u.email ?? '—'
+            const name   = u.full_name ?? ''
+            const avatar = u.avatar_url ?? ''
+            
 
             return (
               <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl"
