@@ -65,27 +65,58 @@ export default function HomePage() {
       setFollowedVenueIds(new Set())
       return
     }
-    sb.from('follows')
-      .select('artist_id, artist:artists(id,name,name_en,image_url,genres)')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        setFollowedIds(new Set((data || []).map((f: any) => f.artist_id)))
-        setFollowedArtistInfo(new Map((data || []).map((f: any) => [f.artist_id, f.artist])))
-      })
-    sb.from('venue_follows').select('venue_id').eq('user_id', user.id)
-      .then(({ data }) => setFollowedVenueIds(new Set((data || []).map((f: any) => f.venue_id))))
+
+    async function loadFollows() {
+      try {
+        // Load followed artists
+        const { data: artistsData, error: artistsError } = await sb
+          .from('follows')
+          .select('artist_id, artist:artists(id,name,name_en,image_url,genres)')
+          .eq('user_id', user.id)
+        
+        if (artistsError) throw artistsError
+        
+        setFollowedIds(new Set((artistsData || []).map((f: any) => f.artist_id)))
+        setFollowedArtistInfo(new Map((artistsData || []).map((f: any) => [f.artist_id, f.artist])))
+
+        // Load followed venues
+        const { data: venuesData, error: venuesError } = await sb
+          .from('venue_follows')
+          .select('venue_id')
+          .eq('user_id', user.id)
+          
+        if (venuesError) throw venuesError
+        
+        setFollowedVenueIds(new Set((venuesData || []).map((f: any) => f.venue_id)))
+      } catch (e) {
+        console.error('Error loading follows:', e)
+      }
+    }
+
+    loadFollows()
   }, [user])
 
   // Load attendance
   useEffect(() => {
     if (!user) { setAttendance(new Map()); return }
-    sb.from('event_attendance')
-      .select('event_id, status')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
+
+    async function loadAttendance() {
+      try {
+        const { data, error } = await sb
+          .from('event_attendance')
+          .select('event_id, status')
+          .eq('user_id', user.id)
+        
+        if (error) throw error
+        
         const map = new Map((data || []).map((a: any) => [a.event_id, a.status as AttendStatus]))
         setAttendance(map)
-      })
+      } catch (e) {
+        console.error('Error loading attendance:', e)
+      }
+    }
+
+    loadAttendance()
   }, [user])
 
   // Toggle attendance status
@@ -363,23 +394,24 @@ export default function HomePage() {
 
       {/* ── ALL EVENTS ── */}
       <section id="all-events" className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8">
-
         {/* Toolbar */}
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           {/* Tabs */}
-          <div className="flex p-1 rounded-xl gap-1"
-            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+          <div className="flex p-1 rounded-xl gap-1" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
             {([
-              { id: 'all',       icon: Music,     label: 'ทั้งหมด'  },
-              { id: 'following', icon: Heart,      label: 'ติดตาม'   },
-              { id: 'ai',        icon: Sparkles,   label: 'แนะนำ'   },
+              { id: 'all',       icon: Music,    label: 'ทั้งหมด' },
+              { id: 'following', icon: Heart,    label: 'ติดตาม' },
+              { id: 'ai',        icon: Sparkles, label: 'แนะนำ' },
             ] as const).map(({ id, icon: Icon, label }) => (
-              <button key={id} onClick={() => setTab(id)}
-                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all',
+              <button key={id}
+                onClick={() => setTab(id)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all',
                   tab === id ? 'text-[var(--surface-0)]' : 'text-muted hover:text-primary'
                 )}
                 style={{ background: tab === id ? 'var(--accent)' : 'transparent' }}>
-                <Icon size={13} /> {label}
+                <Icon size={13} />
+                {label}
                 {id === 'following' && followedIds.size > 0 && (
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full ml-0.5"
                     style={{ background: tab === 'following' ? 'rgba(255,255,255,.2)' : 'var(--accent-muted)', color: tab === 'following' ? 'white' : 'var(--accent)' }}>
@@ -391,127 +423,128 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2"
-              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
               <Search size={13} className="text-muted shrink-0" />
-              <input value={search} onChange={e => setSearch(e.target.value)}
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
                 placeholder="ค้นหางาน, ศิลปิน..."
                 className="bg-transparent text-[13px] text-primary outline-none w-36 placeholder:text-muted" />
             </div>
-            <div className="flex p-1 rounded-lg gap-0.5"
-              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-              {([{id:'calendar',icon:Calendar},{id:'list',icon:List},{id:'grid',icon:LayoutGrid}] as const).map(({id,icon:Icon}) => (
-                <button key={id} onClick={() => setView(id as ViewMode)}
-                  className={cn('p-1.5 rounded-md transition-all',
-                    view === id ? 'bg-[var(--accent)] text-[var(--surface-0)]' : 'text-muted hover:text-primary')}>
-                  <Icon size={15} />
+            <div className="flex p-1 rounded-lg gap-0.5" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+              {([{id:'calendar',icon:Calendar},{id:'list',icon:List},{id:'grid',icon:LayoutGrid}] as const).map(v => (
+                <button key={v.id} onClick={() => setView(v.id as any)}
+                  className="p-1.5 rounded"
+                  style={{ background: view === v.id ? 'var(--surface-3)' : 'transparent', color: view === v.id ? 'var(--accent)' : 'var(--muted)' }}>
+                  <v.icon size={14} />
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {tab !== 'ai' && <FilterBar filters={filters} onChange={setFilters} totalCount={filtered.length} />}
+        <FilterBar onFilterChange={setFilters} />
 
-        {loading && (
-          <div className="flex items-center justify-center py-20 gap-2 text-muted">
-            <Loader2 size={20} className="animate-spin" />
-            <span className="text-[13px]">กำลังโหลด...</span>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <RefreshCw size={24} className="text-accent animate-spin" />
+            <p className="text-[13px] text-muted">กำลังโหลดข้อมูล...</p>
           </div>
-        )}
-
-        {/* ── AI Tab ── */}
-        {!loading && tab === 'ai' && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-[14px] font-medium text-primary flex items-center gap-2">
-                  <Sparkles size={15} style={{ color: 'var(--accent)' }} />
-                  แนะนำสำหรับคุณ
-                </p>
-                <p className="text-[11px] text-muted mt-0.5">
-                  จาก genre และศิลปินที่คุณชอบ
-                </p>
-              </div>
-              <button onClick={generateAI} disabled={aiLoading}
-                className="flex items-center gap-1.5 btn-ghost text-[12px] py-1.5 px-3">
-                <RefreshCw size={13} className={aiLoading ? 'animate-spin' : ''} />
-                สุ่มใหม่
-              </button>
-            </div>
-
-            {aiLoading ? (
-              <div className="flex items-center justify-center py-16 gap-2 text-muted">
-                <Sparkles size={18} className="animate-pulse" style={{ color: 'var(--accent)' }} />
-                <span className="text-[13px]">กำลังคิด...</span>
-              </div>
-            ) : aiEvents.length === 0 ? (
-              <div className="rounded-xl p-10 text-center"
-                style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                <Sparkles size={32} className="mx-auto mb-3" style={{ color: 'var(--accent)', opacity: .4 }} />
-                <p className="text-[14px] font-medium text-primary mb-1">ยังไม่มีคำแนะนำ</p>
-                <p className="text-[12px] text-muted mb-4">ติดตามศิลปินหรือ check in งานก่อนเพื่อให้ระบบเรียนรู้ความชอบของคุณ</p>
-                <button onClick={() => window.location.href = '/artists'} className="btn-accent text-[13px] py-2 px-4">
-                  ค้นหาศิลปิน
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {aiEvents.map(ev => (
-                  <EventRow key={ev.id} event={ev} {...eventRowProps} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── List/Grid/Calendar Tab ── */}
-        {!loading && tab !== 'ai' && view === 'calendar' && (
-          <CalendarView events={filtered} likedIds={likedIds} bookmarkIds={new Set()}
-            onLike={toggleLike} onBookmark={() => {}} />
-        )}
-
-        {!loading && tab !== 'ai' && (view === 'list' || view === 'grid') && (
-          <div className="flex flex-col gap-2">
-
-            {/* Past events */}
-            {pastEvents.length > 0 && (
-              <div>
-                <button onClick={() => setShowPast(v => !v)}
-                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl mb-2 transition-all"
-                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                  <span className="text-[12px] text-muted flex-1 text-left">
-                    งานที่ผ่านมาแล้ว ({pastEvents.length} งาน)
-                  </span>
-                  <span className="text-[11px] text-muted"
-                    style={{ transform: showPast ? 'rotate(180deg)' : 'none', display:'inline-block', transition:'transform .3s' }}>▼</span>
-                </button>
-                <div style={{ overflow:'hidden', maxHeight: showPast ? `${pastEvents.length * 80}px` : '0px', transition:'max-height .4s ease' }}>
-                  <div className="flex flex-col gap-2 pb-2">
-                    {pastEvents.map(ev => <EventRow key={ev.id} event={ev} isPast {...eventRowProps} />)}
+        ) : (
+          <div className="space-y-10 mt-6">
+            {tab === 'ai' ? (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-[16px] font-medium text-primary flex items-center gap-2">
+                      <Sparkles size={16} className="text-accent" /> สำหรับคุณโดยเฉพาะ
+                    </h3>
+                    <p className="text-[12px] text-muted">วิเคราะห์จากศิลปินที่คุณติดตามและแนวเพลงที่ชอบ</p>
                   </div>
+                  <button onClick={generateAI} disabled={aiLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-border hover:bg-surface-2 transition-all">
+                    {aiLoading ? <RefreshCw size={12} className="animate-spin" /> : <RefreshCw size={12} />} รีเฟรช
+                  </button>
                 </div>
-                {upcomingEvents.length > 0 && (
-                  <div className="flex items-center gap-3 my-3">
-                    <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                    <span className="text-[11px] font-medium px-3 py-1 rounded-full"
-                      style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>▼ งานที่กำลังจะมา</span>
-                    <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+
+                {!isLoggedIn ? (
+                  <div className="py-12 text-center rounded-2xl border border-dashed border-border bg-surface-1">
+                    <Music size={32} className="mx-auto text-muted opacity-30 mb-3" />
+                    <p className="text-[14px] text-primary font-medium">เข้าสู่ระบบเพื่อรับการแนะนำ</p>
+                    <p className="text-[12px] text-muted mt-1">เราจะแนะนำงานตามสไตล์ศิลปินที่คุณติดตาม</p>
+                    <button onClick={() => window.location.href='/login'}
+                      className="mt-4 px-6 py-2 rounded-xl bg-accent text-white text-[13px] font-medium">
+                      Login / Sign up
+                    </button>
+                  </div>
+                ) : aiLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[1,2,3,4].map(i => <div key={i} className="aspect-[4/5] rounded-2xl bg-surface-2 animate-pulse" />)}
+                  </div>
+                ) : aiEvents.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {aiEvents.map(ev => (
+                      <div key={ev.id} className="group cursor-pointer" onClick={() => window.location.href=`/events/${ev.id}`}>
+                        <div className="aspect-[4/5] rounded-2xl overflow-hidden relative mb-3" style={{ background: 'var(--surface-2)' }}>
+                          {ev.image_url ? (
+                            <img src={ev.image_url} alt={ev.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center opacity-20"><Music size={40} /></div>
+                          )}
+                          <div className="absolute top-3 left-3 flex flex-col gap-1">
+                            <span className="px-2 py-1 rounded-lg text-[10px] font-bold backdrop-blur-md bg-black/40 text-white uppercase">
+                              {format(parseISO(ev.start_date), 'MMM d')}
+                            </span>
+                          </div>
+                        </div>
+                        <h4 className="text-[14px] font-medium text-primary truncate">{ev.title}</h4>
+                        <p className="text-[11px] text-muted truncate flex items-center gap-1 mt-0.5"><MapPin size={10} /> {ev.venue?.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center rounded-2xl border border-dashed border-border">
+                    <p className="text-[13px] text-muted">กดติดตามศิลปินเพิ่มเพื่อให้ AI แนะนำงานที่ใช่สำหรับคุณ</p>
                   </div>
                 )}
               </div>
-            )}
+            ) : view === 'calendar' ? (
+              <CalendarView events={upcomingEvents} />
+            ) : view === 'list' ? (
+              <div className="space-y-8">
+                {/* UPCOMING */}
+                <div className="space-y-4">
+                  <h3 className="text-[13px] font-medium text-muted uppercase tracking-wider flex items-center gap-2">
+                    <Clock size={14} /> Upcoming Events
+                  </h3>
+                  {upcomingEvents.length > 0 ? (
+                    <div className="space-y-1">
+                      {upcomingEvents.map(ev => <EventRow key={ev.id} event={ev} {...eventRowProps} />)}
+                    </div>
+                  ) : <EmptyState />}
+                </div>
 
-            {/* Upcoming */}
-            {upcomingEvents.length === 0 && pastEvents.length === 0 ? <EmptyState /> :
-             upcomingEvents.length === 0 ? (
-               <div className="rounded-xl p-8 text-center" style={{ background:'var(--surface-1)', border:'1px solid var(--border)' }}>
-                 <p className="text-[13px] text-muted">
-                   {tab === 'following' ? 'ศิลปินที่ติดตามยังไม่มีงานที่กำลังจะมา' : 'ไม่พบงานที่ตรงกัน'}
-                 </p>
-               </div>
-             ) : upcomingEvents.map(ev => <EventRow key={ev.id} event={ev} {...eventRowProps} />)
-            }
+                {/* PAST */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[13px] font-medium text-muted uppercase tracking-wider">Past Events</h3>
+                    <button onClick={() => setShowPast(!showPast)} className="text-[11px] text-accent font-medium">
+                      {showPast ? 'ซ่อนงานที่จบแล้ว' : 'แสดงงานที่จบแล้ว'}
+                    </button>
+                  </div>
+                  {showPast && (
+                    <div className="space-y-1 opacity-60">
+                      {pastEvents.map(ev => <EventRow key={ev.id} event={ev} {...eventRowProps} />)}
+                      {pastEvents.length === 0 && <p className="text-[12px] text-muted py-4 text-center">ไม่มีข้อมูลงานที่จบไปแล้ว</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {upcomingEvents.map(ev => <EventCard key={ev.id} event={ev} {...eventRowProps} />)}
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -519,194 +552,206 @@ export default function HomePage() {
   )
 }
 
-// ── Following Mini Card ────────────────────────────────────────────
-function FollowingMiniCard({ event, followedIds }: any) {
-  const start    = parseISO(event.start_date)
+// ── COMPONENTS ──
+
+function VenueMiniCard({ event }: { event: any }) {
+  const start = parseISO(event.start_date)
   const daysLeft = differenceInDays(start, new Date())
-  const artist   = event.artists?.find((a: any) => followedIds.has(a.id))
-
-  return (
-    <div onClick={() => { window.location.href = `/events/${event.id}` }}
-      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
-      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
-      {artist?.image_url
-        ? <img src={artist.image_url} alt={artist.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
-        : <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-medium"
-            style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>{artist?.name?.slice(0,2)}</div>
-      }
-      <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-primary truncate">{event.title}</p>
-        <p className="text-[10px] text-muted">{event.venue?.name}</p>
-      </div>
-      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0"
-        style={{
-          background: daysLeft === 0 ? 'rgba(232,0,58,.1)' : daysLeft <= 3 ? 'rgba(186,117,23,.1)' : 'var(--accent-muted)',
-          color:      daysLeft === 0 ? '#E8003A' : daysLeft <= 3 ? '#EF9F27' : 'var(--accent)',
-        }}>
-        {daysLeft === 0 ? 'วันนี้!' : daysLeft === 1 ? 'พรุ่งนี้' : `${daysLeft}วัน`}
-      </span>
-    </div>
-  )
-}
-
-// ── Event Row ──────────────────────────────────────────────────────
-function EventRow({ event, likedIds, toggleLike, followedIds, attendance, toggleAttendance, isLoggedIn, isPast }: any) {
-  const start    = parseISO(event.start_date)
-  const end      = event.end_date ? parseISO(event.end_date) : null
-  const isMulti  = event.is_multi_day && end
-  const status   = statusLabel(event.status)
-  const daysLeft = differenceInDays(start, new Date())
-  const liked    = likedIds?.has(event.id)
-
-  const isFollowedEvent = followedIds && event.artists?.some((a: any) => followedIds.has(a.id))
-  const attendStatus: AttendStatus = attendance?.get(event.id) ?? null
-
-  // Border urgency + going highlight
-  const isGoing = attendStatus === 'going'
-  const isAttended = attendStatus === 'attended'
-
-  const borderLeft = isPast     ? '3px solid transparent'
-    : isGoing                   ? '4px solid var(--accent)'
-    : daysLeft === 0            ? '4px solid var(--accent)'
-    : daysLeft <= 3             ? '3px solid color-mix(in srgb, var(--accent) 70%, transparent)'
-    : daysLeft <= 14            ? '2px solid color-mix(in srgb, var(--accent) 35%, transparent)'
-    : '1px solid var(--border)'
-
-  const cardBg = isGoing
-    ? 'linear-gradient(to right, var(--accent-muted), var(--surface-1) 40%)'
-    : 'var(--surface-1)'
-
-  const AttendIcon  = isAttended ? CheckCircle2 : CalendarCheck
-  const attendLabel = isAttended ? 'ไปมาแล้ว' : isGoing ? 'จะไป' : '+ จะไป'
-  const attendStyle = {
-    background: isAttended ? 'rgba(29,158,117,.12)'
-      : isGoing   ? 'var(--accent-muted)'
-      : 'var(--surface-2)',
-    color: isAttended ? '#1D9E75'
-      : isGoing   ? 'var(--accent)'
-      : 'var(--text-muted)',
-    border: `1px solid ${
-      isAttended ? 'rgba(29,158,117,.3)'
-      : isGoing   ? 'var(--accent)'
-      : 'var(--border)'}`,
-  }
 
   return (
     <div
-      onClick={isPast ? undefined : () => { window.location.href = `/events/${event.id}` }}
-      style={{
-        cursor: isPast ? 'default' : 'pointer',
-        opacity: isPast ? 0.4 : 1,
-        background: cardBg,
-        border: isGoing ? '1px solid var(--accent)' : '1px solid var(--border)',
-        borderLeft,
-        borderRadius: 12,
-        display: 'flex',
-        overflow: 'hidden',
-        filter: isPast ? 'grayscale(60%)' : 'none',
-        transition: 'opacity .2s, border-color .2s, background .2s',
-        position: 'relative',
-        boxShadow: isGoing ? '0 0 0 1px var(--accent-muted), 0 2px 12px rgba(0,0,0,.08)' : 'none',
-      }}
-      onMouseEnter={e => { if (!isPast) e.currentTarget.style.opacity = '.9' }}
-      onMouseLeave={e => { e.currentTarget.style.opacity = isPast ? '0.4' : '1' }}
-    >
-      {/* Heart — followed artist */}
-      {isFollowedEvent && !isPast && (
-        <div style={{ position:'absolute', top:7, right:88, zIndex:1 }}>
-          <Heart size={10} style={{ color:'var(--accent)', fill:'var(--accent)', opacity:.7 }} />
-        </div>
-      )}
+      onClick={() => { window.location.href = `/events/${event.id}` }}
+      className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border border-transparent hover:border-border"
+      style={{ background: 'var(--surface-1)' }}>
 
-      {/* Today badge */}
-      {daysLeft === 0 && !isPast && (
-        <div style={{ position:'absolute', top:0, left:0, background:'var(--accent)', color:'var(--surface-0)', fontSize:9, fontWeight:700, padding:'2px 7px', borderBottomRightRadius:6 }}>
-          วันนี้!
-        </div>
-      )}
-
-      {/* Date strip */}
-      <div style={{
-        width: isMulti ? 64 : 56, flexShrink: 0,
-        background: !isPast && daysLeft <= 3 ? 'var(--accent-muted)' : 'var(--surface-2)',
-        borderRight: '1px solid var(--border)',
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'8px 4px',
-      }}>
-        {isMulti ? (
-          <>
-            <span style={{ fontSize:11, color:'var(--accent)', fontWeight:500, textAlign:'center', lineHeight:1.3 }}>{format(start,'d MMM',{locale:th})}</span>
-            <span style={{ fontSize:9, color:'var(--text-muted)' }}>–</span>
-            <span style={{ fontSize:11, color:'var(--accent)', fontWeight:500, textAlign:'center', lineHeight:1.3 }}>{format(end!,'d MMM',{locale:th})}</span>
-          </>
-        ) : (
-          <>
-            <span style={{ fontSize:22, fontWeight:500, color: isPast ? 'var(--text-muted)' : 'var(--accent)', lineHeight:1 }}>{format(start,'d')}</span>
-            <span style={{ fontSize:9, color: isPast ? 'var(--text-muted)' : 'var(--accent)', opacity:.7, textTransform:'uppercase' }}>{format(start,'MMM',{locale:th})}</span>
-          </>
-        )}
+      <div className="w-10 h-10 rounded-lg shrink-0 flex flex-col items-center justify-center border"
+        style={{ background: daysLeft === 0 ? 'rgba(232,0,58,.1)' : 'var(--surface-1)', borderColor: daysLeft === 0 ? 'rgba(232,0,58,.2)' : 'var(--border)' }}>
+        <span className="text-[12px] font-bold" style={{ color: daysLeft === 0 ? '#E8003A' : 'var(--accent)', lineHeight: 1 }}>{format(start,'d')}</span>
+        <span className="text-[8px] font-medium uppercase opacity-60" style={{ color: daysLeft === 0 ? '#E8003A' : 'var(--accent)' }}>{format(start,'MMM',{locale:th})}</span>
       </div>
 
-      {/* Body */}
-      <div style={{ flex:1, minWidth:0, padding: daysLeft === 0 && !isPast ? '16px 12px 10px' : '10px 12px' }}>
-        <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:4 }}>
-          {isPast && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:20, background:'var(--surface-3)', color:'var(--text-muted)' }}>ผ่านไปแล้ว</span>}
-          <span className={cn('tag', status.cls)}>{status.label}</span>
-          {event.genres?.slice(0,2).map((g:string) => <span key={g} className={cn('tag', genreTagClass(g))}>{g}</span>)}
-        </div>
-        <div style={{ fontSize:14, fontWeight:500, color:'var(--text-primary)', marginBottom:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{event.title}</div>
-        {event.artists?.length > 0 && (
-          <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-            {event.artists.map((a:any) => a.name).join(' · ')}
-          </div>
-        )}
-        <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-          {event.venue && <span style={{ fontSize:10, color:'var(--text-muted)', display:'flex', alignItems:'center', gap:2 }}><MapPin size={9}/>{event.venue.name}</span>}
-          {event.start_time && <span style={{ fontSize:10, color:'var(--text-muted)', display:'flex', alignItems:'center', gap:2 }}><Clock size={9}/>{event.start_time.slice(0,5)} น.</span>}
-        </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[12px] font-medium text-primary truncate leading-tight">{event.title}</p>
+        <p className="text-[10px] text-muted truncate mt-0.5">{event.venue?.name}</p>
       </div>
 
-      {/* Right */}
-      <div style={{ flexShrink:0, borderLeft:'1px solid var(--border)', padding:'8px 10px', display:'flex', flexDirection:'column', alignItems:'flex-end', justifyContent:'space-between', minWidth:86 }}>
-        <span style={{ fontSize:12, fontWeight:500, color:event.is_free?'#5DCAA5':'var(--accent)' }}>{formatPrice(event)}</span>
-        <div style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'flex-end' }}>
-          {/* Attend button */}
-          {!isPast && isLoggedIn && (
-            <button
-              onClick={e => { e.stopPropagation(); toggleAttendance(event.id, attendStatus) }}
-              className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg font-medium transition-all"
-              style={attendStyle}>
-              <AttendIcon size={11} />
-              {attendLabel}
-            </button>
+      {daysLeft === 0 && (
+        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#E8003A] text-white shrink-0">TODAY</span>
+      )}
+    </div>
+  )
+}
+
+function EventRow({ event, likedIds, toggleLike, followedIds, attendance, toggleAttendance, isLoggedIn }: any) {
+  const start = parseISO(event.start_date)
+  const daysLeft = differenceInDays(start, new Date())
+  const attendStatus = attendance.get(event.id) || null
+
+  return (
+    <div className={cn(
+      "group flex items-center gap-4 p-3 sm:px-4 rounded-xl transition-all cursor-pointer border border-transparent hover:border-border",
+      daysLeft === 0 ? "bg-surface-1 border-border/50" : "hover:bg-surface-1"
+    )}
+    onClick={() => window.location.href = `/events/${event.id}`}>
+
+      {/* Date box */}
+      <div className="flex flex-col items-center justify-center w-10 sm:w-11 h-10 sm:h-11 rounded-xl shrink-0 border"
+        style={{ background: daysLeft === 0 ? 'rgba(232,0,58,.08)' : daysLeft <= 3 ? 'rgba(186,117,23,.05)' : 'var(--surface-2)', borderColor: daysLeft === 0 ? 'rgba(232,0,58,.2)' : 'var(--border)' }}>
+        <span className="text-[14px] sm:text-[16px] font-bold leading-none"
+          style={{ color: daysLeft === 0 ? '#E8003A' : 'var(--accent)' }}>
+          {format(start, 'd')}
+        </span>
+        <span className="text-[9px] sm:text-[10px] font-medium uppercase opacity-70"
+          style={{ color: daysLeft === 0 ? '#E8003A' : 'var(--accent)' }}>
+          {format(start, 'MMM', { locale: th })}
+        </span>
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-[13px] sm:text-[14px] font-medium text-primary truncate">{event.title}</p>
+          {event.is_free && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 shrink-0">FREE</span>
           )}
-          {/* Like */}
-          <button onClick={e => { e.stopPropagation(); toggleLike?.(event.id) }}
-            style={{ width:26, height:26, borderRadius:8, border:'1px solid var(--border)', background:liked?'var(--accent-muted)':'var(--surface-2)', color:liked?'var(--accent)':'var(--text-muted)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-            <Heart size={12} style={{ fill:liked?'var(--accent)':'none' }} />
-          </button>
         </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 min-w-0">
+            <MapPin size={10} className="text-muted shrink-0" />
+            <p className="text-[11px] text-muted truncate">{event.venue?.name}</p>
+          </div>
+          {event.start_time && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Clock size={10} className="text-muted" />
+              <p className="text-[11px] text-muted">{event.start_time.slice(0,5)} น.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Artists & Price */}
+      <div className="hidden md:flex flex-col items-end gap-1 w-32 shrink-0">
+        <div className="flex -space-x-1.5 overflow-hidden">
+          {event.artists?.slice(0,3).map((a: any) => (
+            <div key={a.id} className="w-5 h-5 rounded-full border-2 border-surface-0 bg-surface-2 flex items-center justify-center overflow-hidden shrink-0">
+              {a.image_url ? <img src={a.image_url} className="w-full h-full object-cover" /> : <Music size={8} className="text-muted" />}
+            </div>
+          ))}
+          {event.artists?.length > 3 && <div className="text-[8px] text-muted pl-2">+{event.artists.length - 3}</div>}
+        </div>
+        <p className="text-[11px] font-medium text-accent">{formatPrice(event)}</p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {isLoggedIn && (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleAttendance(event.id, attendStatus) }}
+            className="flex flex-col items-center justify-center w-8 h-8 rounded-lg transition-all"
+            style={{ background: attendStatus ? 'var(--accent-muted)' : 'var(--surface-2)' }}>
+            {attendStatus === 'going' ? <CheckCircle2 size={15} style={{ color: 'var(--accent)' }} /> :
+             attendStatus === 'attended' ? <CalendarCheck size={15} style={{ color: 'var(--accent)' }} /> :
+             <RefreshCw size={14} className="text-muted opacity-40" />}
+          </button>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleLike(event.id) }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
+          style={{ background: likedIds.has(event.id) ? 'rgba(232,0,58,.08)' : 'var(--surface-2)' }}>
+          <Heart size={15} style={{
+            color: likedIds.has(event.id) ? '#E8003A' : 'var(--muted)',
+            fill: likedIds.has(event.id) ? '#E8003A' : 'none'
+          }} />
+        </button>
       </div>
     </div>
   )
 }
 
-// ── Venue Mini Card ────────────────────────────────────────────────
-function VenueMiniCard({ event }: { event: any }) {
-  const start    = parseISO(event.start_date)
+function EventCard({ event, likedIds, toggleLike, followedIds, attendance, toggleAttendance, isLoggedIn }: any) {
+  const start = parseISO(event.start_date)
+  const daysLeft = differenceInDays(start, new Date())
+  const attendStatus = attendance.get(event.id) || null
+
+  return (
+    <div className="group rounded-2xl overflow-hidden cursor-pointer transition-all border border-border bg-surface-1 hover:border-accent/30"
+      onClick={() => window.location.href = `/events/${event.id}`}>
+      {/* Image area */}
+      <div className="aspect-[16/10] bg-surface-2 relative overflow-hidden">
+        {event.image_url ? (
+          <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center opacity-10"><Music size={40} /></div>
+        )}
+        <div className="absolute top-3 left-3 flex gap-2">
+          <span className="px-2 py-1 rounded-lg text-[10px] font-bold backdrop-blur-md bg-black/40 text-white uppercase">
+            {format(start, 'MMM d')}
+          </span>
+          {event.is_free && (
+            <span className="px-2 py-1 rounded-lg text-[10px] font-bold backdrop-blur-md bg-green-500/80 text-white">FREE</span>
+          )}
+        </div>
+        <button onClick={(e) => { e.stopPropagation(); toggleLike(event.id) }}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-md bg-black/40 flex items-center justify-center transition-all hover:bg-black/60">
+          <Heart size={14} style={{ color: likedIds.has(event.id) ? '#E8003A' : 'white', fill: likedIds.has(event.id) ? '#E8003A' : 'none' }} />
+        </button>
+      </div>
+
+      {/* Info */}
+      <div className="p-4">
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <h4 className="text-[14px] font-semibold text-primary leading-tight line-clamp-2">{event.title}</h4>
+          <span className="text-[12px] font-medium text-accent shrink-0">{formatPrice(event)}</span>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-muted">
+            <MapPin size={12} className="shrink-0" />
+            <span className="text-[11px] truncate">{event.venue?.name}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-muted">
+              <Clock size={12} className="shrink-0" />
+              <span className="text-[11px]">{event.start_time?.slice(0,5)} น.</span>
+            </div>
+            <div className="flex -space-x-1.5">
+              {event.artists?.slice(0,3).map((a: any) => (
+                <div key={a.id} className="w-5 h-5 rounded-full border-2 border-surface-1 bg-surface-2 overflow-hidden">
+                  {a.image_url ? <img src={a.image_url} className="w-full h-full object-cover" /> : <Music size={8} className="m-auto mt-1" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {isLoggedIn && (
+          <button onClick={(e) => { e.stopPropagation(); toggleAttendance(event.id, attendStatus) }}
+            className={cn(
+              "w-full mt-4 py-2 rounded-xl text-[12px] font-medium flex items-center justify-center gap-2 transition-all",
+              attendStatus === 'going' ? "bg-accent text-white" :
+              attendStatus === 'attended' ? "bg-green-500 text-white" :
+              "bg-surface-2 text-primary hover:bg-surface-3"
+            )}>
+            {attendStatus === 'going' ? <CheckCircle2 size={14} /> :
+             attendStatus === 'attended' ? <CalendarCheck size={14} /> : <Calendar size={14} />}
+            {attendStatus === 'going' ? 'กำลังจะไป' : attendStatus === 'attended' ? 'ไปมาแล้ว' : 'สนใจเข้าร่วม'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function VenueMiniCard_Old({ event }: { event: any }) {
+  const start = parseISO(event.start_date)
   const daysLeft = differenceInDays(start, new Date())
 
   return (
-    <div onClick={() => { window.location.href = `/events/${event.id}` }}
-      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
-      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+    <div
+      onClick={() => { window.location.href = `/events/${event.id}` }}
+      className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border border-border bg-surface-1 hover:border-accent/30">
 
-      {/* Date */}
-      <div className="w-10 h-10 rounded-xl shrink-0 flex flex-col items-center justify-center"
-        style={{ background: daysLeft <= 3 ? 'var(--accent-muted)' : 'var(--surface-1)' }}>
+      <div className="w-10 h-10 rounded-lg shrink-0 flex flex-col items-center justify-center"
+        style={{ background: daysLeft === 0 ? 'var(--accent-muted)' : 'var(--surface-1)' }}>
         <span style={{ fontSize:14, fontWeight:600, color:'var(--accent)', lineHeight:1 }}>{format(start,'d')}</span>
         <span style={{ fontSize:8, color:'var(--accent)', opacity:.7, textTransform:'uppercase' }}>{format(start,'MMM',{locale:th})}</span>
       </div>
@@ -732,10 +777,12 @@ function VenueMiniCard({ event }: { event: any }) {
 
 function EmptyState() {
   return (
-    <div className="rounded-xl p-10 text-center" style={{ background:'var(--surface-1)', border:'1px solid var(--border)' }}>
-      <div className="text-3xl mb-3">🎵</div>
-      <p className="text-[14px] font-medium text-primary">ไม่พบงานที่ตรงกัน</p>
-      <p className="text-[12px] text-muted mt-1">ลองปรับตัวกรองใหม่</p>
+    <div className="py-20 text-center">
+      <div className="w-16 h-16 bg-surface-2 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
+        <Search size={24} className="text-muted" />
+      </div>
+      <p className="text-[14px] font-medium text-primary">ไม่พบกิจกรรมที่ค้นหา</p>
+      <p className="text-[12px] text-muted mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรองอื่นๆ</p>
     </div>
   )
 }
