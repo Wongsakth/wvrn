@@ -524,20 +524,139 @@ export default function HomePage() {
       <main className="max-w-screen-xl mx-auto px-4 py-6">
 
         {/* HERO */}
-
         <div className="mb-6">
           <span className="inline-block text-xs px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 mb-3">
             🎵 Never Miss a Show
           </span>
-
-          <h1 className="text-4xl font-bold">
-            WVRN
-          </h1>
-
-          <p className="text-zinc-400 mt-1">
-            ติดตามศิลปินที่ชอบ ไม่พลาดทุก Concert ในไทย
-          </p>
+          <h1 className="text-4xl font-bold">WVRN</h1>
+          <p className="text-zinc-400 mt-1">ติดตามศิลปินที่ชอบ ไม่พลาดทุก Concert ในไทย</p>
         </div>
+
+        {/* ── ศิลปินที่ติดตาม ── */}
+        {isLoggedIn && followedArtistInfo.size > 0 && (
+          <div className="mb-6 rounded-2xl overflow-hidden border border-zinc-800">
+            <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <Heart size={14} className="fill-pink-500 text-pink-500" />
+                <span className="text-[13px] font-medium">ศิลปินที่ติดตาม</span>
+                <span className="text-[11px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">
+                  {followedArtistInfo.size} คน
+                </span>
+              </div>
+              <button onClick={() => window.location.href = '/artists'}
+                className="text-[11px] text-pink-400 flex items-center gap-1">
+                จัดการ <ChevronRight size={11} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-800">
+              {Array.from(followedArtistInfo.entries()).map(([artistId, artist]) => {
+                const nextEvent = events
+                  .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => a.id === artistId))
+                  .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
+                const daysLeft = nextEvent ? differenceInDays(new Date(nextEvent.start_date), new Date()) : null
+                const isToday  = daysLeft === 0
+                return (
+                  <div key={artistId} className="bg-zinc-900 p-3">
+                    <div className="flex items-center gap-3 mb-2 cursor-pointer"
+                      onClick={() => window.location.href = `/artists/${artistId}`}>
+                      {artist?.image_url
+                        ? <img src={artist.image_url} alt={artist.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                        : <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-medium bg-zinc-800 text-pink-400">
+                            {(artist?.name_en || artist?.name)?.slice(0,2)}
+                          </div>
+                      }
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium truncate">{artist?.name_en || artist?.name}</p>
+                        {artist?.name_en && artist?.name !== artist?.name_en && (
+                          <p className="text-[10px] text-zinc-500 truncate">{artist?.name}</p>
+                        )}
+                      </div>
+                      <Heart size={10} className="fill-pink-500 text-pink-500 shrink-0" />
+                    </div>
+                    {nextEvent ? (
+                      <div onClick={() => window.location.href = `/events/${nextEvent.id}`}
+                        className="p-2 rounded-lg cursor-pointer"
+                        style={{ background: isToday ? 'rgba(236,72,153,.08)' : 'rgba(255,255,255,.04)' }}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[10px] font-medium"
+                            style={{ color: isToday ? '#EC4899' : daysLeft! <= 7 ? '#F59E0B' : '#A78BFA' }}>
+                            {isToday ? 'วันนี้!' : daysLeft === 1 ? 'พรุ่งนี้' : `อีก ${daysLeft} วัน`}
+                          </span>
+                          {nextEvent.start_time && (
+                            <span className="text-[9px] text-zinc-500">{nextEvent.start_time.slice(0,5)}</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] font-medium truncate text-white">{nextEvent.title}</p>
+                        <p className="text-[10px] text-zinc-500 truncate">{nextEvent.venue?.name}</p>
+                      </div>
+                    ) : (
+                      <div className="px-2 py-1.5 rounded-lg text-center bg-zinc-800">
+                        <p className="text-[10px] text-zinc-600">ยังไม่มีงานที่กำลังจะมา</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── สถานที่ที่ติดตาม ── */}
+        {isLoggedIn && followedVenueIds.size > 0 && (
+          <div className="mb-6 rounded-2xl overflow-hidden border border-zinc-800">
+            <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <MapPin size={14} className="text-pink-400" />
+                <span className="text-[13px] font-medium">สถานที่ที่ติดตาม</span>
+                <span className="text-[11px] text-zinc-500">— งานเร็วๆ นี้</span>
+              </div>
+              <button onClick={() => window.location.href = '/venues'}
+                className="text-[11px] text-pink-400 flex items-center gap-1">
+                ดูทั้งหมด <ChevronRight size={11} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
+              {events
+                .filter(ev => !isPastEvent(ev, today) && followedVenueIds.has(ev.venue_id))
+                .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+                .slice(0, 6)
+                .map(ev => {
+                  const start = parseISO(ev.start_date)
+                  const days  = differenceInDays(start, new Date())
+                  return (
+                    <div key={ev.id}
+                      onClick={() => window.location.href = `/events/${ev.id}`}
+                      className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-zinc-900 border border-zinc-800">
+                      <div className="w-9 h-9 rounded-lg shrink-0 flex flex-col items-center justify-center bg-zinc-800">
+                        <span className="text-[13px] font-medium text-pink-400 leading-none">{format(start,'d')}</span>
+                        <span className="text-[8px] text-pink-400 opacity-70 uppercase">{format(start,'MMM',{locale:th})}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium truncate">{ev.title}</p>
+                        <div className="flex items-center gap-1">
+                          <MapPin size={9} className="text-zinc-500 shrink-0" />
+                          <p className="text-[10px] text-zinc-500 truncate">{ev.venue?.name}</p>
+                        </div>
+                      </div>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium"
+                        style={{
+                          background: days === 0 ? 'rgba(239,68,68,.1)' : days <= 3 ? 'rgba(245,158,11,.1)' : 'rgba(167,139,250,.1)',
+                          color:      days === 0 ? '#EF4444' : days <= 3 ? '#F59E0B' : '#A78BFA',
+                        }}>
+                        {days === 0 ? 'วันนี้!' : `${days}วัน`}
+                      </span>
+                    </div>
+                  )
+                })
+              }
+              {events.filter(ev => !isPastEvent(ev, today) && followedVenueIds.has(ev.venue_id)).length === 0 && (
+                <div className="col-span-full py-4 text-center text-[12px] text-zinc-600">
+                  ยังไม่มีงานจากสถานที่ที่ติดตาม
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* TOOLBAR */}
 
