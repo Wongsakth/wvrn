@@ -1,907 +1,328 @@
 'use client'
-
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import {
-  Calendar,
-  List,
-  LayoutGrid,
-  Search,
-  Loader2,
-  MapPin,
-  Clock,
-  ChevronRight,
-  Heart,
-  Music,
-  Sparkles,
-  RefreshCw,
-  CheckCircle2,
-  CalendarCheck,
-} from 'lucide-react'
-
+import { useEffect, useState } from 'react'
 import Navbar from '@/components/layout/Navbar'
-import CalendarView from '@/components/calendar/CalendarView'
-import FilterBar from '@/components/events/FilterBar'
-
-import {
-  cn,
-  formatPrice,
-  statusLabel,
-  genreTagClass,
-} from '@/lib/utils'
-
-import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-
+import { createClient } from '@/lib/supabase'
 import {
-  format,
-  parseISO,
-  differenceInDays,
-} from 'date-fns'
+  User, Heart, MapPin, Calendar, LogOut, Shield,
+  ChevronRight, Music, Palette, Lock, Eye, EyeOff,
+  CheckCircle2, AlertCircle, Loader2,
+} from 'lucide-react'
+import { useTheme, THEMES } from '@/lib/theme'
+import toast from 'react-hot-toast'
 
-import { th } from 'date-fns/locale'
+type Section = 'main' | 'theme' | 'password'
 
-import type {
-  EventFilters,
-  ViewMode,
-} from '@/types'
+const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+  admin:  { label: 'Admin',  color: '#E8003A',        bg: 'rgba(232,0,58,.1)',   icon: 'A' },
+  editor: { label: 'Editor', color: '#EF9F27',        bg: 'rgba(239,159,39,.1)', icon: 'E' },
+  user:   { label: 'User',   color: 'var(--accent)',  bg: 'var(--accent-muted)', icon: 'U' },
+}
 
-type TabMode = 'all' | 'following' | 'ai'
-type AttendStatus = 'going' | 'attended' | null
-
-export default function HomePage() {
+export default function ProfilePage() {
+  const { user, signOut } = useAuth()
+  const { theme, setTheme } = useTheme()
+  const [stats,     setStats]     = useState({ artists: 0, venues: 0, going: 0, attended: 0 })
+  const [section,   setSection]   = useState<Section>('main')
+  const [role,      setRole]      = useState('user')
+  const [pwForm,    setPwForm]    = useState({ next: '', confirm: '' })
+  const [pwLoading, setPwLoading] = useState(false)
+  const [showPw,    setShowPw]    = useState({ next: false, confirm: false })
   const sb = createClient()
-  const { user, loading: authLoading } = useAuth()
+  const isEmailUser = !user?.app_metadata?.provider || user?.app_metadata?.provider === 'email'
 
-  const isLoggedIn = !authLoading && !!user
-
-  const [events, setEvents] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
-  const [followedVenueIds, setFollowedVenueIds] = useState<Set<string>>(new Set())
-
-  const [followedArtistInfo, setFollowedArtistInfo] =
-    useState<Map<string, any>>(new Map())
-
-  const [attendance, setAttendance] =
-    useState<Map<string, AttendStatus>>(new Map())
-
-  const [filters, setFilters] = useState<EventFilters>({})
-  const [view, setView] = useState<ViewMode>('list')
-  const [tab, setTab] = useState<TabMode>('all')
-  const [search, setSearch] = useState('')
-
-  const [likedIds, setLikedIds] =
-    useState<Set<string>>(new Set())
-
-  const [showPast, setShowPast] = useState(false)
-
-  const [aiEvents, setAiEvents] = useState<any[]>([])
-  const [aiLoading, setAiLoading] = useState(false)
-
-  const today = useMemo(() => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    return d
-  }, [])
-
-  // =========================================================
-  // HELPERS
-  // =========================================================
-
-  function isPastEvent(ev: any, t: Date) {
-    return new Date(ev.end_date || ev.start_date) < t
-  }
-
-  function toggleLike(id: string) {
-    setLikedIds(prev => {
-      const next = new Set(prev)
-
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-
-      return next
+  useEffect(() => {
+    if (!user) return
+    const r = user.user_metadata?.role ?? user.app_metadata?.role ?? 'user'
+    setRole(r)
+    Promise.all([
+      sb.from('follows').select('id', { count: 'exact' }).eq('user_id', user.id),
+      sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id).catch(() => ({ count: 0 })),
+      sb.from('event_attendance').select('id,status').eq('user_id', user.id),
+    ]).then(([ar, vr, at]) => {
+      const att = (at as any).data || []
+      setStats({
+        artists:  ar.count ?? 0,
+        venues:   (vr as any).count ?? 0,
+        going:    att.filter((a: any) => a.status === 'going').length,
+        attended: att.filter((a: any) => a.status === 'attended').length,
+      })
     })
-  }
-
-  // =========================================================
-  // LOAD EVENTS
-  // =========================================================
-
-  useEffect(() => {
-    async function loadEvents() {
-      setLoading(true)
-
-      try {
-        const { data, error } = await sb
-          .from('events')
-          .select(`
-            *,
-            venue:venues(
-              id,
-              name,
-              province,
-              address,
-              maps_url
-            ),
-            event_artists(
-              artist:artists(
-                id,
-                name,
-                name_en,
-                genres,
-                image_url
-              )
-            )
-          `)
-          .order('start_date', { ascending: true })
-
-        if (error) throw error
-
-        const normalized =
-          (data || []).map((ev: any) => ({
-            ...ev,
-            artists:
-              ev.event_artists
-                ?.map((ea: any) => ea.artist)
-                .filter(Boolean) || [],
-          }))
-
-        setEvents(normalized)
-      } catch (err) {
-        console.error('loadEvents error', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadEvents()
-  }, [])
-
-  // =========================================================
-  // LOAD FOLLOWS
-  // =========================================================
-
-  useEffect(() => {
-    async function loadFollows() {
-      if (!user) {
-        setFollowedIds(new Set())
-        setFollowedVenueIds(new Set())
-        setFollowedArtistInfo(new Map())
-        return
-      }
-
-      try {
-        const { data, error } = await sb
-          .from('follows')
-          .select(`
-            artist_id,
-            artist:artists(
-              id,
-              name,
-              name_en,
-              image_url,
-              genres
-            )
-          `)
-          .eq('user_id', user.id)
-
-        if (error) throw error
-
-        setFollowedIds(
-          new Set(
-            (data || []).map((f: any) => f.artist_id)
-          )
-        )
-
-        setFollowedArtistInfo(
-          new Map(
-            (data || []).map((f: any) => [
-              f.artist_id,
-              f.artist,
-            ])
-          )
-        )
-      } catch (err) {
-        console.error('load artist follows error', err)
-      }
-
-      try {
-        const { data, error } = await sb
-          .from('venue_follows')
-          .select('venue_id')
-          .eq('user_id', user.id)
-
-        if (error) throw error
-
-        setFollowedVenueIds(
-          new Set(
-            (data || []).map((f: any) => f.venue_id)
-          )
-        )
-      } catch (err) {
-        console.error('load venue follows error', err)
-      }
-    }
-
-    loadFollows()
   }, [user])
 
-  // =========================================================
-  // LOAD ATTENDANCE
-  // =========================================================
-
-  useEffect(() => {
-    async function loadAttendance() {
-      if (!user) {
-        setAttendance(new Map())
-        return
-      }
-
-      try {
-        const { data, error } = await sb
-          .from('event_attendance')
-          .select('event_id, status')
-          .eq('user_id', user.id)
-
-        if (error) throw error
-
-        const map = new Map(
-          (data || []).map((a: any) => [
-            a.event_id,
-            a.status as AttendStatus,
-          ])
-        )
-
-        setAttendance(map)
-      } catch (err) {
-        console.error('load attendance error', err)
-      }
-    }
-
-    loadAttendance()
-  }, [user])
-
-  // =========================================================
-  // TOGGLE ATTENDANCE
-  // =========================================================
-
-  async function toggleAttendance(
-    eventId: string,
-    currentStatus: AttendStatus
-  ) {
-    if (!user) {
-      window.location.href = '/login'
-      return
-    }
-
-    const next: AttendStatus =
-      currentStatus === null
-        ? 'going'
-        : currentStatus === 'going'
-        ? 'attended'
-        : null
-
-    // optimistic update
-    setAttendance(prev => {
-      const n = new Map(prev)
-
-      if (next === null) {
-        n.delete(eventId)
-      } else {
-        n.set(eventId, next)
-      }
-
-      return n
-    })
-
+  async function handleChangePassword() {
+    if (!pwForm.next || !pwForm.confirm)   { toast.error('กรุณากรอกรหัสผ่านให้ครบ'); return }
+    if (pwForm.next !== pwForm.confirm)    { toast.error('รหัสผ่านใหม่ไม่ตรงกัน'); return }
+    if (pwForm.next.length < 8)            { toast.error('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'); return }
+    setPwLoading(true)
     try {
-      if (next === null) {
-        const { error } = await sb
-          .from('event_attendance')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('event_id', eventId)
-
-        if (error) throw error
-      } else if (currentStatus === null) {
-        const { error } = await sb
-          .from('event_attendance')
-          .insert({
-            user_id: user.id,
-            event_id: eventId,
-            status: next,
-          })
-
-        if (error) throw error
-      } else {
-        const { error } = await sb
-          .from('event_attendance')
-          .update({
-            status: next,
-          })
-          .eq('user_id', user.id)
-          .eq('event_id', eventId)
-
-        if (error) throw error
-      }
-    } catch (err) {
-      console.error('toggle attendance error', err)
-
-      // revert
-      setAttendance(prev => {
-        const n = new Map(prev)
-
-        if (currentStatus === null) {
-          n.delete(eventId)
-        } else {
-          n.set(eventId, currentStatus)
-        }
-
-        return n
-      })
-    }
+      const { error } = await sb.auth.updateUser({ password: pwForm.next })
+      if (error) throw error
+      toast.success('เปลี่ยนรหัสผ่านสำเร็จแล้ว')
+      setPwForm({ next: '', confirm: '' })
+      setSection('main')
+    } catch (e: any) { toast.error(e.message || 'เกิดข้อผิดพลาด') }
+    finally { setPwLoading(false) }
   }
 
-  // =========================================================
-  // AI RECOMMEND
-  // =========================================================
-
-  const generateAI = useCallback(() => {
-    setAiLoading(true)
-
-    setTimeout(() => {
-      const followedGenres = new Set<string>()
-
-      followedArtistInfo.forEach(artist => {
-        ;(artist?.genres || []).forEach((g: string) => {
-          followedGenres.add(g)
-        })
-      })
-
-      const scored = events
-        .filter(ev => !isPastEvent(ev, today))
-
-        // FIXED BUG
-        .filter(
-          ev =>
-            !ev.artists?.some((a: any) =>
-              followedIds.has(a.id)
-            )
-        )
-
-        .map(ev => {
-          let score = Math.random() * 30
-
-          const evGenres: string[] = ev.genres || []
-
-          evGenres.forEach(g => {
-            if (followedGenres.has(g)) {
-              score += 25
-            }
-          })
-
-          ev.artists?.forEach((a: any) => {
-            events.forEach(e => {
-              if (
-                attendance.get(e.id) === 'attended' &&
-                e.artists?.some(
-                  (x: any) => x.id === a.id
-                )
-              ) {
-                score += 15
-              }
-            })
-          })
-
-          return {
-            ev,
-            score,
-          }
-        })
-
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 8)
-        .map(x => x.ev)
-
-      setAiEvents(scored)
-      setAiLoading(false)
-    }, 500)
-  }, [
-    events,
-    followedArtistInfo,
-    followedIds,
-    attendance,
-    today,
-  ])
-
-  useEffect(() => {
-    if (
-      tab === 'ai' &&
-      aiEvents.length === 0 &&
-      !aiLoading
-    ) {
-      generateAI()
-    }
-  }, [tab])
-
-  // =========================================================
-  // FILTERED EVENTS
-  // =========================================================
-
-  const filtered = useMemo(() => {
-    let base = events
-
-    if (tab === 'following') {
-      base = base.filter(ev =>
-        ev.artists?.some((a: any) =>
-          followedIds.has(a.id)
-        )
-      )
-    }
-
-    return base
-      .filter(ev => {
-        if (
-          filters.province &&
-          ev.province !== filters.province
-        ) {
-          return false
-        }
-
-        if (
-          filters.genre &&
-          !ev.genres?.includes(filters.genre)
-        ) {
-          return false
-        }
-
-        if (
-          filters.eventType &&
-          ev.event_type !== filters.eventType
-        ) {
-          return false
-        }
-
-        if (
-          filters.isFree &&
-          !ev.is_free
-        ) {
-          return false
-        }
-
-        if (search) {
-          const q = search.toLowerCase()
-
-          const matched =
-            ev.title?.toLowerCase().includes(q) ||
-            ev.artists?.some((a: any) =>
-              a.name?.toLowerCase().includes(q)
-            ) ||
-            ev.venue?.name
-              ?.toLowerCase()
-              .includes(q)
-
-          if (!matched) return false
-        }
-
-        return true
-      })
-
-      .sort(
-        (a, b) =>
-          new Date(a.start_date).getTime() -
-          new Date(b.start_date).getTime()
-      )
-  }, [
-    events,
-    filters,
-    search,
-    tab,
-    followedIds,
-  ])
-
-  const pastEvents = filtered.filter(ev =>
-    isPastEvent(ev, today)
+  if (!user) return (
+    <div className="min-h-screen" style={{ background: 'var(--surface-0)' }}>
+      <Navbar />
+      <div className="max-w-md mx-auto px-4 py-16 text-center">
+        <User size={40} className="mx-auto mb-4 text-muted" />
+        <p className="text-[15px] font-medium text-primary mb-4">Login เพื่อดูโปรไฟล์</p>
+        <button onClick={() => window.location.href = '/login'} className="btn-accent py-2 px-6 text-[14px]">Login</button>
+      </div>
+    </div>
   )
 
-  const upcomingEvents = filtered.filter(
-    ev => !isPastEvent(ev, today)
-  )
-
-  // =========================================================
-  // RENDER
-  // =========================================================
+  const roleConf = ROLE_CONFIG[role] ?? ROLE_CONFIG.user
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen pb-24 md:pb-8" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
+      <div className="max-w-screen-sm mx-auto px-4 py-6">
 
-      <main className="max-w-screen-xl mx-auto px-4 py-6">
+        {section !== 'main' && (
+          <button onClick={() => setSection('main')}
+            className="flex items-center gap-1 text-[13px] text-muted mb-4 hover:text-primary transition-colors">
+            ← กลับ
+          </button>
+        )}
 
-        {/* HERO */}
+        {/* ── MAIN ── */}
+        {section === 'main' && (
+          <>
+            {/* Profile card */}
+            <div className="rounded-2xl p-6 mb-4 text-center"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              {user.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} alt=""
+                  className="w-20 h-20 rounded-full mx-auto mb-3 object-cover" />
+              ) : (
+                <div className="w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-[28px] font-medium"
+                  style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
+                  {(user.email ?? 'U')[0].toUpperCase()}
+                </div>
+              )}
+              <p className="text-[18px] font-medium text-primary mb-0.5">
+                {user.user_metadata?.full_name ?? user.email?.split('@')[0]}
+              </p>
+              <p className="text-[12px] text-muted mb-3">{user.email}</p>
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1 rounded-full"
+                style={{ background: roleConf.bg, color: roleConf.color, border: `1px solid ${roleConf.color}30` }}>
+                {roleConf.label}
+              </span>
+            </div>
 
-        <div className="mb-6">
-          <span className="inline-block text-xs px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 mb-3">
-            🎵 Never Miss a Show
-          </span>
-
-          <h1 className="text-4xl font-bold">
-            WVRN
-          </h1>
-
-          <p className="text-zinc-400 mt-1">
-            ติดตามศิลปินที่ชอบ ไม่พลาดทุก Concert ในไทย
-          </p>
-        </div>
-
-        {/* TOOLBAR */}
-
-        <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
-
-          {/* Tabs */}
-
-          <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl p-1">
-            {[
-              {
-                id: 'all',
-                label: 'ทั้งหมด',
-                icon: Music,
-              },
-              {
-                id: 'following',
-                label: 'ติดตาม',
-                icon: Heart,
-              },
-              {
-                id: 'ai',
-                label: 'AI แนะนำ',
-                icon: Sparkles,
-              },
-            ].map(item => {
-              const Icon = item.icon
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() =>
-                    setTab(item.id as TabMode)
-                  }
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
-                    tab === item.id
-                      ? 'bg-pink-600 text-white'
-                      : 'text-zinc-400 hover:text-white'
-                  )}
-                >
-                  <Icon size={14} />
-                  {item.label}
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {[
+                { label: 'ศิลปิน',  value: stats.artists,  href: '/following'           },
+                { label: 'สถานที่', value: stats.venues,   href: '/following?tab=venues' },
+                { label: 'จะไป',   value: stats.going,    href: '/following?tab=going'  },
+                { label: 'ไปแล้ว', value: stats.attended, href: '/following?tab=going'  },
+              ].map(s => (
+                <button key={s.label} onClick={() => window.location.href = s.href}
+                  className="rounded-xl py-3 px-2 text-center transition-all"
+                  style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                  <p className="text-[20px] font-medium text-accent">{s.value}</p>
+                  <p className="text-[10px] text-muted mt-0.5">{s.label}</p>
                 </button>
-              )
-            })}
-          </div>
+              ))}
+            </div>
 
-          {/* Search */}
-
-          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2">
-            <Search size={14} />
-            <input
-              value={search}
-              onChange={e =>
-                setSearch(e.target.value)
-              }
-              placeholder="ค้นหางาน..."
-              className="bg-transparent outline-none text-sm"
-            />
-          </div>
-        </div>
-
-        {/* FILTER */}
-
-        {tab !== 'ai' && (
-          <FilterBar
-            filters={filters}
-            onChange={setFilters}
-            totalCount={filtered.length}
-          />
-        )}
-
-        {/* LOADING */}
-
-        {loading && (
-          <div className="py-24 flex items-center justify-center gap-2 text-zinc-400">
-            <Loader2
-              size={18}
-              className="animate-spin"
-            />
-            กำลังโหลด...
-          </div>
-        )}
-
-        {/* AI */}
-
-        {!loading && tab === 'ai' && (
-          <div>
-
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-semibold">
-                  AI Recommended
-                </h2>
-
-                <p className="text-sm text-zinc-400">
-                  จากแนวเพลงและศิลปินที่คุณติดตาม
-                </p>
+            {/* Settings */}
+            <div className="rounded-2xl overflow-hidden mb-4"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+                <p className="text-[11px] font-medium text-muted uppercase tracking-wide">ตั้งค่า</p>
               </div>
 
-              <button
-                onClick={generateAI}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800"
-              >
-                <RefreshCw
-                  size={14}
-                  className={
-                    aiLoading
-                      ? 'animate-spin'
-                      : ''
-                  }
-                />
-                สุ่มใหม่
+              {/* Theme */}
+              <button onClick={() => setSection('theme')}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-2)] transition-colors"
+                style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'var(--accent-muted)' }}>
+                  <Palette size={15} style={{ color: 'var(--accent)' }} />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-[14px] text-primary">ธีม</p>
+                  <p className="text-[11px] text-muted">
+                    {THEMES.find(t => t.id === theme)?.emoji} {THEMES.find(t => t.id === theme)?.label}
+                  </p>
+                </div>
+                <ChevronRight size={14} className="text-muted" />
+              </button>
+
+              {/* Password — email users only */}
+              {isEmailUser && (
+                <button onClick={() => setSection('password')}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-2)] transition-colors"
+                  style={{ borderBottom: '1px solid var(--border)' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: 'var(--surface-2)' }}>
+                    <Lock size={15} className="text-muted" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-[14px] text-primary">เปลี่ยนรหัสผ่าน</p>
+                    <p className="text-[11px] text-muted">อัปเดตรหัสผ่านของคุณ</p>
+                  </div>
+                  <ChevronRight size={14} className="text-muted" />
+                </button>
+              )}
+
+              {/* Following */}
+              <button onClick={() => window.location.href = '/following'}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-2)] transition-colors"
+                style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'var(--surface-2)' }}>
+                  <Heart size={15} className="text-muted" />
+                </div>
+                <p className="text-[14px] text-primary flex-1 text-left">รายการที่ติดตาม</p>
+                <ChevronRight size={14} className="text-muted" />
+              </button>
+
+              {/* Disclaimer */}
+              <button onClick={() => window.location.href = '/disclaimer'}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-2)] transition-colors">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'var(--surface-2)' }}>
+                  <Shield size={15} className="text-muted" />
+                </div>
+                <p className="text-[14px] text-primary flex-1 text-left">ข้อจำกัดความรับผิดชอบ</p>
+                <ChevronRight size={14} className="text-muted" />
               </button>
             </div>
 
-            {aiLoading ? (
-              <div className="py-20 flex justify-center">
-                <Loader2 className="animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {aiEvents.map(ev => (
-                  <EventRow
-                    key={ev.id}
-                    event={ev}
-                    likedIds={likedIds}
-                    toggleLike={toggleLike}
-                    attendance={attendance}
-                    toggleAttendance={
-                      toggleAttendance
-                    }
-                    followedIds={followedIds}
-                    isLoggedIn={isLoggedIn}
-                  />
-                ))}
-              </div>
+            {/* Admin/Editor shortcut */}
+            {(role === 'admin' || role === 'editor') && (
+              <button onClick={() => window.location.href = '/admin'}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-medium mb-4 transition-all"
+                style={{ background: 'rgba(232,0,58,.08)', border: '1px solid rgba(232,0,58,.2)', color: '#E8003A' }}>
+                Admin Panel
+              </button>
             )}
+
+            {/* Logout */}
+            <button onClick={signOut}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-medium"
+              style={{ background: 'rgba(226,75,74,.06)', border: '1px solid rgba(226,75,74,.15)', color: '#E24B4A' }}>
+              <LogOut size={16} /> ออกจากระบบ
+            </button>
+          </>
+        )}
+
+        {/* ── THEME ── */}
+        {section === 'theme' && (
+          <div>
+            <h2 className="text-[18px] font-medium text-primary mb-5 flex items-center gap-2">
+              <Palette size={18} style={{ color: 'var(--accent)' }} /> เลือกธีม
+            </h2>
+            <div className="flex flex-col gap-2">
+              {THEMES.map(t => (
+                <button key={t.id} onClick={() => setTheme(t.id)}
+                  className="flex items-center gap-4 px-4 py-4 rounded-2xl text-left transition-all"
+                  style={{
+                    background: theme === t.id ? 'var(--accent-muted)' : 'var(--surface-1)',
+                    border: `1.5px solid ${theme === t.id ? 'var(--accent)' : 'var(--border)'}`,
+                  }}>
+                  <span className="text-[26px]">{t.emoji}</span>
+                  <p className="text-[14px] font-medium flex-1"
+                    style={{ color: theme === t.id ? 'var(--accent)' : 'var(--text-primary)' }}>
+                    {t.label}
+                  </p>
+                  {theme === t.id && <CheckCircle2 size={18} style={{ color: 'var(--accent)' }} />}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* LIST */}
+        {/* ── PASSWORD ── */}
+        {section === 'password' && (
+          <div>
+            <h2 className="text-[18px] font-medium text-primary mb-5 flex items-center gap-2">
+              <Lock size={18} style={{ color: 'var(--accent)' }} /> เปลี่ยนรหัสผ่าน
+            </h2>
 
-        {!loading &&
-          tab !== 'ai' &&
-          view === 'list' && (
-            <div className="space-y-3">
+            <div className="rounded-2xl p-5 mb-4 flex flex-col gap-5"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
 
-              {upcomingEvents.map(ev => (
-                <EventRow
-                  key={ev.id}
-                  event={ev}
-                  likedIds={likedIds}
-                  toggleLike={toggleLike}
-                  attendance={attendance}
-                  toggleAttendance={
-                    toggleAttendance
-                  }
-                  followedIds={followedIds}
-                  isLoggedIn={isLoggedIn}
-                />
-              ))}
-
-              {pastEvents.length > 0 && (
-                <>
-                  <button
-                    onClick={() =>
-                      setShowPast(v => !v)
-                    }
-                    className="w-full py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-sm text-zinc-400"
-                  >
-                    {showPast
-                      ? 'ซ่อนงานที่ผ่านมา'
-                      : `ดูงานที่ผ่านมา (${pastEvents.length})`}
+              {/* New password */}
+              <div>
+                <label className="block text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">
+                  รหัสผ่านใหม่
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPw.next ? 'text' : 'password'}
+                    value={pwForm.next}
+                    onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))}
+                    placeholder="อย่างน้อย 8 ตัวอักษร"
+                    className="input-theme text-[14px] w-full pr-10"
+                  />
+                  <button onClick={() => setShowPw(s => ({ ...s, next: !s.next }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+                    {showPw.next ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
+                </div>
+                {pwForm.next && (
+                  <div className="flex gap-1 mt-2">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="flex-1 h-1 rounded-full transition-colors"
+                        style={{
+                          background: pwForm.next.length >= i * 2
+                            ? i <= 1 ? '#E24B4A' : i <= 2 ? '#EF9F27' : i <= 3 ? '#60a5fa' : '#1D9E75'
+                            : 'var(--surface-3)'
+                        }} />
+                    ))}
+                  </div>
+                )}
+              </div>
 
-                  {showPast && (
-                    <div className="space-y-3">
-                      {pastEvents.map(ev => (
-                        <EventRow
-                          key={ev.id}
-                          event={ev}
-                          likedIds={likedIds}
-                          toggleLike={toggleLike}
-                          attendance={attendance}
-                          toggleAttendance={
-                            toggleAttendance
-                          }
-                          followedIds={
-                            followedIds
-                          }
-                          isLoggedIn={
-                            isLoggedIn
-                          }
-                          isPast
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+              {/* Confirm */}
+              <div>
+                <label className="block text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">
+                  ยืนยันรหัสผ่านใหม่
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPw.confirm ? 'text' : 'password'}
+                    value={pwForm.confirm}
+                    onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))}
+                    placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"
+                    className="input-theme text-[14px] w-full pr-10"
+                  />
+                  <button onClick={() => setShowPw(s => ({ ...s, confirm: !s.confirm }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+                    {showPw.confirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+                {pwForm.confirm && pwForm.next !== pwForm.confirm && (
+                  <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: '#E24B4A' }}>
+                    <AlertCircle size={11} /> รหัสผ่านไม่ตรงกัน
+                  </p>
+                )}
+                {pwForm.confirm && pwForm.next === pwForm.confirm && pwForm.next.length >= 8 && (
+                  <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: '#1D9E75' }}>
+                    <CheckCircle2 size={11} /> รหัสผ่านตรงกัน
+                  </p>
+                )}
+              </div>
             </div>
-          )}
 
-      </main>
-    </div>
-  )
-}
-
-// =========================================================
-// EVENT ROW
-// =========================================================
-
-function EventRow({
-  event,
-  likedIds,
-  toggleLike,
-  attendance,
-  toggleAttendance,
-  followedIds,
-  isLoggedIn,
-  isPast,
-}: any) {
-
-  const start = parseISO(event.start_date)
-
-  const liked = likedIds.has(event.id)
-
-  const attendStatus =
-    attendance.get(event.id) || null
-
-  const isFollowed =
-    event.artists?.some((a: any) =>
-      followedIds.has(a.id)
-    )
-
-  return (
-    <div
-      onClick={() => {
-        if (!isPast) {
-          window.location.href = `/events/${event.id}`
-        }
-      }}
-      className={cn(
-        'rounded-2xl border overflow-hidden flex',
-        isPast
-          ? 'opacity-40 border-zinc-800'
-          : 'border-zinc-800 hover:border-zinc-700 cursor-pointer'
-      )}
-    >
-
-      {/* DATE */}
-
-      <div className="w-16 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center justify-center py-4">
-        <div className="text-2xl font-bold text-pink-500">
-          {format(start, 'd')}
-        </div>
-
-        <div className="text-xs uppercase text-zinc-500">
-          {format(start, 'MMM')}
-        </div>
-      </div>
-
-      {/* BODY */}
-
-      <div className="flex-1 p-4 min-w-0">
-
-        <div className="flex flex-wrap gap-2 mb-2">
-
-          {isFollowed && (
-            <span className="text-xs px-2 py-1 rounded-full bg-pink-500/10 text-pink-400">
-              ติดตาม
-            </span>
-          )}
-
-          {event.genres?.slice(0, 2).map((g: string) => (
-            <span
-              key={g}
-              className={cn(
-                'text-xs px-2 py-1 rounded-full',
-                genreTagClass(g)
-              )}
-            >
-              {g}
-            </span>
-          ))}
-        </div>
-
-        <h3 className="font-semibold text-lg truncate">
-          {event.title}
-        </h3>
-
-        {event.artists?.length > 0 && (
-          <p className="text-sm text-zinc-400 mt-1 truncate">
-            {event.artists
-              .map((a: any) => a.name)
-              .join(' · ')}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-4 mt-3 text-sm text-zinc-500">
-
-          {event.venue && (
-            <div className="flex items-center gap-1">
-              <MapPin size={13} />
-              {event.venue.name}
-            </div>
-          )}
-
-          {event.start_time && (
-            <div className="flex items-center gap-1">
-              <Clock size={13} />
-              {event.start_time.slice(0, 5)}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT */}
-
-      <div className="w-28 border-l border-zinc-800 p-3 flex flex-col items-end justify-between">
-
-        <div className="text-pink-400 font-semibold">
-          {formatPrice(event)}
-        </div>
-
-        <div className="flex flex-col gap-2 items-end">
-
-          {!isPast && isLoggedIn && (
-            <button
-              onClick={e => {
-                e.stopPropagation()
-
-                toggleAttendance(
-                  event.id,
-                  attendStatus
-                )
-              }}
-              className="text-xs px-3 py-1 rounded-lg border border-zinc-700 bg-zinc-900"
-            >
-              {attendStatus === 'going'
-                ? 'จะไป'
-                : attendStatus === 'attended'
-                ? 'ไปแล้ว'
-                : '+ จะไป'}
+            <button onClick={handleChangePassword} disabled={pwLoading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-medium"
+              style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
+              {pwLoading
+                ? <><Loader2 size={15} className="animate-spin" /> กำลังบันทึก...</>
+                : <><Lock size={15} /> บันทึกรหัสผ่านใหม่</>}
             </button>
-          )}
-
-          <button
-            onClick={e => {
-              e.stopPropagation()
-              toggleLike(event.id)
-            }}
-            className="w-9 h-9 rounded-xl border border-zinc-700 bg-zinc-900 flex items-center justify-center"
-          >
-            <Heart
-              size={14}
-              className={
-                liked
-                  ? 'fill-pink-500 text-pink-500'
-                  : 'text-zinc-400'
-              }
-            />
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
