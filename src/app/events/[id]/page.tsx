@@ -290,6 +290,27 @@ export default function EventDetailPage() {
               start_date:           event.start_date,
             }} />
 
+            {/* Buy ticket CTA — แสดงตลอดถ้ามี ticket_url */}
+            {event.ticket_url && !event.is_free && (
+              <a
+                href={event.ticket_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-[15px] font-medium transition-all"
+                style={{ background: 'var(--accent)', color: 'white' }}>
+                <Ticket size={18} />
+                ซื้อบัตร
+                {event.ticket_price_min && (
+                  <span className="text-[12px] opacity-80 ml-1">
+                    ฿{Number(event.ticket_price_min).toLocaleString()}
+                    {event.ticket_price_max && event.ticket_price_max !== event.ticket_price_min
+                      ? ` – ฿${Number(event.ticket_price_max).toLocaleString()}`
+                      : ''}
+                  </span>
+                )}
+              </a>
+            )}
+
             {/* Venue map card */}
             {event.venue && (
               <div className="rounded-xl overflow-hidden"
@@ -323,6 +344,8 @@ export default function EventDetailPage() {
                 <a href="/disclaimer" className="underline">อ่านเพิ่มเติม</a>
               </p>
             </div>
+
+            {(event.contact_phone || event.contact_line) && (
               <div className="rounded-xl p-4"
                 style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
                 <h2 className="text-[12px] font-medium text-muted uppercase tracking-wide mb-2">ติดต่อ</h2>
