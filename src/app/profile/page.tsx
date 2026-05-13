@@ -28,6 +28,8 @@ export default function ProfilePage() {
   const [pwForm,    setPwForm]    = useState({ next: '', confirm: '' })
   const [pwLoading, setPwLoading] = useState(false)
   const [showPw,    setShowPw]    = useState({ next: false, confirm: false })
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const sb = createClient()
   const isEmailUser = !user?.app_metadata?.provider || user?.app_metadata?.provider === 'email'
 
@@ -35,18 +37,9 @@ export default function ProfilePage() {
     if (!user) return
     const r = user.user_metadata?.role ?? user.app_metadata?.role ?? 'user'
     setRole(r)
-
-    const getVenueFollowsCount = async () => {
-      try {
-        return await sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id)
-      } catch {
-        return { count: 0 }
-      }
-    }
-
     Promise.all([
       sb.from('follows').select('id', { count: 'exact' }).eq('user_id', user.id),
-      getVenueFollowsCount(),
+      sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('event_attendance').select('id,status').eq('user_id', user.id),
     ]).then(([ar, vr, at]) => {
       const att = (at as any).data || []
@@ -56,8 +49,19 @@ export default function ProfilePage() {
         going:    att.filter((a: any) => a.status === 'going').length,
         attended: att.filter((a: any) => a.status === 'attended').length,
       })
-    })
+    }).catch(() => {})
   }, [user])
+
+  async function handleDeleteAccount() {
+    setDeleteLoading(true)
+    try {
+      const { error } = await sb.rpc('delete_user_data', { target_user_id: user!.id })
+      if (error) throw error
+      toast.success('ลบบัญชีเรียบร้อยแล้ว')
+      signOut()
+    } catch (e: any) { toast.error(e.message) }
+    finally { setDeleteLoading(false) }
+  }
 
   async function handleChangePassword() {
     if (!pwForm.next || !pwForm.confirm)   { toast.error('กรุณากรอกรหัสผ่านให้ครบ'); return }
@@ -221,6 +225,12 @@ export default function ProfilePage() {
               style={{ background: 'rgba(226,75,74,.06)', border: '1px solid rgba(226,75,74,.15)', color: '#E24B4A' }}>
               <LogOut size={16} /> ออกจากระบบ
             </button>
+
+            {/* Delete account */}
+            <button onClick={() => setShowDeleteAccount(true)}
+              className="w-full text-[12px] text-muted mt-2 py-2 hover:text-red-400 transition-colors">
+              ลบบัญชีของฉัน (PDPA)
+            </button>
           </>
         )}
 
@@ -251,8 +261,7 @@ export default function ProfilePage() {
         )}
 
         {/* ── PASSWORD ── */}
-        {section === 'password' && (
-          <div>
+        {section === 'password' && (          <div>
             <h2 className="text-[18px] font-medium text-primary mb-5 flex items-center gap-2">
               <Lock size={18} style={{ color: 'var(--accent)' }} /> เปลี่ยนรหัสผ่าน
             </h2>
@@ -333,6 +342,39 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Delete account modal */}
+      {showDeleteAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-6"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(226,75,74,.1)' }}>
+              <LogOut size={20} style={{ color: '#E24B4A' }} />
+            </div>
+            <h3 className="text-[15px] font-medium text-primary text-center mb-2">ลบบัญชีของฉัน?</h3>
+            <p className="text-[12px] text-muted text-center mb-1">ข้อมูลทั้งหมดจะถูกลบถาวร ได้แก่</p>
+            <ul className="text-[11px] text-muted text-center mb-5 space-y-0.5">
+              <li>• รายการที่ติดตาม (ศิลปิน / สถานที่)</li>
+              <li>• ประวัติการ Check In</li>
+              <li>• ข้อมูลโปรไฟล์ทั้งหมด</li>
+            </ul>
+            <p className="text-[11px] text-muted text-center mb-4 opacity-60">
+              ดำเนินการตาม PDPA — ไม่สามารถกู้คืนได้
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowDeleteAccount(false)}
+                className="btn-ghost flex-1 py-2.5 text-[13px]">ยกเลิก</button>
+              <button onClick={handleDeleteAccount} disabled={deleteLoading}
+                className="flex-1 py-2.5 text-[13px] rounded-xl font-medium flex items-center justify-center gap-2"
+                style={{ background: '#E24B4A', color: '#fff' }}>
+                {deleteLoading ? <><Loader2 size={14} className="animate-spin" /> กำลังลบ...</> : 'ยืนยันลบบัญชี'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

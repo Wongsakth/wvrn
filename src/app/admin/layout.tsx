@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import {
   Shield, Music, MapPin, CalendarDays,
   ClipboardList, ChevronRight, Menu, X,
-  LayoutDashboard, Tag, FileUp, LayoutList, Building2,
+  LayoutDashboard, Tag, FileUp, LayoutList, Building2, Users,
 } from 'lucide-react'
 
 const MENU = [
@@ -25,6 +25,7 @@ const MENU = [
       { href: '/admin/artists',    label: 'จัดการศิลปิน',   icon: Music,         badge: null },
       { href: '/admin/labels',     label: 'ค่ายเพลง',       icon: Building2,     badge: null },
       { href: '/admin/venues',     label: 'จัดการสถานที่',  icon: MapPin,        badge: null },
+      { href: '/admin/users',      label: 'จัดการ Users',   icon: Users,         badge: null },
       { href: '/admin/categories', label: 'Category',       icon: LayoutList,    badge: null },
       { href: '/admin/genres',     label: 'แนวเพลง',        icon: Tag,           badge: null },
     ],
