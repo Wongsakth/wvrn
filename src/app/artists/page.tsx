@@ -214,42 +214,61 @@ export default function ArtistsPage() {
                 >
                   {/* Artist info */}
                   <div className="p-4">
-                    <div className="flex items-start gap-3 mb-3">
+                    {/* Top row: Avatar + Name + Follow button */}
+                    <div className="flex items-center gap-3 mb-3">
                       {/* Avatar */}
                       {artist.image_url ? (
                         <img
                           src={artist.image_url}
                           alt={artist.name}
-                          className="w-14 h-14 rounded-2xl object-cover shrink-0"
+                          className="w-12 h-12 rounded-xl object-cover shrink-0"
+                          onClick={() => { window.location.href = `/artists/${artist.id}` }}
+                          style={{ cursor: 'pointer' }}
                         />
                       ) : (
                         <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 text-[16px] font-medium"
-                          style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
-                          {artist.name.slice(0, 2)}
+                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-[15px] font-medium cursor-pointer"
+                          style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}
+                          onClick={() => { window.location.href = `/artists/${artist.id}` }}>
+                          {(artist.name_en || artist.name).slice(0, 2)}
                         </div>
                       )}
 
-                      {/* Name + Follow */}
-                      <div className="flex-1 min-w-0">
+                      {/* Name */}
+                      <div className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => { window.location.href = `/artists/${artist.id}` }}>
                         <p className="text-[14px] font-medium text-primary leading-tight truncate">
-                          {artist.name}
+                          {artist.name_en || artist.name}
                         </p>
-                        {artist.name_en && (
-                          <p className="text-[11px] text-muted truncate">{artist.name_en}</p>
+                        {artist.name_en && artist.name !== artist.name_en && (
+                          <p className="text-[11px] text-muted truncate">{artist.name}</p>
                         )}
                         {/* Genres */}
-                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                        <div className="flex gap-1 mt-1 flex-wrap">
                           {(artist.genres ?? []).slice(0, 2).map(g => (
                             <span key={g} className={cn('tag text-[9px]', genreTagClass(g))}>{g}</span>
                           ))}
                         </div>
                       </div>
+
+                      {/* Follow button — right side icon only */}
+                      <button
+                        onClick={() => toggleFollow(artist.id, artist.name)}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all"
+                        style={{
+                          background:  isFollowed ? 'var(--accent)' : 'var(--surface-2)',
+                          border:      isFollowed ? 'none' : '1px solid var(--border)',
+                        }}>
+                        <Heart
+                          size={16}
+                          style={{ color: isFollowed ? 'white' : 'var(--text-muted)', fill: isFollowed ? 'white' : 'none' }}
+                        />
+                      </button>
                     </div>
 
                     {/* Upcoming events */}
                     {hasEvents ? (
-                      <div className="flex flex-col gap-1.5 mb-3">
+                      <div className="flex flex-col gap-1.5">
                         {upcomingEvs.map(ev => (
                           <div
                             key={ev.id}
@@ -279,15 +298,11 @@ export default function ArtistsPage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="mb-3 py-2 px-3 rounded-lg text-center"
+                      <div className="py-2 px-3 rounded-lg text-center"
                         style={{ background: 'var(--surface-2)' }}>
                         <p className="text-[10px] text-muted">ยังไม่มีงานที่กำลังจะมา</p>
                       </div>
                     )}
-
-                    {/* Follow button */}
-                    <button
-                      onClick={() => toggleFollow(artist.id, artist.name)}
                       className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[13px] font-medium transition-all"
                       style={{
                         background:  isFollowed ? 'var(--accent-muted)' : 'var(--accent)',
