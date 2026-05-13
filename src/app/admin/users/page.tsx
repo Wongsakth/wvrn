@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
     try {
       const { data: { user } } = await sb.auth.getUser()
       if (user) {
-        const { data: p } = await sb.from('profiles').select('role').eq('id', user.id).single()
+        const { data: p } = await sb.from('user_profiles').select('role').eq('id', user.id).single()
         setMyRole(p?.role ?? 'user')
       }
       const { data, error } = await sb.from('user_profiles')
@@ -61,7 +61,7 @@ export default function AdminUsersPage() {
     } catch (e: any) { toast.error(e.message) }
   }
 
-  const isSuperAdmin = myRole === 'super_admin'
+  const isSuperAdmin = myRole === 'super_admin' || myRole === 'admin'
 
   const filtered = users.filter(u => {
     const email = u.email ?? ''
