@@ -36,6 +36,8 @@ const MENU = [
       { href: '/admin/permissions', label: 'Permission Matrix', icon: Shield,  badge: null },
     ],
   },
+  {
+    group: 'นำเข้าข้อมูล',
     items: [
       { href: '/admin/import-artists', label: 'Import ศิลปิน', icon: FileUp, badge: null },
     ],
