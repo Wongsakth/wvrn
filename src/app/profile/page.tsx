@@ -20,7 +20,7 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; ic
 }
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isAdmin } = useAuth()
   const { theme, setTheme } = useTheme()
   const [stats,     setStats]     = useState({ artists: 0, venues: 0, going: 0, attended: 0 })
   const [section,   setSection]   = useState<Section>('main')
@@ -211,7 +211,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Admin/Editor shortcut */}
-            {(role === 'admin' || role === 'editor') && (
+            {isAdmin && (
               <button onClick={() => window.location.href = '/admin'}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-medium mb-4 transition-all"
                 style={{ background: 'rgba(232,0,58,.08)', border: '1px solid rgba(232,0,58,.2)', color: '#E8003A' }}>

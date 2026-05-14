@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
+import AdminGuard from '@/components/AdminGuard'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import {
@@ -59,6 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [])
 
   return (
+    <AdminGuard>
     <div className="min-h-screen" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
 
@@ -185,5 +187,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
     </div>
+    </AdminGuard>
   )
 }
