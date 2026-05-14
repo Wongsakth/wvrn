@@ -488,11 +488,15 @@ export default function HomePage() {
         return true
       })
 
-      .sort(
-        (a, b) =>
-          new Date(a.start_date).getTime() -
-          new Date(b.start_date).getTime()
-      )
+      .sort((a, b) => {
+        // Featured ขึ้นก่อน: partner > wvrn_picks > normal
+        const featuredScore = (ev: any) =>
+          ev.featured_type === 'partner' ? 2 :
+          ev.featured_type === 'wvrn_picks' ? 1 : 0
+        const diff = featuredScore(b) - featuredScore(a)
+        if (diff !== 0) return diff
+        return new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      })
   }, [
     events,
     filters,
@@ -890,28 +894,44 @@ function EventRow({
       followedIds.has(a.id)
     )
 
+  const featured = event.featured_type
+
   return (
     <div
-      onClick={() => {
-        if (!isPast) {
-          window.location.href = `/events/${event.id}`
-        }
-      }}
-      className={cn(
-        'rounded-2xl border overflow-hidden flex',
-        isPast
-          ? 'opacity-40 border-zinc-800'
-          : 'border-zinc-800 hover:border-zinc-700 cursor-pointer'
+      onClick={() => { if (!isPast) window.location.href = `/events/${event.id}` }}
+      className={cn('rounded-2xl overflow-hidden flex flex-col', isPast ? 'opacity-40' : 'cursor-pointer')}
+      style={{
+        border: featured === 'partner'
+          ? '1.5px solid #EF9F27'
+          : featured === 'wvrn_picks'
+          ? '1.5px solid #7C3AED'
+          : '1px solid rgb(39,39,42)',
+      }}>
+
+      {/* Featured banner */}
+      {featured === 'partner' && (
+        <div className="flex items-center gap-2 px-3 py-1.5"
+          style={{ background: '#EF9F27' }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#412402', letterSpacing: '.06em' }}>⭐ EVENT PARTNER</span>
+          <span style={{ fontSize: 10, color: '#633806', marginLeft: 'auto' }}>WVRN Partner</span>
+        </div>
       )}
-    >
+      {featured === 'wvrn_picks' && (
+        <div className="flex items-center gap-2 px-3 py-1.5"
+          style={{ background: '#7C3AED' }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#EEEDFE', letterSpacing: '.06em' }}>⚡ WVRN PICKS</span>
+          <span style={{ fontSize: 10, color: '#CECBF6', marginLeft: 'auto' }}>แนะนำโดย WVRN</span>
+        </div>
+      )}
+
+      {/* Card body row */}
+      <div className="flex" style={{ background: 'rgb(24,24,27)' }}>
 
       {/* DATE */}
-
       <div className="w-16 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center justify-center py-4">
         <div className="text-2xl font-bold text-pink-500">
           {format(start, 'd')}
         </div>
-
         <div className="text-xs uppercase text-zinc-500">
           {format(start, 'MMM')}
         </div>
@@ -1009,6 +1029,7 @@ function EventRow({
             <Heart size={14} className={liked ? 'fill-pink-500 text-pink-500' : 'text-zinc-400'} />
           </button>
         </div>
+      </div>
       </div>
     </div>
   )

@@ -52,9 +52,10 @@ const EMPTY_FORM = {
   artist_ids: [] as string[],
   artist_orders: {} as Record<string, number>,
   artist_times:  {} as Record<string, string>,
-  ticket_sale_start:    '',   // datetime-local
-  ticket_sale_end:      '',   // datetime-local
-  ticket_announce_date: '',   // date
+  ticket_sale_start:    '',
+  ticket_sale_end:      '',
+  ticket_announce_date: '',
+  featured_type:        '' as '' | 'partner' | 'wvrn_picks',
 }
 
 export default function EventsAdminPage() {
@@ -143,6 +144,7 @@ export default function EventsAdminPage() {
       ticket_sale_start:    ev.ticket_sale_start ? ev.ticket_sale_start.slice(0,16) : '',
       ticket_sale_end:      ev.ticket_sale_end   ? ev.ticket_sale_end.slice(0,16)   : '',
       ticket_announce_date: ev.ticket_announce_date ?? '',
+      featured_type:        ev.featured_type ?? '',
     })
     setShowForm(true)
   }
@@ -172,6 +174,7 @@ export default function EventsAdminPage() {
         ticket_sale_start:    form.ticket_sale_start    || null,
         ticket_sale_end:      form.ticket_sale_end      || null,
         ticket_announce_date: form.ticket_announce_date || null,
+        featured_type:        form.featured_type        || null,
       }
 
       let eventId = editTarget?.id
@@ -616,6 +619,31 @@ export default function EventsAdminPage() {
                   <input value={form.poster_url} onChange={e => setForm(f => ({ ...f, poster_url: e.target.value }))}
                     placeholder="https://..." className="input-theme text-[13px]" />
                 </Field>
+              </Section>
+
+              {/* Featured */}
+              <Section title="🌟 Featured">
+                <Field label="ประเภท Featured">
+                  <select value={form.featured_type}
+                    onChange={e => setForm(f => ({ ...f, featured_type: e.target.value as any }))}
+                    className="input-theme text-[13px]">
+                    <option value="">— ปกติ (Normal) —</option>
+                    <option value="partner">⭐ Event Partner</option>
+                    <option value="wvrn_picks">⚡ WVRN Picks</option>
+                  </select>
+                </Field>
+                {form.featured_type && (
+                  <div className="mt-2 p-3 rounded-xl text-[12px]"
+                    style={{
+                      background: form.featured_type === 'partner' ? 'rgba(239,159,39,.08)' : 'rgba(124,58,237,.08)',
+                      border: `1px solid ${form.featured_type === 'partner' ? 'rgba(239,159,39,.3)' : 'rgba(124,58,237,.3)'}`,
+                      color: form.featured_type === 'partner' ? '#BA7517' : '#7C3AED',
+                    }}>
+                    {form.featured_type === 'partner'
+                      ? '⭐ Event Partner — แสดง banner สีทอง + ขึ้นก่อนงานทั่วไป'
+                      : '⚡ WVRN Picks — แสดง banner สีม่วง + ขึ้นหลัง Event Partner'}
+                  </div>
+                )}
               </Section>
             </div>
 
