@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase'
 import {
   Shield, Music, MapPin, CalendarDays,
   ClipboardList, ChevronRight, Menu, X,
@@ -15,7 +16,7 @@ const MENU = [
     group: 'ภาพรวม',
     items: [
       { href: '/admin',         label: 'Dashboard',      icon: LayoutDashboard, badge: null },
-      { href: '/admin/pending', label: 'รออนุมัติ',       icon: ClipboardList,   badge: 2   },
+      { href: '/admin/pending', label: 'รออนุมัติ', icon: ClipboardList, badge: null },
     ],
   },
   {
@@ -46,7 +47,16 @@ const MENU = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen,  setSidebarOpen]  = useState(false)
+  const [pendingCount, setPendingCount] = useState<number>(0)
+  const sb = createClient()
+
+  useEffect(() => {
+    sb.from('event_submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .then(({ count }) => setPendingCount(count ?? 0))
+  }, [])
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--surface-0)' }}>
@@ -100,12 +110,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     >
                       <item.icon size={15} />
                       <span className="flex-1">{item.label}</span>
-                      {item.badge && (
-                        <span
-                          className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                          style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}
-                        >
-                          {item.badge}
+                      {item.href === '/admin/pending' && pendingCount > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
+                          {pendingCount}
                         </span>
                       )}
                       {active && <ChevronRight size={12} style={{ color: 'var(--accent)' }} />}
@@ -154,12 +162,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         >
                           <item.icon size={15} />
                           <span className="flex-1">{item.label}</span>
-                          {item.badge && (
-                            <span
-                              className="text-[10px] px-1.5 py-0.5 rounded-full"
-                              style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}
-                            >
-                              {item.badge}
+                          {item.href === '/admin/pending' && pendingCount > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                              style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
+                              {pendingCount}
                             </span>
                           )}
                         </Link>
