@@ -662,10 +662,10 @@ export default function HomePage() {
 
           <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl p-1">
             {[
-              { id: 'all',       label: 'งาน',      icon: Music    },
-              { id: 'artists',   label: 'ศิลปิน',   icon: Heart    },
-              { id: 'following', label: 'ติดตาม',   icon: CalendarCheck },
-              { id: 'ai',        label: 'AI แนะนำ', icon: Sparkles },
+              { id: 'all',       label: 'Shows',     icon: Music    },
+              { id: 'artists',   label: 'Artists',   icon: Heart    },
+              { id: 'following', label: 'Following',  icon: CalendarCheck },
+              { id: 'ai',        label: 'For You',   icon: Sparkles },
             ].map(item => {
               const Icon = item.icon
               const needLogin = (item.id === 'following' || item.id === 'ai') && !isLoggedIn
