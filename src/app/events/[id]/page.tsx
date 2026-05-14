@@ -110,9 +110,11 @@ export default function EventDetailPage() {
 
               {/* Poster image */}
               {event.poster_url && (
-                <div className="w-full aspect-video overflow-hidden">
+                <div className="w-full overflow-hidden rounded-t-2xl"
+                  style={{ maxHeight: 480, background: 'var(--surface-2)' }}>
                   <img src={event.poster_url} alt={event.title}
-                    className="w-full h-full object-cover" />
+                    className="w-full object-contain"
+                    style={{ maxHeight: 480, display: 'block', margin: '0 auto' }} />
                 </div>
               )}
 
