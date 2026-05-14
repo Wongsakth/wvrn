@@ -38,13 +38,7 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 mr-auto">
-          <div className="w-7 h-7 rounded-md flex items-center justify-center"
-            style={{ background: 'var(--accent-muted)', border: '1px solid var(--border)' }}>
-            <svg width="15" height="15" viewBox="0 0 32 32" fill="none">
-              <path d="M3,20 L7,9 L12,17 L16,5 L20,21 L25,13 L29,20"
-                stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+          <img src="/logo.png" alt="WVRN" className="w-7 h-7 rounded-md object-cover" />
           <span className="text-[17px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>
             WVRN
           </span>

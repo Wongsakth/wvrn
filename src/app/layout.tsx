@@ -11,11 +11,16 @@ export const metadata: Metadata = {
   title:       'WVRN — Never Miss a Show',
   description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก ไม่มีวันพลาดอีก',
   keywords:    'concert, เที่ยวคอนเสิร์ต, ตารางคอนเสิร์ต, WVRN',
+  icons: {
+    icon:   '/favicon.ico',
+    apple:  '/logo.png',
+  },
   openGraph: {
     title:       'WVRN — Never Miss a Show',
     description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก',
     siteName:    'WVRN',
     type:        'website',
+    images: [{ url: '/logo.png', width: 1080, height: 1080 }],
   },
 }
 
