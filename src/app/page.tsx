@@ -46,7 +46,7 @@ import type {
   ViewMode,
 } from '@/types'
 
-type TabMode = 'all' | 'following' | 'ai'
+type TabMode = 'all' | 'artists' | 'following' | 'ai'
 type AttendStatus = 'going' | 'attended' | null
 
 export default function HomePage() {
@@ -95,15 +95,11 @@ export default function HomePage() {
   }
 
   function toggleLike(id: string) {
+    if (!isLoggedIn) { window.location.href = '/login'; return }
     setLikedIds(prev => {
       const next = new Set(prev)
-
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -666,39 +662,32 @@ export default function HomePage() {
 
           <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl p-1">
             {[
-              {
-                id: 'all',
-                label: 'ทั้งหมด',
-                icon: Music,
-              },
-              {
-                id: 'following',
-                label: 'ติดตาม',
-                icon: Heart,
-              },
-              {
-                id: 'ai',
-                label: 'AI แนะนำ',
-                icon: Sparkles,
-              },
+              { id: 'all',       label: 'งาน',      icon: Music    },
+              { id: 'artists',   label: 'ศิลปิน',   icon: Heart    },
+              { id: 'following', label: 'ติดตาม',   icon: CalendarCheck },
+              { id: 'ai',        label: 'AI แนะนำ', icon: Sparkles },
             ].map(item => {
               const Icon = item.icon
-
+              const needLogin = (item.id === 'following' || item.id === 'ai') && !isLoggedIn
               return (
                 <button
                   key={item.id}
-                  onClick={() =>
+                  onClick={() => {
+                    if (needLogin) { window.location.href = '/login'; return }
                     setTab(item.id as TabMode)
-                  }
+                  }}
                   className={cn(
                     'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
                     tab === item.id
                       ? 'bg-pink-600 text-white'
+                      : needLogin
+                      ? 'text-zinc-600 cursor-pointer'
                       : 'text-zinc-400 hover:text-white'
                   )}
                 >
                   <Icon size={14} />
                   {item.label}
+                  {needLogin && <span className="text-[9px] opacity-60">🔒</span>}
                 </button>
               )
             })}
@@ -739,6 +728,14 @@ export default function HomePage() {
             />
             กำลังโหลด...
           </div>
+        )}
+
+        {/* ARTISTS TAB */}
+        {!loading && tab === 'artists' && (
+          <ArtistsTab followedIds={followedIds} onFollowToggle={(id, name) => {
+            if (!isLoggedIn) { window.location.href = '/login'; return }
+            toggleFollow(id, name)
+          }} />
         )}
 
         {/* AI */}
@@ -1013,6 +1010,70 @@ function EventRow({
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── ArtistsTab ──────────────────────────────────────────────
+function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>; onFollowToggle: (id: string, name: string) => void }) {
+  const [artists, setArtists] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
+  const sb = createClient()
+
+  useEffect(() => {
+    sb.from('artists').select('id,name,name_en,image_url,genres,follower_count')
+      .order('follower_count', { ascending: false })
+      .then(({ data }) => { setArtists(data || []); setLoading(false) })
+  }, [])
+
+  const filtered = artists.filter(a =>
+    !search || a.name?.toLowerCase().includes(search.toLowerCase()) ||
+    (a.name_en ?? '').toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 mb-4">
+        <Search size={14} className="text-zinc-500 shrink-0" />
+        <input value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="ค้นหาศิลปิน..." className="bg-transparent outline-none text-sm flex-1 text-zinc-200" />
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-zinc-500" /></div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {filtered.map(artist => {
+            const followed = followedIds.has(artist.id)
+            return (
+              <div key={artist.id}
+                className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                {artist.image_url
+                  ? <img src={artist.image_url} alt={artist.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  : <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[12px] font-medium bg-zinc-800 text-pink-400">
+                      {(artist.name_en || artist.name).slice(0,2)}
+                    </div>
+                }
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => window.location.href = `/artists/${artist.id}`}>
+                  <p className="text-[13px] font-medium text-white truncate">{artist.name_en || artist.name}</p>
+                  {artist.name_en && artist.name !== artist.name_en && (
+                    <p className="text-[10px] text-zinc-500 truncate">{artist.name}</p>
+                  )}
+                  {artist.follower_count > 0 && (
+                    <p className="text-[10px] text-zinc-600">{artist.follower_count} followers</p>
+                  )}
+                </div>
+                <button onClick={() => onFollowToggle(artist.id, artist.name)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all"
+                  style={{ background: followed ? '#E8003A' : 'rgba(255,255,255,.06)', border: followed ? 'none' : '1px solid rgba(255,255,255,.1)' }}>
+                  <Heart size={14} style={{ color: 'white', fill: followed ? 'white' : 'none' }} />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

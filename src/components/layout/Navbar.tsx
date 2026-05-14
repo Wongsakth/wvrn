@@ -5,21 +5,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import NotificationBell from '@/components/layout/NotificationBell'
 import { useAuth } from '@/lib/auth'
-import { Home, Search, Calendar, Heart, User, LogOut, Plus, Settings } from 'lucide-react'
-
-const BOTTOM_TABS = [
-  { href: '/',          label: 'หน้าหลัก', icon: Home     },
-  { href: '/search',    label: 'ค้นหา',    icon: Search   },
-  { href: '/submit',    label: 'แจ้งงาน',  icon: Plus     },
-  { href: '/following', label: 'ติดตาม',   icon: Heart    },
-  { href: '/profile',   label: 'โปรไฟล์',  icon: User     },
-]
+import { Home, Search, Heart, User, LogOut, Plus, Settings } from 'lucide-react'
 
 export default function Navbar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user, signOut } = useAuth()
-  const { canSubmit } = useAuth()
+  const { user, signOut, canSubmit } = useAuth()
   const [showUser, setShowUser] = useState(false)
 
   const isAdmin = pathname.startsWith('/admin')
@@ -30,51 +21,62 @@ export default function Navbar() {
     return pathname.startsWith(href)
   }
 
+  // Bottom tabs — Profile แสดงเฉพาะ logged in / Login tab แสดงเฉพาะ guest
+  const BOTTOM_TABS = [
+    { href: '/',       label: 'หน้าหลัก', icon: Home   },
+    { href: '/search', label: 'ค้นหา',    icon: Search },
+    ...(canSubmit ? [{ href: '/submit', label: 'แจ้งงาน', icon: Plus, isSubmit: true }] : []),
+    ...(user
+      ? [
+          { href: '/following', label: 'ติดตาม',  icon: Heart },
+          { href: '/profile',   label: 'โปรไฟล์', icon: User  },
+        ]
+      : [
+          { href: '/login', label: 'Login / สมัคร', icon: User },
+        ]
+    ),
+  ]
+
   return (
     <>
-      {/* ── Top Bar (Logo + Actions) ── */}
+      {/* ── Top Bar ── */}
       <header className="sticky top-0 z-50 w-full h-[52px] flex items-center px-4 gap-3"
         style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(8px)' }}>
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 mr-auto">
           <img src="/logo.png" alt="WVRN" className="w-7 h-7 rounded-md object-cover" />
-          <span className="text-[17px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>
-            WVRN
-          </span>
+          <span className="text-[17px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>WVRN</span>
         </Link>
 
-        {/* Desktop nav links */}
+        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {BOTTOM_TABS.map(({ href, label, icon: Icon }) => (
+          {[
+            { href: '/',          label: 'หน้าหลัก', icon: Home   },
+            { href: '/search',    label: 'ค้นหา',    icon: Search },
+            ...(user ? [{ href: '/following', label: 'ติดตาม', icon: Heart }] : []),
+          ].map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all',
-                isActive(href) ? 'font-medium' : 'text-muted hover:text-primary'
-              )}
-              style={{
-                background: isActive(href) ? 'var(--accent-muted)' : 'transparent',
-                color: isActive(href) ? 'var(--accent)' : undefined,
-              }}>
-              <Icon size={14} />
-              {label}
+              className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all',
+                isActive(href) ? 'font-medium' : 'text-muted hover:text-primary')}
+              style={{ background: isActive(href) ? 'var(--accent-muted)' : 'transparent', color: isActive(href) ? 'var(--accent)' : undefined }}>
+              <Icon size={14} />{label}
             </Link>
           ))}
         </nav>
 
-        {/* Right actions */}
+        {/* Right */}
         <div className="flex items-center gap-2">
-          {/* + แจ้งงาน */}
-          <Link href="/submit"
-            className="hidden sm:flex items-center gap-1.5 text-[12px] py-1.5 px-3 rounded-lg font-medium"
-            style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
-            <Plus size={13} /> แจ้งงาน
-          </Link>
+          {canSubmit && (
+            <Link href="/submit"
+              className="hidden sm:flex items-center gap-1.5 text-[12px] py-1.5 px-3 rounded-lg font-medium"
+              style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
+              <Plus size={13} /> แจ้งงาน
+            </Link>
+          )}
 
-          {/* Notification Bell */}
-          <NotificationBell />
+          {user && <NotificationBell />}
 
-          {/* User avatar / Login */}
           {user ? (
             <div className="relative">
               <button onClick={() => setShowUser(v => !v)}
@@ -91,9 +93,7 @@ export default function Navbar() {
                 <div className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden shadow-lg z-50"
                   style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
                   <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                    <p className="text-[12px] font-medium text-primary truncate">
-                      {user.user_metadata?.full_name ?? user.email}
-                    </p>
+                    <p className="text-[12px] font-medium text-primary truncate">{user.user_metadata?.full_name ?? user.email}</p>
                     <p className="text-[11px] text-muted truncate">{user.email}</p>
                   </div>
                   <Link href="/profile" onClick={() => setShowUser(false)}
@@ -111,23 +111,19 @@ export default function Navbar() {
             <Link href="/login"
               className="flex items-center gap-1.5 text-[12px] py-1.5 px-3 rounded-lg font-medium"
               style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
-              <User size={13} /> Login
+              <User size={13} /> Login / สมัคร
             </Link>
           )}
         </div>
       </header>
 
-      {/* ── Bottom Tab Bar (Mobile only) ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
-        style={{
-          background: 'var(--surface-1)',
-          borderTop: '1px solid var(--border)',
-          height: 60,
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}>
-        {BOTTOM_TABS.filter(t => t.href !== '/submit' || canSubmit).map(({ href, label, icon: Icon }) => {
-          const active  = isActive(href)
-          const isSubmit = href === '/submit'
+      {/* ── Bottom Tab Bar (Mobile) ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center"
+        style={{ background: 'var(--surface-1)', borderTop: '1px solid var(--border)', height: 60, paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {BOTTOM_TABS.map(({ href, label, icon: Icon, ...rest }) => {
+          const active    = isActive(href)
+          const isSubmit  = (rest as any).isSubmit === true
+          const isLogin   = href === '/login'
           return (
             <Link key={href} href={href}
               className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all">
@@ -136,15 +132,21 @@ export default function Navbar() {
                   style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(0,0,0,.2)' }}>
                   <Icon size={20} style={{ color: 'white', strokeWidth: 2.5 }} />
                 </div>
+              ) : isLogin ? (
+                <>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--accent-muted)' }}>
+                    <Icon size={17} style={{ color: 'var(--accent)' }} />
+                  </div>
+                  <span className="text-[9px] font-medium" style={{ color: 'var(--accent)' }}>Login</span>
+                </>
               ) : (
-                <Icon size={22}
-                  style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', strokeWidth: active ? 2.2 : 1.8 }} />
-              )}
-              {!isSubmit && (
-                <span className="text-[10px]"
-                  style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', fontWeight: active ? 500 : 400 }}>
-                  {label}
-                </span>
+                <>
+                  <Icon size={22} style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', strokeWidth: active ? 2.2 : 1.8 }} />
+                  <span className="text-[10px]" style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', fontWeight: active ? 500 : 400 }}>
+                    {label}
+                  </span>
+                </>
               )}
             </Link>
           )
