@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import NotificationBell from '@/components/layout/NotificationBell'
 import { useAuth } from '@/lib/auth'
 import { Home, Search, Calendar, Heart, User, LogOut, Plus, Settings } from 'lucide-react'
 
@@ -74,6 +75,9 @@ export default function Navbar() {
             style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
             <Plus size={13} /> แจ้งงาน
           </Link>
+
+          {/* Notification Bell */}
+          <NotificationBell />
 
           {/* User avatar / Login */}
           {user ? (
