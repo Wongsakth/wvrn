@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Navbar from '@/components/layout/Navbar'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
+import { usePermission } from '@/lib/usePermission'
 import { Music, Calendar, Search, Loader2, CheckCircle2, AlertCircle, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { PROVINCES } from '@/lib/utils'
@@ -15,7 +16,9 @@ export default function SubmitPage() {
   const [submitted,   setSubmitted]   = useState(false)
   const [dupCheck,    setDupCheck]    = useState<any[]>([]) // AI dup results
   const [checking,    setChecking]    = useState(false)
-  const { user, canSubmit, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const { can } = usePermission()
+  const canSubmit = can("submit_event")
   const sb = createClient()
 
   // Event form
@@ -108,7 +111,6 @@ export default function SubmitPage() {
     finally { setSubmitting(false) }
   }
 
-  const { user, canSubmit, loading: authLoading } = useAuth()
 
   // Permission guard
   if (!authLoading && (!user || !canSubmit)) return (

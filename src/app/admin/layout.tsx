@@ -25,13 +25,17 @@ const MENU = [
       { href: '/admin/artists',    label: 'จัดการศิลปิน',   icon: Music,         badge: null },
       { href: '/admin/labels',     label: 'ค่ายเพลง',       icon: Building2,     badge: null },
       { href: '/admin/venues',     label: 'จัดการสถานที่',  icon: MapPin,        badge: null },
-      { href: '/admin/users',      label: 'จัดการ Users',   icon: Users,         badge: null },
       { href: '/admin/categories', label: 'Category',       icon: LayoutList,    badge: null },
       { href: '/admin/genres',     label: 'แนวเพลง',        icon: Tag,           badge: null },
     ],
   },
   {
-    group: 'นำเข้าข้อมูล',
+    group: 'System',
+    items: [
+      { href: '/admin/users',       label: 'จัดการ Users',      icon: Users,   badge: null },
+      { href: '/admin/permissions', label: 'Permission Matrix', icon: Shield,  badge: null },
+    ],
+  },
     items: [
       { href: '/admin/import-artists', label: 'Import ศิลปิน', icon: FileUp, badge: null },
     ],
