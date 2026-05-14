@@ -293,8 +293,7 @@ export default function LabelsAdminPage() {
       {/* ── Form Modal ── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowForm(false) }}>
+          style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)' }}>
           <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up"
             style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', maxHeight: '90vh' }}>
 
