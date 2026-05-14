@@ -803,8 +803,9 @@ export default function HomePage() {
 
         {!loading &&
           tab !== 'ai' &&
+          tab !== 'artists' &&
           view === 'list' && (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
               {upcomingEvents.map(ev => (
                 <EventRow
@@ -813,9 +814,7 @@ export default function HomePage() {
                   likedIds={likedIds}
                   toggleLike={toggleLike}
                   attendance={attendance}
-                  toggleAttendance={
-                    toggleAttendance
-                  }
+                  toggleAttendance={toggleAttendance}
                   followedIds={followedIds}
                   isLoggedIn={isLoggedIn}
                 />
@@ -895,141 +894,123 @@ function EventRow({
     )
 
   const featured = event.featured_type
+  const poster   = event.poster_url
 
   return (
     <div
       onClick={() => { if (!isPast) window.location.href = `/events/${event.id}` }}
-      className={cn('rounded-2xl overflow-hidden flex flex-col', isPast ? 'opacity-40' : 'cursor-pointer')}
+      className={cn('rounded-2xl overflow-hidden flex flex-col', isPast ? 'opacity-40' : 'cursor-pointer transition-all hover:scale-[1.01]')}
       style={{
-        border: featured === 'partner'
-          ? '1.5px solid #EF9F27'
-          : featured === 'wvrn_picks'
-          ? '1.5px solid #7C3AED'
-          : '1px solid rgb(39,39,42)',
+        border: featured === 'partner'   ? '1.5px solid #EF9F27'
+               : featured === 'wvrn_picks' ? '1.5px solid #7C3AED'
+               : '1px solid rgb(39,39,42)',
       }}>
 
       {/* Featured banner */}
       {featured === 'partner' && (
-        <div className="flex items-center gap-2 px-3 py-1.5"
-          style={{ background: '#EF9F27' }}>
-          <span style={{ fontSize: 10, fontWeight: 600, color: '#412402', letterSpacing: '.06em' }}>⭐ EVENT PARTNER</span>
+        <div style={{ background: '#EF9F27', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#412402', letterSpacing: '.06em' }}>⭐ EVENT PARTNER</span>
           <span style={{ fontSize: 10, color: '#633806', marginLeft: 'auto' }}>WVRN Partner</span>
         </div>
       )}
       {featured === 'wvrn_picks' && (
-        <div className="flex items-center gap-2 px-3 py-1.5"
-          style={{ background: '#7C3AED' }}>
-          <span style={{ fontSize: 10, fontWeight: 600, color: '#EEEDFE', letterSpacing: '.06em' }}>⚡ WVRN PICKS</span>
+        <div style={{ background: '#7C3AED', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#EEEDFE', letterSpacing: '.06em' }}>⚡ WVRN PICKS</span>
           <span style={{ fontSize: 10, color: '#CECBF6', marginLeft: 'auto' }}>แนะนำโดย WVRN</span>
         </div>
       )}
 
-      {/* Card body row */}
-      <div className="flex" style={{ background: 'rgb(24,24,27)' }}>
+      {/* Card body */}
+      <div className="flex" style={{ background: 'rgb(24,24,27)', minHeight: 90 }}>
 
-      {/* DATE */}
-      <div className="w-16 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center justify-center py-4">
-        <div className="text-2xl font-bold text-pink-500">
-          {format(start, 'd')}
-        </div>
-        <div className="text-xs uppercase text-zinc-500">
-          {format(start, 'MMM')}
-        </div>
-      </div>
-
-      {/* BODY */}
-
-      <div className="flex-1 p-4 min-w-0">
-
-        <div className="flex flex-wrap gap-2 mb-2">
-
-          {isFollowed && (
-            <span className="text-xs px-2 py-1 rounded-full bg-pink-500/10 text-pink-400">
-              ติดตาม
-            </span>
-          )}
-
-          {event.genres?.slice(0, 2).map((g: string) => (
-            <span
-              key={g}
-              className={cn(
-                'text-xs px-2 py-1 rounded-full',
-                genreTagClass(g)
-              )}
-            >
-              {g}
-            </span>
-          ))}
-        </div>
-
-        <h3 className="font-semibold text-lg truncate">
-          {event.title}
-        </h3>
-
-        {event.artists?.length > 0 && (
-          <p className="text-sm text-zinc-400 mt-1 truncate">
-            {event.artists
-              .map((a: any) => a.name)
-              .join(' · ')}
-          </p>
+        {/* POSTER / DATE */}
+        {poster ? (
+          <div className="relative shrink-0" style={{ width: 90 }}>
+            <img src={poster} alt={event.title}
+              className="w-full h-full object-cover"
+              style={{ display: 'block', minHeight: 90 }} />
+            {/* Date overlay */}
+            <div style={{
+              position: 'absolute', top: 6, left: 6,
+              background: 'rgba(0,0,0,.7)', borderRadius: 8,
+              padding: '3px 7px', textAlign: 'center', backdropFilter: 'blur(4px)',
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#f472b6', lineHeight: 1 }}>
+                {format(start, 'd')}
+              </div>
+              <div style={{ fontSize: 8, color: '#a1a1aa', textTransform: 'uppercase' }}>
+                {format(start, 'MMM')}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="shrink-0 flex flex-col items-center justify-center border-r border-zinc-800 bg-zinc-900"
+            style={{ width: 64 }}>
+            <div className="text-2xl font-bold text-pink-500">{format(start, 'd')}</div>
+            <div className="text-xs uppercase text-zinc-500">{format(start, 'MMM')}</div>
+          </div>
         )}
 
-        <div className="flex flex-wrap gap-4 mt-3 text-sm text-zinc-500">
+        {/* BODY */}
+        <div className="flex-1 p-3 min-w-0">
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {isFollowed && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400">ติดตาม</span>
+            )}
+            {event.genres?.slice(0, 2).map((g: string) => (
+              <span key={g} className={cn('text-[10px] px-2 py-0.5 rounded-full', genreTagClass(g))}>{g}</span>
+            ))}
+          </div>
 
-          {event.venue && (
-            <div className="flex items-center gap-1">
-              <MapPin size={13} />
-              {event.venue.name}
-            </div>
+          <h3 className="font-semibold text-[14px] leading-tight truncate text-white mb-0.5">
+            {event.title}
+          </h3>
+
+          {event.artists?.length > 0 && (
+            <p className="text-[11px] text-zinc-400 truncate">
+              {event.artists.map((a: any) => a.name_en || a.name).join(' · ')}
+            </p>
           )}
 
-          {event.start_time && (
-            <div className="flex items-center gap-1">
-              <Clock size={13} />
-              {event.start_time.slice(0, 5)}
-            </div>
-          )}
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-[11px] text-zinc-500">
+            {event.venue && (
+              <span className="flex items-center gap-1"><MapPin size={11} />{event.venue.name}</span>
+            )}
+            {event.start_time && (
+              <span className="flex items-center gap-1"><Clock size={11} />{event.start_time.slice(0,5)}</span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* RIGHT */}
-      <div className="w-28 border-l border-zinc-800 p-3 flex flex-col items-end justify-between">
+        {/* RIGHT */}
+        <div className="shrink-0 border-l border-zinc-800 p-2.5 flex flex-col items-end justify-between" style={{ width: 80 }}>
+          <div className="text-[13px] font-semibold"
+            style={{ color: featured === 'partner' ? '#EF9F27' : featured === 'wvrn_picks' ? '#A78BFA' : '#f472b6' }}>
+            {formatPrice(event)}
+          </div>
 
-        <div className="text-pink-400 font-semibold">
-          {formatPrice(event)}
-        </div>
-
-        <div className="flex flex-col gap-2 items-end">
-
-          {/* Ticket link */}
-          {event.ticket_url && !isPast && (
-            <a
-              href={event.ticket_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              title="ซื้อบัตร"
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-              style={{ background: 'var(--accent)', color: 'white' }}>
-              <Ticket size={15} />
-            </a>
-          )}
-
-          {!isPast && isLoggedIn && (
-            <button
-              onClick={e => { e.stopPropagation(); toggleAttendance(event.id, attendStatus) }}
-              className="text-xs px-3 py-1 rounded-lg border border-zinc-700 bg-zinc-900">
-              {attendStatus === 'going' ? 'จะไป' : attendStatus === 'attended' ? 'ไปแล้ว' : '+ จะไป'}
+          <div className="flex flex-col gap-1.5 items-end">
+            {event.ticket_url && !isPast && (
+              <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()} title="ซื้อบัตร"
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                style={{ background: 'var(--accent)', color: 'white' }}>
+                <Ticket size={13} />
+              </a>
+            )}
+            {!isPast && isLoggedIn && (
+              <button onClick={e => { e.stopPropagation(); toggleAttendance(event.id, attendStatus) }}
+                className="text-[10px] px-2 py-1 rounded-lg border border-zinc-700 bg-zinc-900 whitespace-nowrap">
+                {attendStatus === 'going' ? 'จะไป' : attendStatus === 'attended' ? 'ไปแล้ว' : '+ ไป'}
+              </button>
+            )}
+            <button onClick={e => { e.stopPropagation(); toggleLike(event.id) }}
+              className="w-8 h-8 rounded-lg border border-zinc-700 bg-zinc-900 flex items-center justify-center">
+              <Heart size={13} className={liked ? 'fill-pink-500 text-pink-500' : 'text-zinc-400'} />
             </button>
-          )}
-
-          <button
-            onClick={e => { e.stopPropagation(); toggleLike(event.id) }}
-            className="w-9 h-9 rounded-xl border border-zinc-700 bg-zinc-900 flex items-center justify-center">
-            <Heart size={14} className={liked ? 'fill-pink-500 text-pink-500' : 'text-zinc-400'} />
-          </button>
+          </div>
         </div>
-      </div>
+
       </div>
     </div>
   )
