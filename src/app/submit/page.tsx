@@ -15,7 +15,7 @@ export default function SubmitPage() {
   const [submitted,   setSubmitted]   = useState(false)
   const [dupCheck,    setDupCheck]    = useState<any[]>([]) // AI dup results
   const [checking,    setChecking]    = useState(false)
-  const { user } = useAuth()
+  const { user, canSubmit, loading: authLoading } = useAuth()
   const sb = createClient()
 
   // Event form
@@ -108,12 +108,29 @@ export default function SubmitPage() {
     finally { setSubmitting(false) }
   }
 
-  if (!user) return (
+  const { user, canSubmit, loading: authLoading } = useAuth()
+
+  // Permission guard
+  if (!authLoading && (!user || !canSubmit)) return (
     <div className="min-h-screen" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
       <div className="max-w-md mx-auto px-4 py-16 text-center">
-        <p className="text-[15px] font-medium text-primary mb-4">กรุณา Login ก่อนแจ้งข้อมูล</p>
-        <button onClick={() => window.location.href = '/login'} className="btn-accent py-2 px-6 text-[14px]">Login</button>
+        {!user ? (
+          <>
+            <p className="text-[15px] font-medium text-primary mb-4">กรุณา Login ก่อนแจ้งข้อมูล</p>
+            <button onClick={() => window.location.href = '/login'} className="btn-accent py-2 px-6 text-[14px]">Login</button>
+          </>
+        ) : (
+          <>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(232,0,58,.08)' }}>
+              <AlertCircle size={28} style={{ color: '#E24B4A' }} />
+            </div>
+            <p className="text-[16px] font-medium text-primary mb-2">ไม่มีสิทธิ์เข้าถึง</p>
+            <p className="text-[13px] text-muted mb-5">บัญชีของคุณยังไม่ได้รับสิทธิ์แจ้งข้อมูล<br/>กรุณาติดต่อ Admin</p>
+            <button onClick={() => window.location.href = '/'} className="btn-ghost py-2 px-5 text-[13px]">กลับหน้าหลัก</button>
+          </>
+        )}
       </div>
     </div>
   )

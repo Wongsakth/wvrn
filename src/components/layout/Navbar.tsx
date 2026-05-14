@@ -10,7 +10,7 @@ import { Home, Search, Calendar, Heart, User, LogOut, Plus, Settings } from 'luc
 const BOTTOM_TABS = [
   { href: '/',          label: 'หน้าหลัก', icon: Home     },
   { href: '/search',    label: 'ค้นหา',    icon: Search   },
-  { href: '/calendar',  label: 'ปฏิทิน',   icon: Calendar },
+  { href: '/submit',    label: 'แจ้งงาน',  icon: Plus     },
   { href: '/following', label: 'ติดตาม',   icon: Heart    },
   { href: '/profile',   label: 'โปรไฟล์',  icon: User     },
 ]
@@ -19,6 +19,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const router   = useRouter()
   const { user, signOut } = useAuth()
+  const { canSubmit } = useAuth()
   const [showUser, setShowUser] = useState(false)
 
   const isAdmin = pathname.startsWith('/admin')
@@ -130,17 +131,27 @@ export default function Navbar() {
           height: 60,
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}>
-        {BOTTOM_TABS.map(({ href, label, icon: Icon }) => {
-          const active = isActive(href)
+        {BOTTOM_TABS.filter(t => t.href !== '/submit' || canSubmit).map(({ href, label, icon: Icon }) => {
+          const active  = isActive(href)
+          const isSubmit = href === '/submit'
           return (
             <Link key={href} href={href}
               className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all">
-              <Icon size={22}
-                style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', strokeWidth: active ? 2.2 : 1.8 }} />
-              <span className="text-[10px]"
-                style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', fontWeight: active ? 500 : 400 }}>
-                {label}
-              </span>
+              {isSubmit ? (
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-0.5"
+                  style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(0,0,0,.2)' }}>
+                  <Icon size={20} style={{ color: 'white', strokeWidth: 2.5 }} />
+                </div>
+              ) : (
+                <Icon size={22}
+                  style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', strokeWidth: active ? 2.2 : 1.8 }} />
+              )}
+              {!isSubmit && (
+                <span className="text-[10px]"
+                  style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', fontWeight: active ? 500 : 400 }}>
+                  {label}
+                </span>
+              )}
             </Link>
           )
         })}
