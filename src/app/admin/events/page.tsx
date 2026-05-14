@@ -8,6 +8,7 @@ import {
 import { cn, PROVINCES, formatThaiDate, statusLabel, genreTagClass } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Event, Artist, Venue, EventStatus, EventType, Genre } from '@/types'
+import ImageUpload from '@/components/ImageUpload'
 
 const STATUS_OPTIONS: { id: EventStatus; label: string }[] = [
   { id: 'confirmed', label: 'ยืนยันแล้ว' },
@@ -615,10 +616,13 @@ export default function EventsAdminPage() {
                     placeholder="รายละเอียดงาน, dress code, การเดินทาง..."
                     className="input-theme text-[13px] resize-none" rows={3} />
                 </Field>
-                <Field label="URL รูป Poster">
-                  <input value={form.poster_url} onChange={e => setForm(f => ({ ...f, poster_url: e.target.value }))}
-                    placeholder="https://..." className="input-theme text-[13px]" />
-                </Field>
+                <ImageUpload
+                  bucket="events"
+                  value={form.poster_url}
+                  onChange={url => setForm(f => ({ ...f, poster_url: url }))}
+                  label="รูปปก Event"
+                  aspect="3:4"
+                />
               </Section>
 
               {/* Featured */}

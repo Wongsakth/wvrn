@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Artist, Genre } from '@/types'
+import ImageUpload from '@/components/ImageUpload'
 
 const GENRES: { id: Genre; label: string; color: string }[] = [
   { id: 'pop',        label: 'Pop',        color: '#A78BFA' },
@@ -110,7 +111,7 @@ export default function ArtistsAdminPage() {
     if (!form.name.trim()) { toast.error('กรุณากรอกชื่อศิลปิน'); return }
     setSaving(true)
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         name:          form.name.trim(),
         name_en:       form.name_en.trim()       || null,
         bio:           form.bio.trim()            || null,
@@ -360,51 +361,13 @@ export default function ArtistsAdminPage() {
             <div className="overflow-y-auto px-5 py-4 flex flex-col gap-4" style={{ maxHeight: 'calc(92vh - 130px)' }}>
 
               {/* Image upload */}
-              <div className="flex items-center gap-4">
-                <div
-                  className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--surface-3)', border: '2px solid var(--border)' }}
-                >
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Music size={24} className="text-muted" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    className="btn-ghost flex items-center gap-2 text-[12px] py-2 px-3 mb-2"
-                  >
-                    <Upload size={13} />
-                    อัปโหลดรูปศิลปิน
-                  </button>
-                  <p className="text-[10px] text-muted">หรือใส่ URL รูปภาพด้านล่าง</p>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0]
-                      if (f) handleImageUpload(f)
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Image URL */}
-              <FormField label="URL รูปภาพ">
-                <input
-                  value={form.image_url}
-                  onChange={e => {
-                    setForm(f => ({ ...f, image_url: e.target.value }))
-                    setImagePreview(e.target.value)
-                  }}
-                  placeholder="https://..."
-                  className="input-theme text-[13px]"
-                />
-              </FormField>
+              <ImageUpload
+                bucket="artists"
+                value={form.image_url}
+                onChange={url => { setForm(f => ({ ...f, image_url: url })); setImagePreview(url) }}
+                label="รูปศิลปิน"
+                aspect="1:1"
+              />
 
               {/* Name (required) */}
               <FormField label="ชื่อศิลปิน (ภาษาไทย) *">
