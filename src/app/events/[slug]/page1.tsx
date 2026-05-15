@@ -29,29 +29,24 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (!id || id === 'undefined') { setLoading(false); return }
     async function load() {
-      const decoded = decodeURIComponent(id)
-      const isUuid  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded)
+      // เช็คว่าเป็น UUID หรือ slug
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
-      const select = `*, venue:venues(*), event_artists(sort_order, is_headliner, start_time, artist:artists(*))`
+      const query = sb.from('events').select(`
+          *,
+          venue:venues(*),
+          event_artists(
+            sort_order,
+            is_headliner,
+            start_time,
+            artist:artists(*)
+          )
+        `)
 
-      let data: any = null
-
-      if (isUuid) {
-        const res = await sb.from('events').select(select).eq('id', decoded).single()
-        data = res.data
-      } else {
-        // ลอง slug ตรงๆ ก่อน
-        const res1 = await sb.from('events').select(select).eq('slug', decoded).single()
-        data = res1.data
-        // ถ้าไม่เจอ ลอง ilike (case-insensitive)
-        if (!data) {
-          const res2 = await sb.from('events').select(select).ilike('slug', decoded).single()
-          data = res2.data
-        }
-      }
-
-      if (!data) { setLoading(false); return }
-      if (!data) { setLoading(false); return }
+      const { data, error } = isUuid
+        ? await query.eq('id', id).single()
+        : await query.eq('slug', id).single()
+      if (error || !data) { setLoading(false); return }
 
       // เรียงศิลปินตาม sort_order แล้วแนบ start_time ไปด้วย
       const sortedArtists = [...(data.event_artists ?? [])]
