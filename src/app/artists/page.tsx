@@ -49,6 +49,7 @@ export default function ArtistsPage() {
         ])
 
         setArtists(arRes.data || [])
+console.log('first artist:', arRes.data?.[0])
         setEvents(evRes.data || [])
       } catch (e) {
         console.error(e)
