@@ -1057,7 +1057,7 @@ function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>;
                       {(artist.name_en || artist.name).slice(0,2)}
                     </div>
                 }
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => window.location.href = `/artists/${artist.id}`}>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => window.location.href = `/artists/${artist.slug || artist.id}`}>
                   <p className="text-[13px] font-medium text-white truncate">{artist.name_en || artist.name}</p>
                   {artist.name_en && artist.name !== artist.name_en && (
                     <p className="text-[10px] text-zinc-500 truncate">{artist.name}</p>

@@ -157,7 +157,7 @@ export default function SearchPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {(filter === 'all' ? filteredArtists.slice(0,6) : filteredArtists).map(artist => (
                     <div key={artist.id}
-                      onClick={() => window.location.href = `/artists/${artist.id}`}
+                      onClick={() => window.location.href = `/artists/${artist.slug || artist.id}`}
                       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
                       style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}

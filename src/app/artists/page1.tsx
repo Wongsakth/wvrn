@@ -222,21 +222,21 @@ export default function ArtistsPage() {
                           src={artist.image_url}
                           alt={artist.name}
                           className="w-12 h-12 rounded-xl object-cover shrink-0"
-                          onClick={() => { window.location.href = `/artists/${artist.slug || artist.id}` }}
+                          onClick={() => { window.location.href = `/artists/${artist.id}` }}
                           style={{ cursor: 'pointer' }}
                         />
                       ) : (
                         <div
                           className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-[15px] font-medium cursor-pointer"
                           style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}
-                          onClick={() => { window.location.href = `/artists/${artist.slug || artist.id}` }}>
+                          onClick={() => { window.location.href = `/artists/${artist.id}` }}>
                           {(artist.name_en || artist.name).slice(0, 2)}
                         </div>
                       )}
 
                       {/* Name */}
                       <div className="flex-1 min-w-0 cursor-pointer"
-                        onClick={() => { window.location.href = `/artists/${artist.slug || artist.id}` }}>
+                        onClick={() => { window.location.href = `/artists/${artist.id}` }}>
                         <p className="text-[14px] font-medium text-primary leading-tight truncate">
                           {artist.name_en || artist.name}
                         </p>
