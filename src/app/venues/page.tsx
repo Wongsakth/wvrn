@@ -267,7 +267,7 @@ export default function VenuesPage() {
                             const daysLeft = differenceInDays(start, new Date())
                             return (
                               <div key={ev.id}
-                                onClick={() => { window.location.href = `/events/${\1.slug || \1.id}` }}
+                                onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
                                 className="flex items-center gap-3 cursor-pointer rounded-xl p-2.5 transition-all"
                                 style={{ background: 'var(--surface-1)' }}
                                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}

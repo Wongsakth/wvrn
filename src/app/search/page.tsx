@@ -113,7 +113,7 @@ export default function SearchPage() {
                 <div className="flex flex-col gap-1.5">
                   {(filter === 'all' ? filteredEvents.slice(0,5) : filteredEvents).map(ev => (
                     <div key={ev.id}
-                      onClick={() => window.location.href = `/events/${\1.slug || \1.id}`}
+                      onClick={() => window.location.href = `/events/${ev.slug || ev.id}`}
                       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
                       style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}

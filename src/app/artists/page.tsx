@@ -272,7 +272,7 @@ export default function ArtistsPage() {
                         {upcomingEvs.map(ev => (
                           <div
                             key={ev.id}
-                            onClick={() => { window.location.href = `/events/${\1.slug || \1.id}` }}
+                            onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
                             className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors"
                             style={{ background: 'var(--surface-2)' }}
                           >

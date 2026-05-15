@@ -173,7 +173,7 @@ export default function FollowingPage() {
                     const done  = ev.attend_status === 'attended'
                     return (
                       <div key={ev.id}
-                        onClick={() => window.location.href = `/events/${\1.slug || \1.id}`}
+                        onClick={() => window.location.href = `/events/${ev.slug || ev.id}`}
                         className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
                         style={{
                           background: done ? 'rgba(29,158,117,.06)' : 'var(--surface-1)',

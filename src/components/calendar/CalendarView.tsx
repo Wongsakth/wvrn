@@ -171,7 +171,7 @@ export default function CalendarView({ events, likedIds, bookmarkIds, onLike, on
           <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1">
             {selectedEvents.map(ev => (
               <div key={ev.id}
-                onClick={() => { window.location.href = `/events/${\1.slug || \1.id}` }}
+                onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
                 style={{ cursor: 'pointer' }}>
                 <EventCard
                   event={ev}

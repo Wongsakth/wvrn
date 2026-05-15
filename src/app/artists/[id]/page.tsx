@@ -225,7 +225,7 @@ export default function ArtistProfilePage() {
               <div className="flex flex-col gap-3">
                 {events.map(ev => (
                   <div key={ev.id}
-                    onClick={() => { window.location.href = `/events/${\1.slug || \1.id}` }}
+                    onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
                     className="rounded-xl overflow-hidden cursor-pointer transition-all"
                     style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}
                     onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--border-md)')}

@@ -196,7 +196,7 @@ export default function AdminDashboard() {
           {recent.length === 0 ? (
             <p className="text-[13px] text-muted py-4 text-center">ยังไม่มี Event</p>
           ) : recent.map(ev => (
-            <div key={ev.id} onClick={() => router.push(`/events/${\1.slug || \1.id}`)}
+            <div key={ev.id} onClick={() => router.push(`/events/${ev.slug || ev.id}`)}
               className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
               style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}
