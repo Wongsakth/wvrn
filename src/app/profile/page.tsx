@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import {
   User, Heart, MapPin, Calendar, LogOut, Shield,
   ChevronRight, Music, Palette, Lock, Eye, EyeOff,
-  CheckCircle2, AlertCircle, Loader2,
+  CheckCircle2, AlertCircle, Loader2, Edit3, X,
 } from 'lucide-react'
 import { useTheme, THEMES } from '@/lib/theme'
 import toast from 'react-hot-toast'
@@ -32,6 +32,20 @@ export default function ProfilePage() {
   const [showPw,    setShowPw]    = useState({ next: false, confirm: false })
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput,   setNameInput]   = useState('')
+
+  const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? ''
+
+  async function saveName() {
+    if (!nameInput.trim()) return
+    try {
+      const { error } = await sb.auth.updateUser({ data: { full_name: nameInput.trim() } })
+      if (error) throw error
+      setEditingName(false)
+      toast.success('อัปเดตชื่อแล้ว')
+    } catch (e: any) { toast.error(e.message) }
+  }
   const sb = createClient()
   const isEmailUser = !user?.app_metadata?.provider || user?.app_metadata?.provider === 'email'
 
@@ -131,9 +145,40 @@ export default function ProfilePage() {
                   {(user.email ?? 'U')[0].toUpperCase()}
                 </div>
               )}
-              <p className="text-[18px] font-medium text-primary mb-0.5">
-                {user.user_metadata?.full_name ?? user.email?.split('@')[0]}
-              </p>
+              {/* Display name — inline edit */}
+              {editingName ? (
+                <div className="flex items-center justify-center gap-2 mb-0.5">
+                  <input
+                    value={nameInput}
+                    onChange={e => setNameInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false) }}
+                    autoFocus
+                    maxLength={30}
+                    className="input-theme text-[15px] text-center px-3 py-1.5"
+                    style={{ width: 180 }}
+                  />
+                  <button onClick={saveName}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: 'rgba(29,158,117,.15)', color: '#1D9E75' }}>
+                    <CheckCircle2 size={15} />
+                  </button>
+                  <button onClick={() => setEditingName(false)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-muted"
+                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                  <p className="text-[18px] font-medium text-primary">
+                    {displayName}
+                  </p>
+                  <button onClick={() => { setNameInput(displayName); setEditingName(true) }}
+                    className="text-muted hover:text-primary transition-colors">
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+              )}
               <p className="text-[12px] text-muted mb-3">{user.email}</p>
               <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1 rounded-full"
                 style={{ background: roleConf.bg, color: roleConf.color, border: `1px solid ${roleConf.color}30` }}>
