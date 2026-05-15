@@ -7,14 +7,13 @@ import { useAuth } from '@/lib/auth'
 import {
   Heart, Instagram, Facebook, Globe, Building2,
   MapPin, Clock, ChevronLeft, ChevronRight,
-  Loader2, Music, ExternalLink, Users,
+  Loader2, Music, ExternalLink,
 } from 'lucide-react'
 import { cn, genreTagClass, formatPrice } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { th } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 
-// TikTok icon
 function TikTokIcon({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -26,64 +25,77 @@ function TikTokIcon({ size = 14 }: { size?: number }) {
 export default function ArtistProfilePage() {
   const { slug }  = useParams<{ slug: string }>()
   const router    = useRouter()
+  const { user }  = useAuth()
+  const sb        = createClient()
+
   const [artist,   setArtist]   = useState<any>(null)
+  const [artistId, setArtistId] = useState<string | null>(null)  // ← FIX: lift id ออกมา
   const [events,   setEvents]   = useState<any[]>([])
   const [followed, setFollowed] = useState(false)
   const [loading,  setLoading]  = useState(true)
-  const { user } = useAuth()
-  const sb = createClient()
 
+  // Load artist + events
   useEffect(() => {
+    if (!slug) return
     async function load() {
       setLoading(true)
       try {
-        const decoded = decodeURIComponent(slug)
+        const decoded = decodeURIComponent(slug as string)
         const isUuid  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded)
 
-        // Load artist by slug or UUID
-        const { data: artistData } = isUuid
+        const { data: artistData, error } = isUuid
           ? await sb.from('artists').select('*').eq('id', decoded).single()
           : await sb.from('artists').select('*').eq('slug', decoded).single()
 
-        setArtist(artistData)
-        const id = artistData?.id
+        if (error || !artistData) {
+          setArtist(null)
+          setLoading(false)
+          return
+        }
 
-        // Load upcoming events
+        setArtist(artistData)
+        setArtistId(artistData.id)  // ← FIX: set id ออกมาให้ useEffect อื่นใช้ได้
+
         const today = new Date().toISOString().slice(0, 10)
         const { data: evData } = await sb
           .from('events')
           .select('*, venue:venues(name, province), event_artists!inner(artist_id)')
-          .eq('event_artists.artist_id', id)
+          .eq('event_artists.artist_id', artistData.id)
           .gte('start_date', today)
           .order('start_date', { ascending: true })
-        setEvents((evData || []).map((ev: any) => ({
-          ...ev,
-          artists: [],
-        })))
-      } catch (e) { console.error(e) }
-      finally { setLoading(false) }
+
+        setEvents((evData || []).map((ev: any) => ({ ...ev, artists: [] })))
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
-  }, [id])
+  }, [slug])  // ← FIX: dependency เป็น slug ไม่ใช่ id
 
-  // Check if following
+  // Check follow — รอให้ artistId มีค่าก่อน
   useEffect(() => {
-    if (!user) { setFollowed(false); return }
-    sb.from('follows').select('artist_id')
-      .eq('user_id', user.id).eq('artist_id', id).maybeSingle()
+    if (!user || !artistId) { setFollowed(false); return }
+    sb.from('follows')
+      .select('artist_id')
+      .eq('user_id', user.id)
+      .eq('artist_id', artistId)
+      .maybeSingle()
       .then(({ data }) => setFollowed(!!data))
-  }, [user, id])
+  }, [user, artistId])  // ← FIX: ใช้ artistId แทน id
 
   async function toggleFollow() {
     if (!user) { toast.error('กรุณา Login ก่อนครับ'); window.location.href = '/login'; return }
+    if (!artistId) return
     const prev = followed
     setFollowed(!prev)
     try {
       if (prev) {
-        await sb.from('follows').delete().eq('user_id', user.id).eq('artist_id', id)
+        await sb.from('follows').delete().eq('user_id', user.id).eq('artist_id', artistId)
         toast.success(`เลิกติดตาม ${artist?.name}`)
       } else {
-        await sb.from('follows').insert({ user_id: user.id, artist_id: id })
+        await sb.from('follows').insert({ user_id: user.id, artist_id: artistId })
         toast.success(`ติดตาม ${artist?.name} แล้ว! 🎵`)
       }
     } catch {
@@ -174,9 +186,9 @@ export default function ArtistProfilePage() {
                 <button onClick={toggleFollow}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[14px] font-medium transition-all"
                   style={{
-                    background:  followed ? 'var(--accent-muted)' : 'var(--accent)',
-                    color:       followed ? 'var(--accent)' : 'var(--surface-0)',
-                    border:      followed ? '1px solid var(--accent)' : 'none',
+                    background: followed ? 'var(--accent-muted)' : 'var(--accent)',
+                    color:      followed ? 'var(--accent)' : 'var(--surface-0)',
+                    border:     followed ? '1px solid var(--accent)' : 'none',
                   }}>
                   <Heart size={15} style={{ fill: followed ? 'var(--accent)' : 'white' }} />
                   {followed ? 'ติดตามอยู่' : 'ติดตาม'}
@@ -234,8 +246,8 @@ export default function ArtistProfilePage() {
                     onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
                     className="rounded-xl overflow-hidden cursor-pointer transition-all"
                     style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}
-                    onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--border-md)')}
-                    onMouseLeave={e=>(e.currentTarget.style.borderColor='var(--border)')}>
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
                     <div className="flex">
                       {/* Date */}
                       <div className="flex flex-col items-center justify-center px-4 py-4 shrink-0"
@@ -258,7 +270,7 @@ export default function ArtistProfilePage() {
                           )}
                           {ev.start_time && (
                             <span className="flex items-center gap-1 text-[11px] text-muted">
-                              <Clock size={10} />{ev.start_time.slice(0,5)} น.
+                              <Clock size={10} />{ev.start_time.slice(0, 5)} น.
                             </span>
                           )}
                         </div>
