@@ -574,7 +574,7 @@ export default function HomePage() {
                       <Heart size={10} className="fill-pink-500 text-pink-500 shrink-0" />
                     </div>
                     {nextEvent ? (
-                      <div onClick={() => window.location.href = `/events/${nextEvent.id}`}
+                      <div onClick={() => window.location.href = `/events/${nextEvent.slug || nextEvent.id}`}
                         className="p-2 rounded-lg cursor-pointer"
                         style={{ background: isToday ? 'rgba(236,72,153,.08)' : 'rgba(255,255,255,.04)' }}>
                         <div className="flex items-center justify-between mb-0.5">
@@ -625,7 +625,7 @@ export default function HomePage() {
                   const days  = differenceInDays(start, new Date())
                   return (
                     <div key={ev.id}
-                      onClick={() => window.location.href = `/events/${ev.id}`}
+                      onClick={() => window.location.href = `/events/${ev.slug || ev.id}`}
                       className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-zinc-900 border border-zinc-800">
                       <div className="w-9 h-9 rounded-lg shrink-0 flex flex-col items-center justify-center bg-zinc-800">
                         <span className="text-[13px] font-medium text-pink-400 leading-none">{format(start,'d')}</span>
@@ -898,7 +898,7 @@ function EventRow({
 
   return (
     <div
-      onClick={() => { if (!isPast) window.location.href = `/events/${event.id}` }}
+      onClick={() => { if (!isPast) window.location.href = `/events/${event.slug || event.id}` }}
       className={cn('rounded-2xl overflow-hidden flex flex-col', isPast ? 'opacity-40' : 'cursor-pointer transition-all hover:scale-[1.01]')}
       style={{
         border: featured === 'partner'   ? '1.5px solid #EF9F27'

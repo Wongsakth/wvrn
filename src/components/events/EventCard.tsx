@@ -30,7 +30,7 @@ export default function EventCard({ event, liked, bookmarked, onLike, onBookmark
   const status    = statusLabel(event.status)
 
   function goDetail() {
-    window.location.href = `/events/${event.id}`
+    window.location.href = `/events/${\1.slug || \1.id}`
   }
 
   function handleShare(e: React.MouseEvent) {

@@ -333,7 +333,7 @@ export default function EventsAdminPage() {
                   borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
                   cursor: 'pointer',
                 }}
-                onClick={() => { window.location.href = `/events/${ev.id}` }}>
+                onClick={() => { window.location.href = `/events/${\1.slug || \1.id}` }}>
                 {/* Date box */}
                 <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0"
                   style={{ background: 'var(--accent-muted)' }}>
