@@ -18,11 +18,10 @@ import {
 } from 'lucide-react'
 
 import Navbar from '@/components/layout/Navbar'
-import EventClientActions from '@/components/events/EventClientActions'
 import EventLineupTimeline from '@/components/events/EventLineupTimeline'
 import TicketSaleWidget from '@/components/events/TicketSaleWidget'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase'
 import {
   formatPrice,
   statusLabel,
@@ -457,7 +456,7 @@ export default async function EventDetailPage({
 
           {/* RIGHT */}
           <div className="flex flex-col gap-4">
-            <EventClientActions event={event} />
+            
 
             <TicketSaleWidget
               event={{
