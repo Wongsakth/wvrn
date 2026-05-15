@@ -29,9 +29,10 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (!id || id === 'undefined') { setLoading(false); return }
     async function load() {
-      const { data, error } = await sb
-        .from('events')
-        .select(`
+      // เช็คว่าเป็น UUID หรือ slug
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
+      const query = sb.from('events').select(`
           *,
           venue:venues(*),
           event_artists(
@@ -41,8 +42,10 @@ export default function EventDetailPage() {
             artist:artists(*)
           )
         `)
-        .or(`id.eq.${id},slug.eq.${id}`)
-        .single()
+
+      const { data, error } = isUuid
+        ? await query.eq('id', id).single()
+        : await query.eq('slug', id).single()
       if (error || !data) { setLoading(false); return }
 
       // เรียงศิลปินตาม sort_order แล้วแนบ start_time ไปด้วย
