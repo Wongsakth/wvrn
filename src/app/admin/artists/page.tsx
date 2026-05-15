@@ -46,9 +46,25 @@ export default function ArtistsAdminPage() {
   const [deleteId,   setDeleteId]   = useState<string | null>(null)
   const [form,       setForm]       = useState({ ...EMPTY_FORM })
   const [imagePreview, setImagePreview] = useState<string>('')
+  const [dupSuggestions, setDupSuggestions] = useState<any[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const sb = createClient()
+
+  // ─── Duplicate check ─────────────────────────────────────
+  const dupTimer = useRef<any>(null)
+  function checkDuplicate(val: string) {
+    clearTimeout(dupTimer.current)
+    if (!val || val.length < 2) { setDupSuggestions([]); return }
+    dupTimer.current = setTimeout(async () => {
+      if (editTarget) return // ตอนแก้ไขไม่ต้องเช็ค
+      const { data } = await sb.from('artists')
+        .select('id,name,name_en,image_url')
+        .or(`name.ilike.%${val}%,name_en.ilike.%${val}%`)
+        .limit(4)
+      setDupSuggestions(data || [])
+    }, 500)
+  }
 
   // ─── Load artists ────────────────────────────────────────
   async function load() {
@@ -72,6 +88,7 @@ export default function ArtistsAdminPage() {
     setEditTarget(null)
     setForm({ ...EMPTY_FORM })
     setImagePreview('')
+    setDupSuggestions([])
     setShowForm(true)
   }
 
@@ -372,11 +389,42 @@ export default function ArtistsAdminPage() {
               <FormField label="ชื่อศิลปิน (ภาษาไทย) *">
                 <input
                   value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  onChange={e => { setForm(f => ({ ...f, name: e.target.value })); checkDuplicate(e.target.value) }}
                   placeholder="เช่น บิลลี่ แบล็ก"
                   className="input-theme text-[13px]"
                   autoFocus
                 />
+                {!editTarget && dupSuggestions.length > 0 && (
+                  <div className="mt-2 rounded-xl overflow-hidden"
+                    style={{ border: '1px solid rgba(239,159,39,.4)', background: 'rgba(239,159,39,.05)' }}>
+                    <p className="text-[11px] font-medium px-3 py-2 flex items-center gap-1.5"
+                      style={{ color: '#EF9F27', borderBottom: '1px solid rgba(239,159,39,.2)' }}>
+                      ⚠️ พบศิลปินที่คล้ายกันในระบบ — กดเลือกใช้อันที่มีอยู่แทนการสร้างใหม่
+                    </p>
+                    {dupSuggestions.map(s => (
+                      <button key={s.id} type="button"
+                        onClick={() => {
+                          setForm(f => ({ ...f, name: s.name, name_en: s.name_en ?? '' }))
+                          setDupSuggestions([])
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[var(--surface-2)]"
+                        style={{ borderTop: '1px solid rgba(239,159,39,.1)' }}>
+                        {s.image_url
+                          ? <img src={s.image_url} className="w-7 h-7 rounded-full object-cover shrink-0" alt={s.name} />
+                          : <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[10px] font-medium"
+                              style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
+                              {s.name.slice(0,2)}
+                            </div>
+                        }
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-medium text-primary">{s.name}</p>
+                          {s.name_en && <p className="text-[10px] text-muted">{s.name_en}</p>}
+                        </div>
+                        <span className="text-[10px] shrink-0" style={{ color: '#EF9F27' }}>ใช้อันนี้ →</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </FormField>
 
               {/* Name EN */}
