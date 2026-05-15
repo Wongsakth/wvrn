@@ -265,6 +265,23 @@ export default function ProfilePage() {
                 <ChevronRight size={14} className="text-muted" />
               </button>
 
+              {/* Apply Editor — user role only */}
+              {role === 'user' && (
+                <button onClick={() => window.location.href = '/apply-editor'}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-2)] transition-colors"
+                  style={{ borderTop: '1px solid var(--border)' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: 'rgba(124,58,237,.1)' }}>
+                    <Edit3 size={15} style={{ color: '#7C3AED' }} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-[14px] text-primary">ขอเป็น Editor</p>
+                    <p className="text-[11px] text-muted">ช่วย WVRN เพิ่มข้อมูล Event</p>
+                  </div>
+                  <ChevronRight size={14} className="text-muted" />
+                </button>
+              )}
+
               {/* Disclaimer */}
               <button onClick={() => window.location.href = '/disclaimer'}
                 className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-2)] transition-colors">
