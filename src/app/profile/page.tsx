@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useTheme, THEMES } from '@/lib/theme'
 import toast from 'react-hot-toast'
+import ScoreCard from '@/components/ScoreCard'
 
 type Section = 'main' | 'theme' | 'password'
 
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   const { user, signOut, isAdmin } = useAuth()
   const { theme, setTheme } = useTheme()
   const [stats,     setStats]     = useState({ artists: 0, venues: 0, going: 0, attended: 0 })
+  const [scoreData, setScoreData] = useState({ score: 0, rank: 'listener' as any, submitted: 0, approved: 0, followed: 0 })
   const [section,   setSection]   = useState<Section>('main')
   const [role,      setRole]      = useState('user')
   const [pwForm,    setPwForm]    = useState({ next: '', confirm: '' })
@@ -41,13 +43,24 @@ export default function ProfilePage() {
       sb.from('follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('event_attendance').select('id,status').eq('user_id', user.id),
-    ]).then(([ar, vr, at]) => {
-      const att = (at as any).data || []
+      sb.from('profiles').select('score,score_rank').eq('id', user.id).single(),
+      sb.from('event_submissions').select('id,status').eq('submitted_by', user.id),
+    ]).then(([ar, vr, at, prof, subs]) => {
+      const att   = (at as any).data || []
+      const subArr = (subs as any).data || []
       setStats({
         artists:  ar.count ?? 0,
         venues:   (vr as any).count ?? 0,
         going:    att.filter((a: any) => a.status === 'going').length,
         attended: att.filter((a: any) => a.status === 'attended').length,
+      })
+      const p = (prof as any).data
+      setScoreData({
+        score:     p?.score      ?? 0,
+        rank:      p?.score_rank ?? 'listener',
+        submitted: subArr.length,
+        approved:  subArr.filter((s: any) => s.status === 'approved').length,
+        followed:  ar.count ?? 0,
       })
     }).catch(() => {})
   }, [user])
@@ -144,6 +157,15 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
+
+            {/* Score card */}
+            <ScoreCard
+              score={scoreData.score}
+              rank={scoreData.rank}
+              submitted={scoreData.submitted}
+              approved={scoreData.approved}
+              followed={scoreData.followed}
+            />
 
             {/* Settings */}
             <div className="rounded-2xl overflow-hidden mb-4"
