@@ -728,12 +728,10 @@ export default function HomePage() {
         {/* LOADING */}
 
         {loading && (
-          <div className="py-24 flex items-center justify-center gap-2 text-zinc-400">
-            <Loader2
-              size={18}
-              className="animate-spin"
-            />
-            กำลังโหลด...
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
         )}
 
@@ -865,6 +863,40 @@ export default function HomePage() {
           )}
 
       </main>
+    </div>
+  )
+}
+
+
+// =========================================================
+// SKELETON LOADER
+// =========================================================
+
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgb(39,39,42)' }}>
+      <div className="flex" style={{ background: 'rgb(24,24,27)', minHeight: 90 }}>
+        {/* Date placeholder */}
+        <div className="shrink-0 flex flex-col items-center justify-center border-r border-zinc-800 bg-zinc-900" style={{ width: 64 }}>
+          <div className="w-7 h-5 rounded mb-1" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-5 h-3 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+        {/* Body placeholder */}
+        <div className="flex-1 p-3 min-w-0">
+          <div className="flex gap-1.5 mb-2">
+            <div className="w-10 h-4 rounded-full" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div className="w-14 h-4 rounded-full" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          </div>
+          <div className="w-3/4 h-4 rounded mb-2" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-1/2 h-3 rounded mb-2" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-2/3 h-3 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+        {/* Right placeholder */}
+        <div className="shrink-0 border-l border-zinc-800 p-2.5 flex flex-col items-end justify-between" style={{ width: 80 }}>
+          <div className="w-10 h-4 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-8 h-8 rounded-lg" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+      </div>
     </div>
   )
 }
@@ -1073,7 +1105,18 @@ function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>;
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-zinc-500" /></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <div className="w-10 h-10 rounded-full shrink-0" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                <div className="w-3/4 h-3.5 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div className="w-1/2 h-3 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              </div>
+              <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {filtered.map(artist => {
