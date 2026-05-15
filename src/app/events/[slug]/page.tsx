@@ -241,9 +241,9 @@ export default function EventDetailPage() {
                 {(interested > 0 || going > 0) && (
                   <div className="flex items-center gap-3 mb-4 px-3 py-2 rounded-xl"
                     style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                    <Users size={13} style={{ color: 'var(--accent)' }} />
                     {interested > 0 && (
-                      <span className="text-[12px] text-secondary">
+                      <span className="flex items-center gap-1.5 text-[12px] text-secondary">
+                        <Heart size={11} style={{ color: 'var(--accent)' }} />
                         <span className="font-medium text-primary">{interested.toLocaleString()}</span> สนใจ
                       </span>
                     )}
@@ -251,7 +251,8 @@ export default function EventDetailPage() {
                       <span className="text-muted text-[12px]">·</span>
                     )}
                     {going > 0 && (
-                      <span className="text-[12px] text-secondary">
+                      <span className="flex items-center gap-1.5 text-[12px] text-secondary">
+                        <Users size={11} style={{ color: 'var(--accent)' }} />
                         <span className="font-medium" style={{ color: 'var(--accent)' }}>{going.toLocaleString()}</span> จะไป
                       </span>
                     )}

@@ -993,16 +993,18 @@ function EventRow({
           {/* Social proof */}
           {!isPast && (goingCount !== null || interestedCount !== null) && (goingCount! > 0 || interestedCount! > 0) && (
             <div className="flex items-center gap-2 mt-1.5">
-              {goingCount! > 0 && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(232,0,58,0.1)', color: 'var(--accent)' }}>
-                  🔥 {goingCount!.toLocaleString()} จะไป
+              {interestedCount! > 0 && (
+                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.05)', color: '#a1a1aa' }}>
+                  <Heart size={9} className="text-pink-400" />
+                  {interestedCount!.toLocaleString()} สนใจ
                 </span>
               )}
-              {interestedCount! > 0 && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full text-zinc-400"
-                  style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  {interestedCount!.toLocaleString()} สนใจ
+              {goingCount! > 0 && (
+                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(232,0,58,0.1)', color: 'var(--accent)' }}>
+                  <Users size={9} />
+                  {goingCount!.toLocaleString()} จะไป
                 </span>
               )}
             </div>
