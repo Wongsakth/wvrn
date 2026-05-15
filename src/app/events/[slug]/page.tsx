@@ -79,6 +79,35 @@ export default function EventDetailPage() {
     return `${base}/api/og?${params}`
   })() : ''
 
+  // inject OG meta tags
+  useEffect(() => {
+    if (!event || !ogImageUrl) return
+    const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://wvrn.vercel.app'
+    const url  = `${base}/events/${event.slug || event.id}`
+    const desc = [
+      event.artists?.map((a: any) => a.name_en || a.name).join(', '),
+      event.venue?.name,
+      event.start_date ? new Date(event.start_date).toLocaleDateString('th-TH', { dateStyle: 'long' }) : '',
+    ].filter(Boolean).join(' · ')
+
+    const setMeta = (prop: string, val: string, attr = 'property') => {
+      let el = document.querySelector(`meta[${attr}="${prop}"]`) as HTMLMetaElement
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, prop); document.head.appendChild(el) }
+      el.content = val
+    }
+
+    document.title = `${event.title} | WVRN`
+    setMeta('og:title',       event.title)
+    setMeta('og:description', desc)
+    setMeta('og:image',       ogImageUrl)
+    setMeta('og:url',         url)
+    setMeta('og:type',        'website')
+    setMeta('og:site_name',   'WVRN')
+    setMeta('twitter:card',   'summary_large_image', 'name')
+    setMeta('twitter:title',  event.title, 'name')
+    setMeta('twitter:image',  ogImageUrl, 'name')
+  }, [event, ogImageUrl])
+
     if (loading) return (
     <div className="min-h-screen" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
