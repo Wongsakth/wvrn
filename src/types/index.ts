@@ -6,15 +6,19 @@ export type Genre       = 'pop' | 'rock' | 'indie' | 'hiphop' | 'jazz' | 'electr
 export type EventType   = 'concert' | 'festival' | 'acoustic' | 'showcase' | 'fanmeeting' | 'other'
 
 export interface Artist {
-  id:           string
-  name:         string
-  name_en?:     string
-  bio?:         string
-  image_url?:   string
-  genres:       Genre[]
-  facebook_url?: string
+  id:             string
+  name:           string
+  name_en?:       string
+  slug?:          string        // ← เพิ่ม
+  bio?:           string
+  image_url?:     string
+  genres:         Genre[]
+  facebook_url?:  string
   instagram_url?: string
-  created_at:   string
+  tiktok_url?:    string        // ← เพิ่ม
+  website_url?:   string        // ← เพิ่ม
+  label_url?:     string        // ← เพิ่ม
+  created_at:     string
 }
 
 export interface Venue {
@@ -32,12 +36,13 @@ export interface Venue {
 export interface Event {
   id:           string
   title:        string
+  slug?:        string          // ← เพิ่ม (ใช้ใน event link แล้ว)
   description?: string
   event_type:   EventType
   status:       EventStatus
-  start_date:   string       // ISO date string
+  start_date:   string
   end_date?:    string
-  start_time?:  string       // HH:mm
+  start_time?:  string
   end_time?:    string
   venue_id?:    string
   venue?:       Venue
