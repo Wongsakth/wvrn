@@ -47,7 +47,7 @@ export default function ArtistsPage() {
             .gte('start_date', new Date().toISOString().slice(0, 10))
             .order('start_date', { ascending: true }),
         ])
-
+alert(JSON.stringify(arRes.data?.[0]))  // ← ใช้ alert แทน console.log
         setArtists(arRes.data || [])
 console.log('first artist:', arRes.data?.[0])
 console.log('arRes:', arRes)        // ← เพิ่ม
