@@ -419,7 +419,7 @@ export default function EventDetailPage() {
 function ArtistRow({ artist }: { artist: any }) {
   return (
     <div
-      onClick={() => { window.location.href = `/artists/${artist.id}` }}
+      onClick={() => { window.location.href = `/artists/${artist.slug || artist.id}` }}
       suppressHydrationWarning
       className="flex items-center gap-3 p-2.5 rounded-xl transition-colors hover:bg-[var(--surface-2)] cursor-pointer">
       {/* Avatar */}
@@ -447,17 +447,6 @@ function ArtistRow({ artist }: { artist: any }) {
         {artist.name_en && <p className="text-[11px] text-muted">{artist.name_en}</p>}
       </div>
 
-      {/* Time */}
-      {artist.artist_time && (
-        <div className="flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg"
-          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-          <Clock size={10} className="text-muted" />
-          <span className="text-[12px] font-medium" style={{ color: 'var(--accent)' }}>
-            {artist.artist_time.slice(0, 5)} น.
-          </span>
-        </div>
-      )}
-
       {/* Social links */}
       <div className="flex items-center gap-1 shrink-0">
         {artist.instagram_url && (
@@ -476,6 +465,17 @@ function ArtistRow({ artist }: { artist: any }) {
             className="icon-btn w-7 h-7"><Globe size={13} /></a>
         )}
       </div>
+
+      {/* Time */}
+      {artist.artist_time && (
+        <div className="flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg"
+          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+          <Clock size={10} className="text-muted" />
+          <span className="text-[12px] font-medium" style={{ color: 'var(--accent)' }}>
+            {artist.artist_time.slice(0, 5)} น.
+          </span>
+        </div>
+      )}
     </div>
   )
 }
