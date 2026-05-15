@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   CalendarCheck,
   Ticket,
-  Users,   
+  Users,
+  CalendarPlus,
 } from 'lucide-react'
 
 import Navbar from '@/components/layout/Navbar'
@@ -29,6 +30,7 @@ import {
   formatPrice,
   statusLabel,
   genreTagClass,
+  googleCalendarUrl,
 } from '@/lib/utils'
 
 import { createClient } from '@/lib/supabase'
@@ -1028,16 +1030,14 @@ function EventRow({
                 <Ticket size={13} />
               </a>
             )}
-            {!isPast && isLoggedIn && (
-              <button onClick={e => { e.stopPropagation(); toggleAttendance(event.id, attendStatus) }}
-                className="text-[10px] px-2 py-1 rounded-lg border border-zinc-700 bg-zinc-900 whitespace-nowrap">
-                {attendStatus === 'going' ? 'จะไป' : attendStatus === 'attended' ? 'ไปแล้ว' : '+ ไป'}
+            {!isPast && (
+              <button
+                onClick={e => { e.stopPropagation(); window.open(googleCalendarUrl(event), '_blank') }}
+                title="เพิ่มในปฏิทิน"
+                className="w-8 h-8 rounded-lg border border-zinc-700 bg-zinc-900 flex items-center justify-center transition-all hover:border-zinc-500">
+                <CalendarPlus size={13} className="text-zinc-400" />
               </button>
             )}
-            <button onClick={e => { e.stopPropagation(); toggleLike(event.id) }}
-              className="w-8 h-8 rounded-lg border border-zinc-700 bg-zinc-900 flex items-center justify-center">
-              <Heart size={13} className={liked ? 'fill-pink-500 text-pink-500' : 'text-zinc-400'} />
-            </button>
           </div>
         </div>
 
