@@ -6,18 +6,14 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/og', '/apply-editor'],
       },
       {
-        // Allow Facebook/social crawlers to scrape event pages
         userAgent: 'facebookexternalhit',
         allow: '/',
-        disallow: ['/admin/'],
       },
       {
-        userAgent: 'Twitterbot',
+        userAgent: 'Facebot',
         allow: '/',
-        disallow: ['/admin/'],
       },
     ],
     sitemap: 'https://wvrn.vercel.app/sitemap.xml',
