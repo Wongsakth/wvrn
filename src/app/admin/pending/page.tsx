@@ -181,7 +181,8 @@ export default function PendingPage() {
           <Loader2 size={24} className="animate-spin text-muted" />
         </div>
       ) : tab === 'events' ? (
-        submissions.length === 0 ? (
+        <>
+        {submissions.length === 0 ? (
         <div className="rounded-2xl p-16 text-center"
           style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
           <CheckCircle2 size={40} className="mx-auto mb-4" style={{ color: '#1D9E75' }} />
@@ -311,7 +312,8 @@ export default function PendingPage() {
             </div>
           ))}
         </div>
-      ))
+      )}
+      </>
       ) : (
         /* Editor Applications tab */
         editorApps.length === 0 ? (
