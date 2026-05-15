@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   CalendarCheck,
   Ticket,
+  Users,   
 } from 'lucide-react'
 
 import Navbar from '@/components/layout/Navbar'
