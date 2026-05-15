@@ -176,6 +176,10 @@ export default function EventsAdminPage() {
         ticket_sale_end:      form.ticket_sale_end      || null,
         ticket_announce_date: form.ticket_announce_date || null,
         featured_type:        form.featured_type        || null,
+        slug: form.title
+          ? (form.title.toLowerCase().replace(/[^a-z0-9\u0e00-\u0e7f\s]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim())
+            + '-' + Math.random().toString(36).slice(2,8)
+          : null,
       }
 
       let eventId = editTarget?.id
