@@ -71,7 +71,7 @@ export default function ArtistsAdminPage() {
     setLoading(true)
     try {
       const { data, error } = await sb
-        .from('artists').select('*').order('name')
+        .from('artists').select('*').is('deleted_at', null).order('name')
       if (error) throw error
       setArtists(data || [])
     } catch (e: any) {
@@ -164,7 +164,7 @@ export default function ArtistsAdminPage() {
   // ─── Delete ───────────────────────────────────────────────
   async function handleDelete(id: string) {
     try {
-      const { error } = await sb.from('artists').delete().eq('id', id)
+      const { error } = await sb.from('artists').update({ deleted_at: new Date().toISOString() }).eq('id', id)
       if (error) throw error
       toast.success('ลบศิลปินแล้ว')
       setDeleteId(null)

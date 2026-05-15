@@ -77,9 +77,9 @@ export default function EventsAdminPage() {
     setLoading(true)
     try {
       const [evRes, arRes, veRes] = await Promise.all([
-        sb.from('events').select('*, venue:venues(name,province), event_artists(sort_order,start_time,is_headliner,artist:artists(id,name))').order('start_date', { ascending: false }),
-        sb.from('artists').select('id,name').order('name'),
-        sb.from('venues').select('id,name,province').order('name'),
+        sb.from('events').select('*, venue:venues(name,province), event_artists(sort_order,start_time,is_headliner,artist:artists(id,name))').is('deleted_at', null).order('start_date', { ascending: false }),
+        sb.from('artists').select('id,name').is('deleted_at', null).order('name'),
+        sb.from('venues').select('id,name,province').is('deleted_at', null).order('name'),
       ])
       if (evRes.error) throw evRes.error
       setEvents((evRes.data || []).map((ev: any) => ({
@@ -220,7 +220,9 @@ export default function EventsAdminPage() {
 
   async function handleDelete(id: string) {
     try {
-      const { error } = await sb.from('events').delete().eq('id', id)
+      const { error } = await sb.from('events')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
       if (error) throw error
       toast.success('ลบ Event แล้ว')
       setDeleteId(null)

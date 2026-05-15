@@ -29,7 +29,7 @@ export default function VenuesAdminPage() {
   async function load() {
     setLoading(true)
     try {
-      const { data, error } = await sb.from('venues').select('*').order('name')
+      const { data, error } = await sb.from('venues').select('*').is('deleted_at', null).order('name')
       if (error) throw error
       setVenues(data || [])
     } catch (e: any) {
@@ -90,7 +90,9 @@ export default function VenuesAdminPage() {
 
   async function handleDelete(id: string) {
     try {
-      const { error } = await sb.from('venues').delete().eq('id', id)
+      const { error } = await sb.from('venues')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
       if (error) throw error
       toast.success('ลบสถานที่แล้ว')
       setDeleteId(null)
@@ -262,7 +264,7 @@ export default function VenuesAdminPage() {
             </div>
             <h3 className="text-[15px] font-medium text-primary text-center mb-2">ลบสถานที่นี้?</h3>
             <p className="text-[12px] text-muted text-center mb-5">
-              Event ที่ผูกกับสถานที่นี้จะยังคงอยู่ แต่จะไม่แสดงชื่อสถานที่
+              สถานที่จะถูกซ่อนจากระบบ แต่ข้อมูลยังคงอยู่ใน database
             </p>
             <div className="flex gap-2">
               <button onClick={() => setDeleteId(null)} className="btn-ghost flex-1 py-2.5 text-[13px]">ยกเลิก</button>

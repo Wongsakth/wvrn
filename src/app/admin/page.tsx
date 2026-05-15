@@ -22,10 +22,10 @@ export default function AdminDashboard() {
     try {
       const [pendRes, evRes, arRes, vRes, recentRes] = await Promise.all([
         sb.from('event_submissions').select('*').eq('status','pending').order('created_at', { ascending: true }),
-        sb.from('events').select('id', { count: 'exact', head: true }),
-        sb.from('artists').select('id', { count: 'exact', head: true }),
-        sb.from('venues').select('id', { count: 'exact', head: true }),
-        sb.from('events').select('id,title,start_date,province,venue:venues(name)').order('created_at', { ascending: false }).limit(5),
+        sb.from('events').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        sb.from('artists').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        sb.from('venues').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        sb.from('events').select('id,title,slug,start_date,province,venue:venues(name)').is('deleted_at', null).order('created_at', { ascending: false }).limit(5),
       ])
       setPending(pendRes.data || [])
       setRecent(recentRes.data || [])
