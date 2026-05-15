@@ -13,6 +13,7 @@ import Navbar from '@/components/layout/Navbar'
 import EventLineupTimeline from '@/components/events/EventLineupTimeline'
 import TicketSaleWidget from '@/components/events/TicketSaleWidget'
 import { createClient } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
 import { cn, formatPrice, statusLabel, genreTagClass, googleCalendarUrl } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -20,10 +21,14 @@ export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const id = slug  // slug อาจเป็น uuid หรือ slug จริง
   const router   = useRouter()
-  const [event,   setEvent]   = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [liked,   setLiked]   = useState(false)
-  const [saved,   setSaved]   = useState(false)
+  const [event,      setEvent]      = useState<any>(null)
+  const [loading,    setLoading]    = useState(true)
+  const [liked,      setLiked]      = useState(false)
+  const [saved,      setSaved]      = useState(false)
+  const [myType,     setMyType]     = useState<'interested'|'going'|null>(null)
+  const [interested, setInterested] = useState(0)
+  const [going,      setGoing]      = useState(0)
+  const { user } = useAuth()
   const sb = createClient()
 
   useEffect(() => {
@@ -59,10 +64,62 @@ export default function EventDetailPage() {
         .map(ea => ({ ...ea.artist, artist_time: ea.start_time, is_headliner: ea.is_headliner }))
 
       setEvent({ ...data, artists: sortedArtists })
+
+      // Load social proof counts
+      const { data: counts } = await sb
+        .from('event_interactions')
+        .select('type')
+        .eq('event_id', data.id)
+      setInterested((counts || []).filter((r: any) => r.type === 'interested').length)
+      setGoing((counts || []).filter((r: any) => r.type === 'going').length)
+
       setLoading(false)
     }
     load()
   }, [id])
+
+  // Load my interaction
+  useEffect(() => {
+    if (!user || !event) return
+    sb.from('event_interactions')
+      .select('type')
+      .eq('event_id', event.id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setMyType(data?.type ?? null))
+  }, [user, event?.id])
+
+  async function toggleInteraction(type: 'interested' | 'going') {
+    if (!user) { toast.error('กรุณา Login ก่อนครับ'); window.location.href = '/login'; return }
+    const prev = myType
+    const isSame = prev === type
+
+    // optimistic update
+    if (prev === 'interested') setInterested(v => v - 1)
+    if (prev === 'going')      setGoing(v => v - 1)
+    if (!isSame && type === 'interested') setInterested(v => v + 1)
+    if (!isSame && type === 'going')      setGoing(v => v + 1)
+    setMyType(isSame ? null : type)
+
+    try {
+      if (isSame) {
+        await sb.from('event_interactions').delete()
+          .eq('event_id', event.id).eq('user_id', user.id)
+      } else {
+        await sb.from('event_interactions').upsert({
+          event_id: event.id, user_id: user.id, type,
+        }, { onConflict: 'event_id,user_id' })
+      }
+    } catch {
+      // rollback
+      setMyType(prev)
+      if (prev === 'interested') setInterested(v => v + 1)
+      if (prev === 'going')      setGoing(v => v + 1)
+      if (!isSame && type === 'interested') setInterested(v => v - 1)
+      if (!isSame && type === 'going')      setGoing(v => v - 1)
+      toast.error('เกิดข้อผิดพลาด')
+    }
+  }
 
 
   // Build OG image URL
@@ -180,6 +237,27 @@ export default function EventDetailPage() {
               )}
 
               <div className="p-5">
+                {/* Social Proof */}
+                {(interested > 0 || going > 0) && (
+                  <div className="flex items-center gap-3 mb-4 px-3 py-2 rounded-xl"
+                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                    <Users size={13} style={{ color: 'var(--accent)' }} />
+                    {interested > 0 && (
+                      <span className="text-[12px] text-secondary">
+                        <span className="font-medium text-primary">{interested.toLocaleString()}</span> สนใจ
+                      </span>
+                    )}
+                    {interested > 0 && going > 0 && (
+                      <span className="text-muted text-[12px]">·</span>
+                    )}
+                    {going > 0 && (
+                      <span className="text-[12px] text-secondary">
+                        <span className="font-medium" style={{ color: 'var(--accent)' }}>{going.toLocaleString()}</span> จะไป
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Tags */}
                 <div className="flex gap-2 flex-wrap mb-3">
                   <span className={cn('tag', status.cls)}>{status.label}</span>
@@ -297,39 +375,44 @@ export default function EventDetailPage() {
           <div className="flex flex-col gap-4">
 
             {/* Action buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setLiked(v => !v)}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium transition-all"
-                style={{
-                  background: liked ? 'var(--accent-muted)' : 'var(--surface-1)',
-                  border: `1px solid ${liked ? 'var(--accent)' : 'var(--border)'}`,
-                  color: liked ? 'var(--accent)' : 'var(--text-secondary)',
-                }}>
-                <Heart size={15} style={{ fill: liked ? 'var(--accent)' : 'none' }} />
-                {liked ? 'ถูกใจแล้ว' : 'ถูกใจ'}
-              </button>
-              <button
-                onClick={() => setSaved(v => !v)}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium transition-all"
-                style={{
-                  background: saved ? 'var(--accent-muted)' : 'var(--surface-1)',
-                  border: `1px solid ${saved ? 'var(--accent)' : 'var(--border)'}`,
-                  color: saved ? 'var(--accent)' : 'var(--text-secondary)',
-                }}>
-                <Bookmark size={15} style={{ fill: saved ? 'var(--accent)' : 'none' }} />
-                {saved ? 'บันทึกแล้ว' : 'บันทึก'}
-              </button>
-              <button
-                onClick={() => window.open(googleCalendarUrl(event), '_blank')}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all btn-ghost">
-                <CalendarPlus size={15} /> ปฏิทิน
-              </button>
-              <button
-                onClick={handleShare}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all btn-ghost">
-                <Share2 size={15} /> แชร์
-              </button>
+            {/* Social proof buttons */}
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => toggleInteraction('interested')}
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium transition-all"
+                  style={{
+                    background: myType === 'interested' ? 'var(--accent-muted)' : 'var(--surface-1)',
+                    border: `1px solid ${myType === 'interested' ? 'var(--accent)' : 'var(--border)'}`,
+                    color: myType === 'interested' ? 'var(--accent)' : 'var(--text-secondary)',
+                  }}>
+                  <Heart size={15} style={{ fill: myType === 'interested' ? 'var(--accent)' : 'none' }} />
+                  สนใจ{interested > 0 ? ` · ${interested.toLocaleString()}` : ''}
+                </button>
+                <button
+                  onClick={() => toggleInteraction('going')}
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium transition-all"
+                  style={{
+                    background: myType === 'going' ? 'var(--accent-muted)' : 'var(--surface-1)',
+                    border: `1px solid ${myType === 'going' ? 'var(--accent)' : 'var(--border)'}`,
+                    color: myType === 'going' ? 'var(--accent)' : 'var(--text-secondary)',
+                  }}>
+                  <Users size={15} />
+                  จะไป{going > 0 ? ` · ${going.toLocaleString()}` : ''}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => window.open(googleCalendarUrl(event), '_blank')}
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all btn-ghost">
+                  <CalendarPlus size={15} /> ปฏิทิน
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all btn-ghost">
+                  <Share2 size={15} /> แชร์
+                </button>
+              </div>
             </div>
 
             {/* Ticket widget */}
