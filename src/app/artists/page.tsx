@@ -30,7 +30,7 @@ export default function ArtistsPage() {
 
       try {
         const [arRes, evRes] = await Promise.all([
-          sb.from('artists').select('*').order('name'),
+          sb.from('artists').select('id, name, name_en, slug, bio, image_url, genres, facebook_url, instagram_url, tiktok_url, website_url, label_url, created_at').order('name'),
 
           sb.from('events')
             .select(`
