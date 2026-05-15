@@ -1024,7 +1024,7 @@ function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>;
   const sb = createClient()
 
   useEffect(() => {
-    sb.from('artists').select('id,name,name_en,image_url,genres,follower_count')
+    sb.from('artists').select('id,name,name_en,slug,image_url,genres,follower_count')
       .order('follower_count', { ascending: false })
       .then(({ data }) => { setArtists(data || []); setLoading(false) })
   }, [])
