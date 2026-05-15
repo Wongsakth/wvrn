@@ -384,7 +384,7 @@ export default function ArtistsPage() {
                           alt={artist.name}
                           className="w-12 h-12 rounded-xl object-cover shrink-0"
                           onClick={() => {
-                            window.location.href = `/artists/${artist.id}`
+                            window.location.href = `/artists/${artist.slug || artist.id}`
                           }}
                           style={{ cursor: 'pointer' }}
                         />
@@ -396,7 +396,7 @@ export default function ArtistsPage() {
                             color: 'var(--accent)'
                           }}
                           onClick={() => {
-                            window.location.href = `/artists/${artist.id}`
+                            window.location.href = `/artists/${artist.slug || artist.id}`
                           }}
                         >
                           {(artist.name_en || artist.name).slice(0, 2)}
@@ -406,7 +406,7 @@ export default function ArtistsPage() {
                       <div
                         className="flex-1 min-w-0 cursor-pointer"
                         onClick={() => {
-                          window.location.href = `/artists/${artist.id}`
+                          window.location.href = `/artists/${artist.slug || artist.id}`
                         }}
                       >
                         <p className="text-[14px] font-medium text-primary leading-tight truncate">
