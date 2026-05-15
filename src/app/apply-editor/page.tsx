@@ -11,7 +11,29 @@ export default function ApplyEditorPage() {
   const [existing, setExisting] = useState<any>(null)
   const [loading,  setLoading]  = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [form, setForm] = useState({ reason: '', social_url: '', sample_url: '' })
+  const [form, setForm] = useState({
+    reason:     '',
+    social_url: '',
+    sample_url: '',
+    phone:      '',
+    apply_type: [] as string[],
+  })
+
+  const APPLY_TYPES = [
+    { value: 'event_owner',    label: 'เจ้าของงาน / ผู้จัดงาน',        desc: 'มีสิทธิ์เพิ่ม event ของตัวเอง' },
+    { value: 'venue_owner',    label: 'เจ้าของสถานที่ / ร้าน',          desc: 'มีสิทธิ์จัดการ event ที่ venue ตัวเอง' },
+    { value: 'artist',         label: 'ศิลปิน / วง',                    desc: 'อัปเดตตารางงานของตัวเอง' },
+    { value: 'artist_manager', label: 'ผู้จัดการศิลปิน / ทีมงาน',       desc: 'จัดการข้อมูลศิลปินในสังกัด' },
+  ]
+
+  function toggleType(val: string) {
+    setForm(f => ({
+      ...f,
+      apply_type: f.apply_type.includes(val)
+        ? f.apply_type.filter(t => t !== val)
+        : [...f.apply_type, val],
+    }))
+  }
   const sb = createClient()
 
   useEffect(() => {
@@ -23,7 +45,9 @@ export default function ApplyEditorPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.reason.trim()) { toast.error('กรุณากรอกเหตุผล'); return }
+    if (!form.reason.trim())        { toast.error('กรุณากรอกเหตุผล'); return }
+    if (!form.phone.trim())         { toast.error('กรุณากรอกเบอร์โทร'); return }
+    if (form.apply_type.length === 0) { toast.error('กรุณาเลือกประเภทอย่างน้อย 1 ข้อ'); return }
     setSubmitting(true)
     try {
       const { error } = await sb.from('editor_applications').insert({
@@ -31,6 +55,8 @@ export default function ApplyEditorPage() {
         reason:     form.reason.trim(),
         social_url: form.social_url.trim() || null,
         sample_url: form.sample_url.trim() || null,
+        phone:      form.phone.trim(),
+        apply_type: form.apply_type,
         status:     'pending',
       })
       if (error) throw error
@@ -127,13 +153,58 @@ export default function ApplyEditorPage() {
             <div className="rounded-2xl p-5 flex flex-col gap-4"
               style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
 
+              {/* ประเภทที่ขอ — required */}
+              <div>
+                <label className="block text-[11px] font-medium text-muted uppercase tracking-wide mb-2">
+                  คุณเป็น... * (เลือกได้หลายข้อ)
+                </label>
+                <div className="flex flex-col gap-2">
+                  {APPLY_TYPES.map(t => {
+                    const checked = form.apply_type.includes(t.value)
+                    return (
+                      <button key={t.value} type="button"
+                        onClick={() => toggleType(t.value)}
+                        className="flex items-start gap-3 p-3 rounded-xl text-left transition-all"
+                        style={{
+                          background: checked ? 'rgba(124,58,237,.08)' : 'var(--surface-2)',
+                          border: `1px solid ${checked ? '#7C3AED50' : 'var(--border)'}`,
+                        }}>
+                        <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5"
+                          style={{
+                            background: checked ? '#7C3AED' : 'transparent',
+                            border: `1.5px solid ${checked ? '#7C3AED' : 'var(--border)'}`,
+                          }}>
+                          {checked && <span style={{ color: 'white', fontSize: 11 }}>✓</span>}
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-medium text-primary">{t.label}</p>
+                          <p className="text-[11px] text-muted">{t.desc}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* เบอร์โทร — required */}
               <div>
                 <label className="block text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">
-                  เหตุผลที่อยากเป็น Editor *
+                  เบอร์โทรศัพท์ *
+                </label>
+                <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="0812345678"
+                  type="tel" className="input-theme text-[13px] w-full" />
+                <p className="text-[10px] text-muted mt-1">Admin จะติดต่อเพื่อยืนยันตัวตน ไม่แสดงต่อสาธารณะ</p>
+              </div>
+
+              {/* เหตุผล */}
+              <div>
+                <label className="block text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">
+                  เหตุผลเพิ่มเติม *
                 </label>
                 <textarea value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
-                  placeholder="บอกเราว่าคุณสนใจด้านดนตรี Concert อย่างไร และจะช่วย WVRN ได้อย่างไรบ้าง..."
-                  rows={4} className="input-theme text-[13px] resize-none w-full" required />
+                  placeholder="บอกเพิ่มเติมว่าอยากช่วย WVRN ด้านไหน หรือมีงานที่อยากเพิ่มข้อมูลเข้ามาบ้าง..."
+                  rows={3} className="input-theme text-[13px] resize-none w-full" required />
               </div>
 
               <div>

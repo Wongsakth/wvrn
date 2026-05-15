@@ -339,7 +339,24 @@ export default function PendingPage() {
                   <div className="flex items-center gap-2 mb-3">
                     <User size={14} className="text-muted" />
                     <span className="text-[12px] text-muted font-mono">{app.user_id.slice(0,8)}...</span>
+                    {(app as any).phone && (
+                      <span className="text-[12px] text-muted">· 📞 {(app as any).phone}</span>
+                    )}
                   </div>
+                  {(app as any).apply_type?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {(app as any).apply_type.map((t: string) => (
+                        <span key={t} className="text-[11px] px-2.5 py-1 rounded-full font-medium"
+                          style={{ background: 'rgba(124,58,237,.1)', color: '#7C3AED' }}>
+                          {t === 'event_owner'    ? 'เจ้าของงาน'
+                          : t === 'venue_owner'   ? 'เจ้าของสถานที่'
+                          : t === 'artist'        ? 'ศิลปิน/วง'
+                          : t === 'artist_manager'? 'ผู้จัดการศิลปิน'
+                          : t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className="mb-3 p-3 rounded-xl" style={{ background: 'var(--surface-2)' }}>
                     <p className="text-[11px] text-muted mb-1">เหตุผล</p>
                     <p className="text-[13px] text-primary">{app.reason}</p>
