@@ -882,19 +882,28 @@ function EventRow({
 }: any) {
 
   const start = parseISO(event.start_date)
-
   const liked = likedIds.has(event.id)
-
-  const attendStatus =
-    attendance.get(event.id) || null
-
-  const isFollowed =
-    event.artists?.some((a: any) =>
-      followedIds.has(a.id)
-    )
-
+  const attendStatus = attendance.get(event.id) || null
+  const isFollowed = event.artists?.some((a: any) => followedIds.has(a.id))
   const featured = event.featured_type
   const poster   = event.poster_url
+
+  // Social proof counts (lazy load)
+  const [goingCount,      setGoingCount]      = useState<number | null>(null)
+  const [interestedCount, setInterestedCount] = useState<number | null>(null)
+  const sb2 = createClient()
+
+  useEffect(() => {
+    if (isPast) return
+    sb2.from('event_interactions')
+      .select('type')
+      .eq('event_id', event.id)
+      .then(({ data }) => {
+        if (!data) return
+        setGoingCount(data.filter((r: any) => r.type === 'going').length)
+        setInterestedCount(data.filter((r: any) => r.type === 'interested').length)
+      })
+  }, [event.id])
 
   return (
     <div
@@ -980,6 +989,24 @@ function EventRow({
               <span className="flex items-center gap-1"><Clock size={11} />{event.start_time.slice(0,5)}</span>
             )}
           </div>
+
+          {/* Social proof */}
+          {!isPast && (goingCount !== null || interestedCount !== null) && (goingCount! > 0 || interestedCount! > 0) && (
+            <div className="flex items-center gap-2 mt-1.5">
+              {goingCount! > 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(232,0,58,0.1)', color: 'var(--accent)' }}>
+                  🔥 {goingCount!.toLocaleString()} จะไป
+                </span>
+              )}
+              {interestedCount! > 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full text-zinc-400"
+                  style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  {interestedCount!.toLocaleString()} สนใจ
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* RIGHT */}
