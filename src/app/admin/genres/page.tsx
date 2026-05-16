@@ -10,8 +10,8 @@ import toast from 'react-hot-toast'
 
 interface Genre {
   id:         string
-  name:       string
-  name_th:    string | null
+  label_en:   string
+  label_th:   string | null
   color:      string
   emoji:      string
   sort_order: number
@@ -32,7 +32,7 @@ const PRESET_EMOJIS = [
 ]
 
 const EMPTY: Omit<Genre,'id'|'created_at'> = {
-  name: '', name_th: '', color: '#A78BFA',
+  label_en: '', label_th: '', color: '#A78BFA',
   emoji: '🎵', sort_order: 0, is_active: true,
 }
 
@@ -77,8 +77,8 @@ export default function GenresAdminPage() {
   function openEdit(g: Genre) {
     setEditTarget(g)
     setForm({
-      name:       g.name,
-      name_th:    g.name_th    ?? '',
+      label_en:   g.label_en ?? '',
+      label_th:   g.label_th   ?? '',
       color:      g.color,
       emoji:      g.emoji,
       sort_order: g.sort_order,
@@ -94,8 +94,8 @@ export default function GenresAdminPage() {
     setSaving(true)
     try {
       const payload = {
-        name:       form.name.trim(),
-        name_th:    form.name_th?.trim() || null,
+        label_en:   form.label_en.trim(),
+        label_th:   form.label_th?.trim() || null,
         color:      form.color,
         emoji:      form.emoji,
         sort_order: Number(form.sort_order) || 0,
@@ -184,7 +184,7 @@ export default function GenresAdminPage() {
             <span key={g.id}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium"
               style={{ background: g.color + '20', color: g.color, border: `1px solid ${g.color}40` }}>
-              {g.emoji} {g.name}
+              {g.emoji} {g.label_en}
             </span>
           ))}
         </div>
@@ -243,17 +243,17 @@ export default function GenresAdminPage() {
 
               {/* Name EN */}
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[14px] font-medium text-primary">{g.name}</span>
+                <span className="text-[14px] font-medium text-primary">{g.label_en}</span>
               </div>
 
               {/* Name TH */}
-              <span className="text-[12px] text-muted">{g.name_th ?? '—'}</span>
+              <span className="text-[12px] text-muted">{g.label_th ?? '—'}</span>
 
               {/* Color + Emoji tag preview */}
               <div>
                 <span className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium w-fit"
                   style={{ background: g.color + '20', color: g.color }}>
-                  {g.emoji} {g.name}
+                  {g.emoji} {g.label_en}
                 </span>
               </div>
 
@@ -312,15 +312,15 @@ export default function GenresAdminPage() {
               {/* Name EN */}
               <Field label="ชื่อแนวเพลง (English) *">
                 <input value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, label_en: e.target.value }))}
                   placeholder="เช่น Rock, Pop, Jazz"
                   className="input-theme text-[13px]" autoFocus />
               </Field>
 
               {/* Name TH */}
               <Field label="ชื่อภาษาไทย">
-                <input value={form.name_th ?? ''}
-                  onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))}
+                <input value={form.label_th ?? ''}
+                  onChange={e => setForm(f => ({ ...f, label_th: e.target.value }))}
                   placeholder="เช่น ร็อค, ป็อป, แจ๊ส"
                   className="input-theme text-[13px]" />
               </Field>
