@@ -450,46 +450,34 @@ export default function HomePage() {
 
     return base
       .filter(ev => {
-        if (
-          filters.province &&
-          ev.province !== filters.province
-        ) {
-          return false
+        // ── Province / Near Me ──
+        if (filters.nearMe && filters.province && ev.province !== filters.province) return false
+        if (!filters.nearMe && filters.province && ev.province !== filters.province) return false
+
+        // ── Date preset / range ──
+        if (filters.dateFrom) {
+          if (ev.start_date < filters.dateFrom) return false
+        }
+        if (filters.dateTo) {
+          if (ev.start_date > filters.dateTo) return false
         }
 
-        if (
-          filters.genre &&
-          !ev.genres?.includes(filters.genre)
-        ) {
-          return false
-        }
+        // ── Genre ──
+        if (filters.genre && !ev.genres?.includes(filters.genre)) return false
 
-        if (
-          filters.eventType &&
-          ev.event_type !== filters.eventType
-        ) {
-          return false
-        }
+        // ── Event type ──
+        if (filters.eventType && ev.event_type !== filters.eventType) return false
 
-        if (
-          filters.isFree &&
-          !ev.is_free
-        ) {
-          return false
-        }
+        // ── Free ──
+        if (filters.isFree && !ev.is_free) return false
 
+        // ── Search ──
         if (search) {
           const q = search.toLowerCase()
-
           const matched =
             ev.title?.toLowerCase().includes(q) ||
-            ev.artists?.some((a: any) =>
-              a.name?.toLowerCase().includes(q)
-            ) ||
-            ev.venue?.name
-              ?.toLowerCase()
-              .includes(q)
-
+            ev.artists?.some((a: any) => a.name?.toLowerCase().includes(q)) ||
+            ev.venue?.name?.toLowerCase().includes(q)
           if (!matched) return false
         }
 
@@ -508,6 +496,13 @@ export default function HomePage() {
   }, [
     events,
     filters,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.datePreset,
+    filters.nearMe,
+    filters.province,
+    filters.isFree,
+    filters.eventType,
     search,
     tab,
     followedIds,
