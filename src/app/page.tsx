@@ -526,19 +526,60 @@ export default function HomePage() {
     <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
 
-      <main className="max-w-screen-xl mx-auto px-4 py-6">
+      <main className="max-w-screen-xl mx-auto px-4 py-4">
 
-        {/* HERO */}
-        <div className="mb-6">
-          <span className="inline-block text-xs px-3 py-1 rounded-full bg-[var(--surface-1)] border border-[var(--border)] mb-3">
-            🎵 Never Miss a Show
-          </span>
-          <h1 className="text-4xl font-bold">WVRN</h1>
-          <p className="text-muted mt-1">ติดตามศิลปินที่ชอบ ไม่พลาดทุก Concert ในไทย</p>
+        {/* TOOLBAR - Tabs + Search */}
+        <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
+          <div className="flex bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-1">
+            {[
+              { id: 'all',       label: 'Shows',     icon: Music       },
+              { id: 'artists',   label: 'Artists',   icon: Heart       },
+              { id: 'following', label: 'Following', icon: CalendarCheck },
+              { id: 'ai',        label: 'For You',   icon: Sparkles    },
+            ].map(item => {
+              const Icon = item.icon
+              const needLogin = (item.id === 'following' || item.id === 'ai') && !isLoggedIn
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    if (needLogin) { window.location.href = '/login'; return }
+                    setTab(item.id as TabMode)
+                  }}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
+                    tab === item.id
+                      ? 'font-medium'
+                      : needLogin ? 'text-muted cursor-pointer' : 'text-muted hover:text-primary'
+                  )}
+                  style={tab === item.id ? { background: 'var(--accent)', color: 'var(--surface-0)' } : {}}
+                >
+                  <Icon size={14} />
+                  {item.label}
+                  {needLogin && <span className="text-[9px] opacity-60">🔒</span>}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl px-3 py-2">
+            <Search size={14} className="text-muted" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="ค้นหางาน..."
+              className="bg-transparent outline-none text-sm w-40"
+            />
+          </div>
         </div>
 
-        {/* ── ศิลปินที่ติดตาม ── */}
-        {isLoggedIn && followedArtistInfo.size > 0 && (
+        {/* 2-COLUMN LAYOUT */}
+        <div className="flex gap-5 items-start">
+
+        {/* ── LEFT: Main content ── */}
+        <div className="flex-1 min-w-0">
+
+        {/* ── ศิลปินที่ติดตาม - ย้ายไป sidebar แล้ว ── */}
+        {false && isLoggedIn && followedArtistInfo.size > 0 && (
           <div className="mb-6 rounded-2xl overflow-hidden border border-[var(--border)]">
             <div className="flex items-center justify-between px-4 py-3 bg-[var(--surface-1)] border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
@@ -606,8 +647,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* ── สถานที่ที่ติดตาม ── */}
-        {isLoggedIn && followedVenueIds.size > 0 && (
+        {/* ── สถานที่ที่ติดตาม - ย้ายไป sidebar แล้ว ── */}
+        {false && isLoggedIn && followedVenueIds.size > 0 && (
           <div className="mb-6 rounded-2xl overflow-hidden border border-[var(--border)]">
             <div className="flex items-center justify-between px-4 py-3 bg-[var(--surface-1)] border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
@@ -663,59 +704,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TOOLBAR */}
 
-        <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
-
-          {/* Tabs */}
-
-          <div className="flex bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-1">
-            {[
-              { id: 'all',       label: 'Shows',     icon: Music    },
-              { id: 'artists',   label: 'Artists',   icon: Heart    },
-              { id: 'following', label: 'Following',  icon: CalendarCheck },
-              { id: 'ai',        label: 'For You',   icon: Sparkles },
-            ].map(item => {
-              const Icon = item.icon
-              const needLogin = (item.id === 'following' || item.id === 'ai') && !isLoggedIn
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    if (needLogin) { window.location.href = '/login'; return }
-                    setTab(item.id as TabMode)
-                  }}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
-                    tab === item.id
-                      ? 'bg-pink-600 text-primary'
-                      : needLogin
-                      ? 'text-muted cursor-pointer'
-                      : 'text-muted hover:text-primary'
-                  )}
-                >
-                  <Icon size={14} />
-                  {item.label}
-                  {needLogin && <span className="text-[9px] opacity-60">🔒</span>}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Search */}
-
-          <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl px-3 py-2">
-            <Search size={14} />
-            <input
-              value={search}
-              onChange={e =>
-                setSearch(e.target.value)
-              }
-              placeholder="ค้นหางาน..."
-              className="bg-transparent outline-none text-sm"
-            />
-          </div>
-        </div>
 
         {/* FILTER */}
 
@@ -815,7 +804,7 @@ export default function HomePage() {
           tab !== 'ai' &&
           tab !== 'artists' &&
           view === 'list' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="flex flex-col gap-2">
 
               {upcomingEvents.map(ev => (
                 <EventRow
@@ -871,6 +860,124 @@ export default function HomePage() {
             </div>
           )}
 
+        </div>
+        {/* ── RIGHT: Sidebar ── */}
+        <div className="w-64 shrink-0 hidden lg:flex flex-col gap-4 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pb-4">
+
+          {/* Countdown - Next show from followed artists */}
+          {isLoggedIn && (() => {
+            const nextEv = events
+              .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => followedIds.has(a.id)))
+              .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
+            if (!nextEv) return null
+            const daysLeft = differenceInDays(parseISO(nextEv.start_date), new Date())
+            return (
+              <div className="rounded-xl p-4 cursor-pointer"
+                onClick={() => window.location.href = `/events/${nextEv.slug || nextEv.id}`}
+                style={{ background: 'var(--accent)', border: '1px solid var(--accent)' }}>
+                <p className="text-[9px] font-medium tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>NEXT FOR YOU</p>
+                <p className="text-[13px] font-medium text-white mb-2 line-clamp-2">{nextEv.title}</p>
+                <div className="flex gap-3">
+                  {[
+                    { val: daysLeft, label: 'days' },
+                    { val: new Date().getHours() > 0 ? 23 - new Date().getHours() : 0, label: 'hrs' },
+                    { val: 59 - new Date().getMinutes(), label: 'min' },
+                  ].map(u => (
+                    <div key={u.label} className="text-center">
+                      <div className="text-[22px] font-medium text-white leading-none">{String(u.val).padStart(2,'0')}</div>
+                      <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{u.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Artists you follow */}
+          {isLoggedIn && followedArtistInfo.size > 0 && (
+            <div className="rounded-xl overflow-hidden"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between px-3 py-2.5 border-b"
+                style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[10px] font-medium tracking-widest text-muted uppercase">Artists you follow</span>
+                <button onClick={() => window.location.href = '/artists'}
+                  className="text-[10px]" style={{ color: 'var(--accent)' }}>
+                  View all
+                </button>
+              </div>
+              <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border)' }}>
+                {Array.from(followedArtistInfo.entries()).slice(0, 5).map(([artistId, artist]) => {
+                  const nextEvent = events
+                    .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => a.id === artistId))
+                    .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
+                  const daysLeft = nextEvent ? differenceInDays(parseISO(nextEvent.start_date), new Date()) : null
+                  return (
+                    <div key={artistId}
+                      onClick={() => window.location.href = `/artists/${artist?.slug || artistId}`}
+                      className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-[var(--surface-2)] transition-colors">
+                      {artist?.image_url
+                        ? <img src={artist.image_url} alt={artist.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                        : <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-medium"
+                            style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
+                            {(artist?.name_en || artist?.name)?.slice(0,2)}
+                          </div>
+                      }
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium truncate text-primary">{artist?.name_en || artist?.name}</p>
+                        <p className="text-[10px] text-muted truncate">
+                          {nextEvent ? (daysLeft === 0 ? 'Today!' : `in ${daysLeft} days`) : 'No upcoming shows'}
+                        </p>
+                      </div>
+                      {daysLeft !== null && daysLeft <= 7 && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium"
+                          style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
+                          Soon
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Venues you follow */}
+          {isLoggedIn && followedVenueIds.size > 0 && (
+            <div className="rounded-xl overflow-hidden"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between px-3 py-2.5 border-b"
+                style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[10px] font-medium tracking-widest text-muted uppercase">Venues you follow</span>
+                <button onClick={() => window.location.href = '/venues'}
+                  className="text-[10px]" style={{ color: 'var(--accent)' }}>
+                  View all
+                </button>
+              </div>
+              <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border)' }}>
+                {Array.from(followedVenueIds).slice(0, 4).map(venueId => {
+                  const venueEvents = events.filter(ev => !isPastEvent(ev, today) && ev.venue_id === venueId)
+                  const venueName = venueEvents[0]?.venue?.name ?? venueId.slice(0,8)
+                  return (
+                    <div key={venueId}
+                      onClick={() => window.location.href = `/venues/${venueId}`}
+                      className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-[var(--surface-2)] transition-colors">
+                      <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
+                        style={{ background: 'var(--surface-2)' }}>
+                        <MapPin size={13} className="text-muted" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium truncate text-primary">{venueName}</p>
+                        <p className="text-[10px] text-muted">{venueEvents.length} upcoming shows</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+        </div>
+        </div>
       </main>
     </div>
   )
