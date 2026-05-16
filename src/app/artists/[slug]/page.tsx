@@ -29,7 +29,8 @@ export default function ArtistProfilePage() {
   const sb        = createClient()
 
   const [artist,   setArtist]   = useState<any>(null)
-  const [artistId, setArtistId] = useState<string | null>(null)  // ← FIX: lift id ออกมา
+  const [artistId, setArtistId] = useState<string | null>(null)
+  const [label,    setLabel]    = useState<any>(null)
   const [events,   setEvents]   = useState<any[]>([])
   const [followed, setFollowed] = useState(false)
   const [loading,  setLoading]  = useState(true)
@@ -44,8 +45,8 @@ export default function ArtistProfilePage() {
         const isUuid  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded)
 
         const { data: artistData, error } = isUuid
-          ? await sb.from('artists').select('*').eq('id', decoded).single()
-          : await sb.from('artists').select('*').eq('slug', decoded).single()
+          ? await sb.from('artists').select('*, label:labels(id,name,website_url,facebook_url)').eq('id', decoded).single()
+          : await sb.from('artists').select('*, label:labels(id,name,website_url,facebook_url)').eq('slug', decoded).single()
 
         if (error || !artistData) {
           setArtist(null)
@@ -54,7 +55,8 @@ export default function ArtistProfilePage() {
         }
 
         setArtist(artistData)
-        setArtistId(artistData.id)  // ← FIX: set id ออกมาให้ useEffect อื่นใช้ได้
+        setArtistId(artistData.id)
+        if (artistData.label) setLabel(artistData.label)
 
         const today = new Date().toISOString().slice(0, 10)
         const { data: evData } = await sb
@@ -123,12 +125,16 @@ export default function ArtistProfilePage() {
     </div>
   )
 
+  // label url: ถ้ามี label object ให้ใช้ website_url หรือ facebook_url จาก label
+  const labelUrl   = label?.website_url || label?.facebook_url || artist.label_url
+  const labelName  = label?.name || 'ค่ายเพลง'
+
   const socials = [
     { url: artist.instagram_url, icon: <Instagram size={16} />, label: 'Instagram', color: '#E1306C' },
     { url: artist.facebook_url,  icon: <Facebook  size={16} />, label: 'Facebook',  color: '#1877F2' },
     { url: artist.tiktok_url,    icon: <TikTokIcon size={16} />, label: 'TikTok',   color: '#010101' },
     { url: artist.website_url,   icon: <Globe      size={16} />, label: 'Website',  color: 'var(--accent)' },
-    { url: artist.label_url,     icon: <Building2  size={16} />, label: 'ค่ายเพลง', color: 'var(--text-muted)' },
+    { url: labelUrl,             icon: <Building2  size={16} />, label: labelName,  color: 'var(--text-muted)' },
   ].filter(s => s.url)
 
   return (
