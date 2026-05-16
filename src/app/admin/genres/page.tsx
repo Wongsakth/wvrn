@@ -221,8 +221,6 @@ export default function GenresAdminPage() {
             <span></span>
             <span>ชื่อ (EN)</span>
             <span>ชื่อ (TH)</span>
-            <span>สี + Emoji</span>
-            <span className="text-center">ลำดับ</span>
             <span className="text-center">สถานะ</span>
           </div>
 
@@ -233,7 +231,7 @@ export default function GenresAdminPage() {
                 !g.is_active && 'opacity-50',
               )}
               style={{
-                gridTemplateColumns: '32px 1fr 1fr 80px 80px 80px',
+                gridTemplateColumns: '32px 1fr 1fr 80px',
                 background: 'var(--surface-1)',
                 borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
               }}>
@@ -249,16 +247,6 @@ export default function GenresAdminPage() {
               {/* Name TH */}
               <span className="text-[12px] text-muted">{g.label_th ?? '—'}</span>
 
-              {/* Color + Emoji tag preview */}
-              <div>
-                <span className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium w-fit"
-                  style={{ background: g.color + '20', color: g.color }}>
-                  {g.emoji} {g.label_en}
-                </span>
-              </div>
-
-              {/* Sort order */}
-              <span className="text-[12px] text-muted text-center">{g.sort_order}</span>
 
               {/* Active toggle + actions */}
               <div className="flex items-center gap-1 justify-end">
