@@ -25,6 +25,7 @@ const EMPTY_FORM = {
   tiktok_url:    '',
   website_url:   '',
   label_url:     '',
+  label_id:      '' as string | null,
 }
 
 export default function ArtistsAdminPage() {
@@ -39,6 +40,7 @@ export default function ArtistsAdminPage() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [dupSuggestions, setDupSuggestions] = useState<any[]>([])
   const [genreList,  setGenreList]  = useState<{id:string;label_th:string;label_en:string;category:string}[]>([])
+  const [labelList,  setLabelList]  = useState<{id:string;name:string}[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const sb = createClient()
@@ -77,6 +79,8 @@ export default function ArtistsAdminPage() {
     load()
     sb.from('genres').select('id,label_th,label_en,category').order('category').order('label_en')
       .then(({ data }) => setGenreList(data || []))
+    sb.from('labels').select('id,name').is('deleted_at', null).order('name')
+      .then(({ data }) => setLabelList(data || []))
   }, [])
 
   // ─── Open form ────────────────────────────────────────────
@@ -101,6 +105,7 @@ export default function ArtistsAdminPage() {
       tiktok_url:    (artist as any).tiktok_url   ?? '',
       website_url:   (artist as any).website_url  ?? '',
       label_url:     (artist as any).label_url    ?? '',
+      label_id:      (artist as any).label_id     ?? null,
     })
     setImagePreview(artist.image_url ?? '')
     setShowForm(true)
@@ -135,6 +140,7 @@ export default function ArtistsAdminPage() {
         tiktok_url:    form.tiktok_url.trim()     || null,
         website_url:   form.website_url.trim()    || null,
         label_url:     form.label_url.trim()      || null,
+        label_id:      form.label_id                || null,
       }
 
       if (editTarget) {
@@ -287,6 +293,15 @@ export default function ArtistsAdminPage() {
                     )}
                   </div>
                   <div className="flex gap-1.5 mt-1 flex-wrap">
+                    {(artist as any).label_id && (() => {
+                      const lbl = labelList.find(l => l.id === (artist as any).label_id)
+                      return lbl ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full"
+                          style={{ background: 'var(--surface-2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                          🏷 {lbl.name}
+                        </span>
+                      ) : null
+                    })()}
                     {(artist.genres ?? []).map(g => {
                       const gc = genreList.find(x => x.id === g)
                       return (
@@ -552,7 +567,20 @@ export default function ArtistsAdminPage() {
                     />
                   </div>
 
-                  {/* Label / ค่ายเพลง */}
+                  {/* Label / ค่ายเพลง - dropdown */}
+                  <FormField label="ค่ายเพลง">
+                    <select
+                      value={form.label_id ?? ''}
+                      onChange={e => setForm(f => ({ ...f, label_id: e.target.value || null }))}
+                      className="input-theme text-[13px]">
+                      <option value="">— ไม่สังกัดค่าย —</option>
+                      {labelList.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </FormField>
+
+                  {/* Label / ค่ายเพลง URL */}
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
