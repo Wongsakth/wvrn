@@ -214,7 +214,7 @@ export default function GenresAdminPage() {
           {/* Column headers */}
           <div className="grid px-4 py-2 text-[10px] font-medium text-muted uppercase tracking-wide"
             style={{
-              gridTemplateColumns: '32px 1fr 1fr 80px 80px 80px',
+              gridTemplateColumns: '32px 1fr 1fr 80px',
               background: 'var(--surface-2)',
               borderBottom: '1px solid var(--border)',
             }}>
