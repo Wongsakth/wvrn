@@ -21,7 +21,6 @@ export default function Navbar() {
     return pathname.startsWith(href)
   }
 
-  // Bottom tabs — Profile แสดงเฉพาะ logged in / Login tab แสดงเฉพาะ guest
   const BOTTOM_TABS = [
     { href: '/',       label: 'หน้าหลัก', icon: Home   },
     { href: '/search', label: 'ค้นหา',    icon: Search },
@@ -43,10 +42,19 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 w-full h-[52px] flex items-center px-4 gap-3"
         style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(8px)' }}>
 
-        {/* Logo */}
+        {/* Logo + Tagline */}
         <Link href="/" className="flex items-center gap-2 mr-auto">
           <img src="/logo.png" alt="WVRN" className="w-7 h-7 rounded-md object-cover" />
           <span className="text-[17px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>WVRN</span>
+          <span className="hidden sm:inline-flex text-[10px] font-medium px-2.5 py-1 rounded-full"
+            style={{
+              background:  'rgba(232,0,58,0.1)',
+              color:       'var(--accent)',
+              border:      '1px solid rgba(232,0,58,0.2)',
+              letterSpacing: '1px',
+            }}>
+            NEVER MISS A SHOW
+          </span>
         </Link>
 
         {/* Desktop nav */}
@@ -121,9 +129,9 @@ export default function Navbar() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center"
         style={{ background: 'var(--surface-1)', borderTop: '1px solid var(--border)', height: 60, paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {BOTTOM_TABS.map(({ href, label, icon: Icon, ...rest }) => {
-          const active    = isActive(href)
-          const isSubmit  = (rest as any).isSubmit === true
-          const isLogin   = href === '/login'
+          const active   = isActive(href)
+          const isSubmit = (rest as any).isSubmit === true
+          const isLogin  = href === '/login'
           return (
             <Link key={href} href={href}
               className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all">
