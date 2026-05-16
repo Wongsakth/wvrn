@@ -20,6 +20,7 @@ export default function ArtistsPage() {
   const [genreFilter, setGenreFilter] = useState('')
   const [showFollowed,setShowFollowed]= useState(false)
   const [genreList,   setGenreList]   = useState<{id:string;label_th:string;label_en:string;category:string}[]>([])
+  const [showAllGenres, setShowAllGenres] = useState(false)
 
   const { user } = useAuth()
   const sb = createClient()
@@ -287,34 +288,70 @@ export default function ArtistsPage() {
           )}
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-none">
-          <button
-            onClick={() => setGenreFilter('')}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border',
-              !genreFilter
-                ? 'font-medium border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]'
-                : 'border-[var(--border)] text-secondary'
-            )}
-          >
-            ทั้งหมด
-          </button>
+        {/* Genre pills — sorted by count, show top 8 */}
+        {(() => {
+          const genreCounts = genreList.map(g => ({
+            ...g,
+            count: artists.filter(a => (a.genres ?? []).includes(g.id as any)).length,
+          })).filter(g => g.count > 0).sort((a, b) => b.count - a.count)
 
-          {genreList.map(g => (
-            <button
-              key={g.id}
-              onClick={() => setGenreFilter(genreFilter === g.id ? '' : g.id)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border whitespace-nowrap',
-                genreFilter === g.id
-                  ? 'font-medium border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]'
-                  : 'border-[var(--border)] text-secondary'
+          const visible = showAllGenres ? genreCounts : genreCounts.slice(0, 8)
+          const hidden  = genreCounts.length - 8
+
+          return (
+            <div className="flex flex-wrap gap-2 mb-5">
+              <button
+                onClick={() => setGenreFilter('')}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border',
+                  !genreFilter
+                    ? 'font-medium border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]'
+                    : 'border-[var(--border)] text-secondary'
+                )}
+              >
+                ทั้งหมด
+              </button>
+
+              {visible.map(g => (
+                <button
+                  key={g.id}
+                  onClick={() => setGenreFilter(genreFilter === g.id ? '' : g.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border whitespace-nowrap',
+                    genreFilter === g.id
+                      ? 'font-medium border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]'
+                      : 'border-[var(--border)] text-secondary'
+                  )}
+                >
+                  {g.label_th}
+                  <span className={cn(
+                    'text-[10px] px-1.5 py-0.5 rounded-full',
+                    genreFilter === g.id
+                      ? 'bg-[var(--accent)] text-white'
+                      : 'bg-[var(--surface-2)] text-muted'
+                  )}>{g.count}</span>
+                </button>
+              ))}
+
+              {!showAllGenres && hidden > 0 && (
+                <button
+                  onClick={() => setShowAllGenres(true)}
+                  className="px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border border-dashed border-[var(--border)] text-muted hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  + อีก {hidden} แนว
+                </button>
               )}
-            >
-              {g.label_th}
-            </button>
-          ))}
-        </div>
+              {showAllGenres && (
+                <button
+                  onClick={() => setShowAllGenres(false)}
+                  className="px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border border-dashed border-[var(--border)] text-muted"
+                >
+                  ย่อลง
+                </button>
+              )}
+            </div>
+          )
+        })()}
 
         {loading ? (
           <div className="flex items-center justify-center py-24 gap-2 text-muted">
