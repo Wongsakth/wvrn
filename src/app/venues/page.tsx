@@ -317,7 +317,7 @@ export default function VenuesPage() {
 
                           {/* See all */}
                           <button
-                            onClick={() => window.location.href = `/venues/${venue.id}`}
+                            onClick={() => window.location.href = `/venues/${venue.slug || venue.id}`}
                             className="flex items-center justify-center gap-1 text-[11px] pt-1 transition-colors hover:text-primary"
                             style={{ color: 'var(--accent)' }}>
                             ดูงานทั้งหมดของสถานที่นี้ <ChevronRight size={12} />
