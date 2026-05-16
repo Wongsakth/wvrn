@@ -143,8 +143,9 @@ export default function GenresAdminPage() {
   }
 
   const filtered = genres.filter(g =>
-    g.name.toLowerCase().includes(search.toLowerCase()) ||
-    (g.name_th ?? '').includes(search)
+    (g.label_en ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (g.label_th ?? '').includes(search) ||
+    (g.id ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
   const activeCount   = genres.filter(g => g.is_active).length
