@@ -1,18 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react'
 import { cn, PROVINCES } from '@/lib/utils'
+import { createClient } from '@/lib/supabase'
 import type { EventFilters, Genre, EventType } from '@/types'
-
-const GENRES: { id: Genre; label: string }[] = [
-  { id: 'pop',        label: 'Pop'        },
-  { id: 'rock',       label: 'Rock'       },
-  { id: 'indie',      label: 'Indie'      },
-  { id: 'hiphop',     label: 'Hip-Hop'    },
-  { id: 'jazz',       label: 'Jazz'       },
-  { id: 'electronic', label: 'Electronic' },
-  { id: 'folk',       label: 'Folk'       },
-]
 
 const EVENT_TYPES: { id: EventType; label: string }[] = [
   { id: 'concert',    label: 'Concert'    },
@@ -29,7 +20,14 @@ interface Props {
 }
 
 export default function FilterBar({ filters, onChange, totalCount }: Props) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded,  setExpanded]  = useState(false)
+  const [genreList, setGenreList] = useState<{id:string;label_th:string;label_en:string}[]>([])
+  const sb = createClient()
+
+  useEffect(() => {
+    sb.from('genres').select('id,label_th,label_en,category').order('category').order('label_en')
+      .then(({ data }) => setGenreList(data || []))
+  }, [])
 
   function chip(label: string, active: boolean, onClick: () => void) {
     return (
@@ -77,9 +75,9 @@ export default function FilterBar({ filters, onChange, totalCount }: Props) {
         <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-1">
           {chip('ทั้งหมด', !hasFilters, () => onChange({}))}
           {chip('ฟรี', !!filters.isFree, () => onChange({ ...filters, isFree: filters.isFree ? undefined : true }))}
-          {GENRES.slice(0, 4).map(g =>
-            chip(g.label, filters.genre === g.id, () =>
-              onChange({ ...filters, genre: filters.genre === g.id ? undefined : g.id })
+          {genreList.slice(0, 5).map(g =>
+            chip(g.label_th, filters.genre === g.id, () =>
+              onChange({ ...filters, genre: filters.genre === g.id ? undefined : (g.id as Genre) })
             )
           )}
         </div>
@@ -112,12 +110,12 @@ export default function FilterBar({ filters, onChange, totalCount }: Props) {
           </div>
 
           {/* Genre */}
-          <div>
+          <div className="sm:col-span-2">
             <label className="block text-[10px] text-muted mb-1.5 uppercase tracking-wide font-medium">แนวเพลง</label>
             <div className="flex flex-wrap gap-1.5">
-              {GENRES.map(g =>
-                chip(g.label, filters.genre === g.id, () =>
-                  onChange({ ...filters, genre: filters.genre === g.id ? undefined : g.id })
+              {genreList.map(g =>
+                chip(g.label_th, filters.genre === g.id, () =>
+                  onChange({ ...filters, genre: filters.genre === g.id ? undefined : (g.id as Genre) })
                 )
               )}
             </div>

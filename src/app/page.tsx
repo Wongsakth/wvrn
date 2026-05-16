@@ -1047,30 +1047,47 @@ function EventRow({
         </div>
 
         {/* RIGHT */}
-        <div className="shrink-0 border-l border-[var(--border)] p-2.5 flex flex-col items-end justify-between" style={{ width: 80 }}>
-          <div className="text-[13px] font-semibold"
-            style={{ color: featured === 'partner' ? '#EF9F27' : featured === 'wvrn_picks' ? '#A78BFA' : '#f472b6' }}>
+        <div className="shrink-0 border-l border-[var(--border)] flex flex-col" style={{ width: 72 }}>
+          {/* ราคา */}
+          <div className="px-2 pt-2.5 pb-1.5 text-[11px] font-semibold leading-tight text-center"
+            style={{ color: featured === 'partner' ? '#EF9F27' : featured === 'wvrn_picks' ? '#A78BFA' : 'var(--accent)' }}>
             {formatPrice(event)}
           </div>
 
-          <div className="flex flex-col gap-1.5 items-end">
-            {event.ticket_url && !isPast && (
-              <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()} title="ซื้อบัตร"
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                style={{ background: 'var(--accent)', color: 'white' }}>
-                <Ticket size={13} />
-              </a>
-            )}
-            {!isPast && (
-              <button
-                onClick={e => { e.stopPropagation(); window.open(googleCalendarUrl(event), '_blank') }}
-                title="เพิ่มในปฏิทิน"
-                className="w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] flex items-center justify-center transition-all hover:border-zinc-500">
-                <CalendarPlus size={13} className="text-muted" />
-              </button>
-            )}
-          </div>
+          {/* ซื้อบัตร */}
+          {event.ticket_url && !isPast ? (
+            <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-all border-t border-[var(--border)]"
+              style={{ background: 'var(--accent)' }}
+              title="ซื้อบัตร">
+              <Ticket size={13} style={{ color: 'white' }} />
+              <span className="text-[8px] font-medium" style={{ color: 'white' }}>ซื้อบัตร</span>
+            </a>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-0.5 border-t border-[var(--border)] cursor-not-allowed"
+              style={{ background: 'var(--surface-2)', opacity: 0.4 }}>
+              <Ticket size={13} className="text-muted" />
+              <span className="text-[8px] text-muted">ซื้อบัตร</span>
+            </div>
+          )}
+
+          {/* ปฏิทิน */}
+          {!isPast ? (
+            <button
+              onClick={e => { e.stopPropagation(); window.open(googleCalendarUrl(event), '_blank') }}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 border-t border-[var(--border)] transition-all hover:bg-[var(--surface-2)]"
+              title="เพิ่มในปฏิทิน">
+              <CalendarPlus size={13} className="text-muted" />
+              <span className="text-[8px] text-muted">ปฏิทิน</span>
+            </button>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-0.5 border-t border-[var(--border)] cursor-not-allowed"
+              style={{ opacity: 0.4 }}>
+              <CalendarPlus size={13} className="text-muted" />
+              <span className="text-[8px] text-muted">ปฏิทิน</span>
+            </div>
+          )}
         </div>
 
       </div>
