@@ -720,16 +720,18 @@ export default function HomePage() {
         {/* FILTER */}
 
         {tab !== 'ai' && (
-          <LiveTicker
-          followedArtistIds={Array.from(followedIds)}
-          followedVenueIds={Array.from(followedVenueIds)}
-          userProvince={userProvince}
-        />
-        <FilterBar
-            filters={filters}
-            onChange={setFilters}
-            totalCount={filtered.length}
-          />
+          <>
+            <LiveTicker
+              followedArtistIds={Array.from(followedIds)}
+              followedVenueIds={Array.from(followedVenueIds)}
+              userProvince={userProvince}
+            />
+            <FilterBar
+              filters={filters}
+              onChange={setFilters}
+              totalCount={filtered.length}
+            />
+          </>
         )}
 
         {/* LOADING */}
