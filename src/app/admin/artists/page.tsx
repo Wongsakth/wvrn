@@ -40,7 +40,7 @@ export default function ArtistsAdminPage() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [dupSuggestions, setDupSuggestions] = useState<any[]>([])
   const [genreList,  setGenreList]  = useState<{id:string;label_th:string;label_en:string;category:string}[]>([])
-  const [labelList,  setLabelList]  = useState<{id:string;name:string}[]>([])
+  const [labelList,  setLabelList]  = useState<{id:string;name:string;website_url?:string|null;facebook_url?:string|null}[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const sb = createClient()
@@ -79,7 +79,7 @@ export default function ArtistsAdminPage() {
     load()
     sb.from('genres').select('id,label_th,label_en,category').order('category').order('label_en')
       .then(({ data }) => setGenreList(data || []))
-    sb.from('labels').select('id,name').is('deleted_at', null).order('name')
+    sb.from('labels').select('id,name,website_url,facebook_url').is('deleted_at', null).order('name')
       .then(({ data }) => setLabelList(data || []))
   }, [])
 
@@ -571,7 +571,16 @@ export default function ArtistsAdminPage() {
                   <FormField label="ค่ายเพลง">
                     <select
                       value={form.label_id ?? ''}
-                      onChange={e => setForm(f => ({ ...f, label_id: e.target.value || null }))}
+                      onChange={e => {
+                        const selectedId = e.target.value || null
+                        const selectedLabel = labelList.find(l => l.id === selectedId)
+                        const autoUrl = selectedLabel?.website_url || selectedLabel?.facebook_url || ''
+                        setForm(f => ({
+                          ...f,
+                          label_id:  selectedId,
+                          label_url: autoUrl || f.label_url,
+                        }))
+                      }}
                       className="input-theme text-[13px]">
                       <option value="">— ไม่สังกัดค่าย —</option>
                       {labelList.map(l => (
