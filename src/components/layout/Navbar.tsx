@@ -43,14 +43,16 @@ export default function Navbar() {
         style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(8px)' }}>
 
         {/* Logo + Tagline */}
-        <Link href="/" className="flex items-center gap-2 mr-auto">
-          <img src="/logo.png" alt="WVRN" className="w-7 h-7 rounded-md object-cover" />
-          <span className="text-[17px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>WVRN</span>
-          <span className="hidden sm:inline-flex text-[10px] font-medium px-2.5 py-1 rounded-full"
+        <Link href="/" className="flex flex-col items-center sm:flex-row sm:items-center gap-0 sm:gap-2 mr-auto">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="WVRN" className="w-7 h-7 rounded-md object-cover" />
+            <span className="text-[17px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>WVRN</span>
+          </div>
+          <span className="text-[9px] font-medium px-2 py-0.5 rounded-full mt-0.5 sm:mt-0"
             style={{
-              background:  'rgba(232,0,58,0.1)',
-              color:       'var(--accent)',
-              border:      '1px solid rgba(232,0,58,0.2)',
+              background:    'rgba(232,0,58,0.1)',
+              color:         'var(--accent)',
+              border:        '1px solid rgba(232,0,58,0.2)',
               letterSpacing: '1px',
             }}>
             NEVER MISS A SHOW
