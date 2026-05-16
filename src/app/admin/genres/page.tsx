@@ -54,7 +54,7 @@ export default function GenresAdminPage() {
     setLoading(true)
     try {
       const { data, error } = await sb
-        .from('genres').select('*').order('sort_order').order('name')
+        .from('genres').select('*').order('category').order('label_en')
       if (error) throw error
       setGenres(data || [])
     } catch (e: any) {
