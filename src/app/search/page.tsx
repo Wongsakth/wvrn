@@ -24,10 +24,10 @@ export default function SearchPage() {
       try {
         const today = new Date().toISOString().slice(0, 10)
         const [evRes, arRes, vRes] = await Promise.all([
-          sb.from('events').select('id,title,start_date,start_time,is_free,ticket_price_min,genres,venue:venues(name)')
-            .gte('start_date', today).order('start_date', { ascending: true }),
-          sb.from('artists').select('id,name,name_en,image_url,genres').order('name'),
-          sb.from('venues').select('id,name,province,address').order('name'),
+          sb.from('events').select('id,title,slug,start_date,start_time,is_free,ticket_price_min,genres,venue:venues(name)')
+            .is('deleted_at', null).gte('start_date', today).order('start_date', { ascending: true }),
+          sb.from('artists').select('id,name,name_en,slug,image_url,genres').is('deleted_at', null).order('name'),
+          sb.from('venues').select('id,name,slug,province,address').is('deleted_at', null).order('name'),
         ])
         setEvents(evRes.data || [])
         setArtists(arRes.data || [])
@@ -197,7 +197,7 @@ export default function SearchPage() {
                 <div className="flex flex-col gap-1.5">
                   {(filter === 'all' ? filteredVenues.slice(0,4) : filteredVenues).map(venue => (
                     <div key={venue.id}
-                      onClick={() => window.location.href = `/venues`}
+                      onClick={() => window.location.href = `/venues/${venue.slug || venue.id}`}
                       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
                       style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
                       <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center"
