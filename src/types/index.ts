@@ -96,15 +96,19 @@ export interface EventSubmission {
 // ─── UI / Filter Types ────────────────────────────────────────────────────────
 
 export interface EventFilters {
-  search?:    string
-  province?:  string
-  genre?:     Genre
-  eventType?: EventType
-  isFree?:    boolean
-  dateFrom?:  string
-  dateTo?:    string
-  artistId?:  string
-  status?:    EventStatus
+  search?:      string
+  province?:    string
+  genre?:       Genre
+  eventType?:   EventType
+  isFree?:      boolean
+  dateFrom?:    string
+  dateTo?:      string
+  artistId?:    string
+  status?:      EventStatus
+  nearMe?:      boolean   // filter by user province or GPS
+  datePreset?:  'today' | 'week' | 'month'  // quick date shortcuts
+  userLat?:     number    // GPS coords for radius search
+  userLng?:     number
 }
 
 export type ViewMode = 'calendar' | 'list' | 'grid'
