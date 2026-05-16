@@ -10,16 +10,16 @@ import { th } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 import type { Artist } from '@/types'
 
-const GENRES = ['pop','rock','indie','hiphop','jazz','electronic','folk','rnb']
 
 export default function ArtistsPage() {
-  const [artists, setArtists] = useState<Artist[]>([])
-  const [events, setEvents] = useState<any[]>([])
+  const [artists,     setArtists]     = useState<Artist[]>([])
+  const [events,      setEvents]      = useState<any[]>([])
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [loading,     setLoading]     = useState(true)
+  const [search,      setSearch]      = useState('')
   const [genreFilter, setGenreFilter] = useState('')
-  const [showFollowed, setShowFollowed] = useState(false)
+  const [showFollowed,setShowFollowed]= useState(false)
+  const [genreList,   setGenreList]   = useState<{id:string;label_th:string;label_en:string;category:string}[]>([])
 
   const { user } = useAuth()
   const sb = createClient()
@@ -29,8 +29,8 @@ export default function ArtistsPage() {
       setLoading(true)
 
       try {
-        const [arRes, evRes] = await Promise.all([
-          sb.from('artists').select('id, name, name_en, slug, bio, image_url, genres, facebook_url, instagram_url, tiktok_url, website_url, label_url, created_at').order('name'),
+        const [arRes, evRes, genreRes] = await Promise.all([
+          sb.from('artists').select('id, name, name_en, slug, bio, image_url, genres, facebook_url, instagram_url, tiktok_url, website_url, label_url, created_at').is('deleted_at', null).order('name'),
 
           sb.from('events')
             .select(`
@@ -44,13 +44,15 @@ export default function ArtistsPage() {
               venue:venues(name),
               event_artists(artist_id)
             `)
+            .is('deleted_at', null)
             .gte('start_date', new Date().toISOString().slice(0, 10))
             .order('start_date', { ascending: true }),
+          sb.from('genres').select('id,label_th,label_en,category').order('category').order('label_en'),
         ])
 
         setArtists(arRes.data || [])
-
         setEvents(evRes.data || [])
+        setGenreList(genreRes.data || [])
       } catch (e) {
         console.error(e)
       } finally {
@@ -298,22 +300,18 @@ export default function ArtistsPage() {
             ทั้งหมด
           </button>
 
-          {GENRES.map(g => (
+          {genreList.map(g => (
             <button
-              key={g}
-              onClick={() =>
-                setGenreFilter(
-                  genreFilter === g ? '' : g
-                )
-              }
+              key={g.id}
+              onClick={() => setGenreFilter(genreFilter === g.id ? '' : g.id)}
               className={cn(
-                'px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border capitalize',
-                genreFilter === g
+                'px-3 py-1.5 rounded-full text-[12px] shrink-0 transition-all border whitespace-nowrap',
+                genreFilter === g.id
                   ? 'font-medium border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]'
                   : 'border-[var(--border)] text-secondary'
               )}
             >
-              {g}
+              {g.label_th}
             </button>
           ))}
         </div>

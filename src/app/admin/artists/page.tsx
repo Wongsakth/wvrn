@@ -12,16 +12,7 @@ import toast from 'react-hot-toast'
 import type { Artist, Genre } from '@/types'
 import ImageUpload from '@/components/ImageUpload'
 
-const GENRES: { id: Genre; label: string; color: string }[] = [
-  { id: 'pop',        label: 'Pop',        color: '#A78BFA' },
-  { id: 'rock',       label: 'Rock',       color: '#EF9F27' },
-  { id: 'indie',      label: 'Indie',      color: '#FFD700' },
-  { id: 'hiphop',     label: 'Hip-Hop',    color: '#FF3CAC' },
-  { id: 'jazz',       label: 'Jazz',       color: '#85B7EB' },
-  { id: 'electronic', label: 'Electronic', color: '#5DCAA5' },
-  { id: 'folk',       label: 'Folk',       color: '#C4A882' },
-  { id: 'rnb',        label: 'R&B',        color: '#F472B6' },
-]
+
 
 const EMPTY_FORM = {
   name:          '',
@@ -47,6 +38,7 @@ export default function ArtistsAdminPage() {
   const [form,       setForm]       = useState({ ...EMPTY_FORM })
   const [imagePreview, setImagePreview] = useState<string>('')
   const [dupSuggestions, setDupSuggestions] = useState<any[]>([])
+  const [genreList,  setGenreList]  = useState<{id:string;label_th:string;label_en:string;category:string}[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const sb = createClient()
@@ -81,7 +73,11 @@ export default function ArtistsAdminPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    sb.from('genres').select('id,label_th,label_en,category').order('category').order('label_en')
+      .then(({ data }) => setGenreList(data || []))
+  }, [])
 
   // ─── Open form ────────────────────────────────────────────
   function openAdd() {
@@ -175,10 +171,10 @@ export default function ArtistsAdminPage() {
   }
 
   // ─── Toggle genre ─────────────────────────────────────────
-  function toggleGenre(g: Genre) {
+  function toggleGenre(g: string) {
     setForm(f => ({
       ...f,
-      genres: f.genres.includes(g)
+      genres: (f.genres as string[]).includes(g)
         ? f.genres.filter(x => x !== g)
         : [...f.genres, g],
     }))
@@ -292,7 +288,7 @@ export default function ArtistsAdminPage() {
                   </div>
                   <div className="flex gap-1.5 mt-1 flex-wrap">
                     {(artist.genres ?? []).map(g => {
-                      const gc = GENRES.find(x => x.id === g)
+                      const gc = genreList.find(x => x.id === g)
                       return (
                         <span
                           key={g}
@@ -438,26 +434,45 @@ export default function ArtistsAdminPage() {
               </FormField>
 
               {/* Genres */}
-              <FormField label="แนวเพลง">
-                <div className="flex flex-wrap gap-2">
-                  {GENRES.map(g => {
-                    const active = form.genres.includes(g.id)
+              <FormField label={`แนวเพลง${form.genres.length > 0 ? ` · เลือกแล้ว ${form.genres.length} แนว` : ''}`}>
+                <div className="flex flex-col gap-3">
+                  {(['pop','rock','hiphop','electronic','folk','thai','jazz','other'] as const).map(cat => {
+                    const catGenres = genreList.filter(g => g.category === cat)
+                    if (catGenres.length === 0) return null
+                    const catLabel: Record<string,string> = {
+                      pop: 'Pop & Mainstream', rock: 'Rock', hiphop: 'Hip-Hop & Urban',
+                      electronic: 'Electronic', folk: 'Folk & Acoustic', thai: '🇹🇭 ไทย',
+                      jazz: 'Jazz & Soul', other: 'อื่นๆ',
+                    }
                     return (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => toggleGenre(g.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] transition-all border"
-                        style={{
-                          background: active ? g.color + '20' : 'var(--surface-2)',
-                          borderColor: active ? g.color : 'var(--border)',
-                          color: active ? g.color : 'var(--text-muted)',
-                          fontWeight: active ? 600 : 400,
-                        }}
-                      >
-                        {active && <Check size={11} />}
-                        {g.label}
-                      </button>
+                      <div key={cat}>
+                        <p className="text-[10px] font-medium text-muted uppercase tracking-wide mb-1.5">
+                          {catLabel[cat]}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {catGenres.map(g => {
+                            const active = (form.genres as string[]).includes(g.id)
+                            return (
+                              <button
+                                key={g.id}
+                                type="button"
+                                onClick={() => toggleGenre(g.id)}
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-all border"
+                                style={{
+                                  background: active ? 'var(--accent-muted)' : 'var(--surface-2)',
+                                  borderColor: active ? 'var(--accent)' : 'var(--border)',
+                                  color: active ? 'var(--accent)' : 'var(--text-muted)',
+                                  fontWeight: active ? 600 : 400,
+                                }}
+                              >
+                                {active && <Check size={9} />}
+                                {g.label_th}
+                                <span className="opacity-50 ml-0.5">{g.label_en}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
