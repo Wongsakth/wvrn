@@ -18,6 +18,8 @@ interface Venue {
   address:   string | null
   province:  string | null
   maps_url:  string | null
+  image_url: string | null
+  slug:      string | null
 }
 
 const PROVINCES = ['กรุงเทพมหานคร','นนทบุรี','ปทุมธานี','เชียงใหม่','ภูเก็ต','เพชรบูรณ์']
@@ -214,10 +216,17 @@ export default function VenuesPage() {
                       <div className="flex items-start gap-3 p-4"
                         style={{ borderBottom: upcomingEvs.length > 0 ? '1px solid var(--border)' : 'none' }}>
 
-                        {/* Icon */}
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                          style={{ background: isFollowed ? 'var(--accent-muted)' : 'var(--surface-2)' }}>
-                          <MapPin size={18} style={{ color: isFollowed ? 'var(--accent)' : 'var(--text-muted)' }} />
+                        {/* Thumbnail */}
+                        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 mt-0.5"
+                          style={{ background: isFollowed ? 'var(--accent-muted)' : 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                          {venue.image_url ? (
+                            <img src={venue.image_url} alt={venue.name}
+                              className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <MapPin size={18} style={{ color: isFollowed ? 'var(--accent)' : 'var(--text-muted)' }} />
+                            </div>
+                          )}
                         </div>
 
                         {/* Info */}

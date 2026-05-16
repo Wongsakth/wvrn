@@ -152,13 +152,20 @@ export default function VenueDetailPage() {
               style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
 
               {/* Cover */}
-              <div className="h-32 flex items-center justify-center relative"
+              <div className="h-48 flex items-center justify-center relative overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, var(--accent-muted), var(--surface-2))' }}>
                 {venue.image_url ? (
-                  <img src={venue.image_url} alt={venue.name}
-                    className="w-full h-full object-cover" />
+                  <>
+                    <img src={venue.image_url} alt={venue.name}
+                      className="w-full h-full object-cover" />
+                    <div className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)' }} />
+                  </>
                 ) : (
-                  <MapPin size={40} style={{ color: 'var(--accent)', opacity: 0.4 }} />
+                  <div className="flex flex-col items-center gap-2">
+                    <MapPin size={40} style={{ color: 'var(--accent)', opacity: 0.3 }} />
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)', opacity: 0.5 }}>ไม่มีรูปสถานที่</span>
+                  </div>
                 )}
               </div>
 
