@@ -521,28 +521,28 @@ export default function HomePage() {
   // =========================================================
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}"">
       <Navbar />
 
       <main className="max-w-screen-xl mx-auto px-4 py-6">
 
         {/* HERO */}
         <div className="mb-6">
-          <span className="inline-block text-xs px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 mb-3">
+          <span className="inline-block text-xs px-3 py-1 rounded-full bg-[var(--surface-1)] border border-[var(--border)] mb-3">
             🎵 Never Miss a Show
           </span>
           <h1 className="text-4xl font-bold">WVRN</h1>
-          <p className="text-zinc-400 mt-1">ติดตามศิลปินที่ชอบ ไม่พลาดทุก Concert ในไทย</p>
+          <p className="text-muted mt-1">ติดตามศิลปินที่ชอบ ไม่พลาดทุก Concert ในไทย</p>
         </div>
 
         {/* ── ศิลปินที่ติดตาม ── */}
         {isLoggedIn && followedArtistInfo.size > 0 && (
-          <div className="mb-6 rounded-2xl overflow-hidden border border-zinc-800">
-            <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+          <div className="mb-6 rounded-2xl overflow-hidden border border-[var(--border)]">
+            <div className="flex items-center justify-between px-4 py-3 bg-[var(--surface-1)] border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
                 <Heart size={14} className="fill-pink-500 text-pink-500" />
                 <span className="text-[13px] font-medium">ศิลปินที่ติดตาม</span>
-                <span className="text-[11px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] text-muted bg-[var(--surface-2)] px-2 py-0.5 rounded-full">
                   {followedArtistInfo.size} คน
                 </span>
               </div>
@@ -551,7 +551,7 @@ export default function HomePage() {
                 จัดการ <ChevronRight size={11} />
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--surface-2)]">
               {Array.from(followedArtistInfo.entries()).map(([artistId, artist]) => {
                 const nextEvent = events
                   .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => a.id === artistId))
@@ -559,19 +559,19 @@ export default function HomePage() {
                 const daysLeft = nextEvent ? differenceInDays(new Date(nextEvent.start_date), new Date()) : null
                 const isToday  = daysLeft === 0
                 return (
-                  <div key={artistId} className="bg-zinc-900 p-3">
+                  <div key={artistId} className="bg-[var(--surface-1)] p-3">
                     <div className="flex items-center gap-3 mb-2 cursor-pointer"
                       onClick={() => window.location.href = `/artists/${artistId}`}>
                       {artist?.image_url
                         ? <img src={artist.image_url} alt={artist.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
-                        : <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-medium bg-zinc-800 text-pink-400">
+                        : <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-medium bg-[var(--surface-2)] text-pink-400">
                             {(artist?.name_en || artist?.name)?.slice(0,2)}
                           </div>
                       }
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium truncate">{artist?.name_en || artist?.name}</p>
                         {artist?.name_en && artist?.name !== artist?.name_en && (
-                          <p className="text-[10px] text-zinc-500 truncate">{artist?.name}</p>
+                          <p className="text-[10px] text-muted truncate">{artist?.name}</p>
                         )}
                       </div>
                       <Heart size={10} className="fill-pink-500 text-pink-500 shrink-0" />
@@ -586,15 +586,15 @@ export default function HomePage() {
                             {isToday ? 'วันนี้!' : daysLeft === 1 ? 'พรุ่งนี้' : `อีก ${daysLeft} วัน`}
                           </span>
                           {nextEvent.start_time && (
-                            <span className="text-[9px] text-zinc-500">{nextEvent.start_time.slice(0,5)}</span>
+                            <span className="text-[9px] text-muted">{nextEvent.start_time.slice(0,5)}</span>
                           )}
                         </div>
-                        <p className="text-[11px] font-medium truncate text-white">{nextEvent.title}</p>
-                        <p className="text-[10px] text-zinc-500 truncate">{nextEvent.venue?.name}</p>
+                        <p className="text-[11px] font-medium truncate text-primary">{nextEvent.title}</p>
+                        <p className="text-[10px] text-muted truncate">{nextEvent.venue?.name}</p>
                       </div>
                     ) : (
-                      <div className="px-2 py-1.5 rounded-lg text-center bg-zinc-800">
-                        <p className="text-[10px] text-zinc-600">ยังไม่มีงานที่กำลังจะมา</p>
+                      <div className="px-2 py-1.5 rounded-lg text-center bg-[var(--surface-2)]">
+                        <p className="text-[10px] text-muted">ยังไม่มีงานที่กำลังจะมา</p>
                       </div>
                     )}
                   </div>
@@ -606,12 +606,12 @@ export default function HomePage() {
 
         {/* ── สถานที่ที่ติดตาม ── */}
         {isLoggedIn && followedVenueIds.size > 0 && (
-          <div className="mb-6 rounded-2xl overflow-hidden border border-zinc-800">
-            <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+          <div className="mb-6 rounded-2xl overflow-hidden border border-[var(--border)]">
+            <div className="flex items-center justify-between px-4 py-3 bg-[var(--surface-1)] border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-pink-400" />
                 <span className="text-[13px] font-medium">สถานที่ที่ติดตาม</span>
-                <span className="text-[11px] text-zinc-500">— งานเร็วๆ นี้</span>
+                <span className="text-[11px] text-muted">— งานเร็วๆ นี้</span>
               </div>
               <button onClick={() => window.location.href = '/venues'}
                 className="text-[11px] text-pink-400 flex items-center gap-1">
@@ -629,16 +629,16 @@ export default function HomePage() {
                   return (
                     <div key={ev.id}
                       onClick={() => window.location.href = `/events/${ev.slug || ev.id}`}
-                      className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-zinc-900 border border-zinc-800">
-                      <div className="w-9 h-9 rounded-lg shrink-0 flex flex-col items-center justify-center bg-zinc-800">
+                      className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-[var(--surface-1)] border border-[var(--border)]">
+                      <div className="w-9 h-9 rounded-lg shrink-0 flex flex-col items-center justify-center bg-[var(--surface-2)]">
                         <span className="text-[13px] font-medium text-pink-400 leading-none">{format(start,'d')}</span>
                         <span className="text-[8px] text-pink-400 opacity-70 uppercase">{format(start,'MMM',{locale:th})}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[12px] font-medium truncate">{ev.title}</p>
                         <div className="flex items-center gap-1">
-                          <MapPin size={9} className="text-zinc-500 shrink-0" />
-                          <p className="text-[10px] text-zinc-500 truncate">{ev.venue?.name}</p>
+                          <MapPin size={9} className="text-muted shrink-0" />
+                          <p className="text-[10px] text-muted truncate">{ev.venue?.name}</p>
                         </div>
                       </div>
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium"
@@ -653,7 +653,7 @@ export default function HomePage() {
                 })
               }
               {events.filter(ev => !isPastEvent(ev, today) && followedVenueIds.has(ev.venue_id)).length === 0 && (
-                <div className="col-span-full py-4 text-center text-[12px] text-zinc-600">
+                <div className="col-span-full py-4 text-center text-[12px] text-muted">
                   ยังไม่มีงานจากสถานที่ที่ติดตาม
                 </div>
               )}
@@ -667,7 +667,7 @@ export default function HomePage() {
 
           {/* Tabs */}
 
-          <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl p-1">
+          <div className="flex bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-1">
             {[
               { id: 'all',       label: 'Shows',     icon: Music    },
               { id: 'artists',   label: 'Artists',   icon: Heart    },
@@ -686,10 +686,10 @@ export default function HomePage() {
                   className={cn(
                     'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
                     tab === item.id
-                      ? 'bg-pink-600 text-white'
+                      ? 'bg-pink-600 text-primary'
                       : needLogin
-                      ? 'text-zinc-600 cursor-pointer'
-                      : 'text-zinc-400 hover:text-white'
+                      ? 'text-muted cursor-pointer'
+                      : 'text-muted hover:text-primary'
                   )}
                 >
                   <Icon size={14} />
@@ -702,7 +702,7 @@ export default function HomePage() {
 
           {/* Search */}
 
-          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2">
+          <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl px-3 py-2">
             <Search size={14} />
             <input
               value={search}
@@ -754,14 +754,14 @@ export default function HomePage() {
                   AI Recommended
                 </h2>
 
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-muted">
                   จากแนวเพลงและศิลปินที่คุณติดตาม
                 </p>
               </div>
 
               <button
                 onClick={generateAI}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--surface-1)] border border-[var(--border)]"
               >
                 <RefreshCw
                   size={14}
@@ -827,7 +827,7 @@ export default function HomePage() {
                     onClick={() =>
                       setShowPast(v => !v)
                     }
-                    className="w-full py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-sm text-zinc-400"
+                    className="w-full py-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] text-sm text-muted"
                   >
                     {showPast
                       ? 'ซ่อนงานที่ผ่านมา'
@@ -874,27 +874,27 @@ export default function HomePage() {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgb(39,39,42)' }}>
-      <div className="flex" style={{ background: 'rgb(24,24,27)', minHeight: 90 }}>
+    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+      <div className="flex" style={{ background: 'var(--surface-1)', minHeight: 90 }}>
         {/* Date placeholder */}
-        <div className="shrink-0 flex flex-col items-center justify-center border-r border-zinc-800 bg-zinc-900" style={{ width: 64 }}>
-          <div className="w-7 h-5 rounded mb-1" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div className="w-5 h-3 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        <div className="shrink-0 flex flex-col items-center justify-center border-r border-[var(--border)] bg-[var(--surface-1)]" style={{ width: 64 }}>
+          <div className="w-7 h-5 rounded mb-1" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-5 h-3 rounded" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
         </div>
         {/* Body placeholder */}
         <div className="flex-1 p-3 min-w-0">
           <div className="flex gap-1.5 mb-2">
-            <div className="w-10 h-4 rounded-full" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-            <div className="w-14 h-4 rounded-full" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div className="w-10 h-4 rounded-full" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div className="w-14 h-4 rounded-full" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           </div>
-          <div className="w-3/4 h-4 rounded mb-2" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div className="w-1/2 h-3 rounded mb-2" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div className="w-2/3 h-3 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-3/4 h-4 rounded mb-2" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-1/2 h-3 rounded mb-2" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-2/3 h-3 rounded" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
         </div>
         {/* Right placeholder */}
-        <div className="shrink-0 border-l border-zinc-800 p-2.5 flex flex-col items-end justify-between" style={{ width: 80 }}>
-          <div className="w-10 h-4 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div className="w-8 h-8 rounded-lg" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        <div className="shrink-0 border-l border-[var(--border)] p-2.5 flex flex-col items-end justify-between" style={{ width: 80 }}>
+          <div className="w-10 h-4 rounded" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div className="w-8 h-8 rounded-lg" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
         </div>
       </div>
     </div>
@@ -947,7 +947,7 @@ function EventRow({
       style={{
         border: featured === 'partner'   ? '1.5px solid #EF9F27'
                : featured === 'wvrn_picks' ? '1.5px solid #7C3AED'
-               : '1px solid rgb(39,39,42)',
+               : '1px solid var(--border)',
       }}>
 
       {/* Featured banner */}
@@ -965,7 +965,7 @@ function EventRow({
       )}
 
       {/* Card body */}
-      <div className="flex" style={{ background: 'rgb(24,24,27)', minHeight: 90 }}>
+      <div className="flex" style={{ background: 'var(--surface-1)', minHeight: 90 }}>
 
         {/* POSTER / DATE */}
         {poster ? (
@@ -988,10 +988,10 @@ function EventRow({
             </div>
           </div>
         ) : (
-          <div className="shrink-0 flex flex-col items-center justify-center border-r border-zinc-800 bg-zinc-900"
+          <div className="shrink-0 flex flex-col items-center justify-center border-r border-[var(--border)] bg-[var(--surface-1)]"
             style={{ width: 64 }}>
             <div className="text-2xl font-bold text-pink-500">{format(start, 'd')}</div>
-            <div className="text-xs uppercase text-zinc-500">{format(start, 'MMM')}</div>
+            <div className="text-xs uppercase text-muted">{format(start, 'MMM')}</div>
           </div>
         )}
 
@@ -1006,17 +1006,17 @@ function EventRow({
             ))}
           </div>
 
-          <h3 className="font-semibold text-[14px] leading-tight truncate text-white mb-0.5">
+          <h3 className="font-semibold text-[14px] leading-tight truncate text-primary mb-0.5">
             {event.title}
           </h3>
 
           {event.artists?.length > 0 && (
-            <p className="text-[11px] text-zinc-400 truncate">
+            <p className="text-[11px] text-muted truncate">
               {event.artists.map((a: any) => a.name_en || a.name).join(' · ')}
             </p>
           )}
 
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-[11px] text-zinc-500">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-[11px] text-muted">
             {event.venue && (
               <span className="flex items-center gap-1"><MapPin size={11} />{event.venue.name}</span>
             )}
@@ -1047,7 +1047,7 @@ function EventRow({
         </div>
 
         {/* RIGHT */}
-        <div className="shrink-0 border-l border-zinc-800 p-2.5 flex flex-col items-end justify-between" style={{ width: 80 }}>
+        <div className="shrink-0 border-l border-[var(--border)] p-2.5 flex flex-col items-end justify-between" style={{ width: 80 }}>
           <div className="text-[13px] font-semibold"
             style={{ color: featured === 'partner' ? '#EF9F27' : featured === 'wvrn_picks' ? '#A78BFA' : '#f472b6' }}>
             {formatPrice(event)}
@@ -1066,8 +1066,8 @@ function EventRow({
               <button
                 onClick={e => { e.stopPropagation(); window.open(googleCalendarUrl(event), '_blank') }}
                 title="เพิ่มในปฏิทิน"
-                className="w-8 h-8 rounded-lg border border-zinc-700 bg-zinc-900 flex items-center justify-center transition-all hover:border-zinc-500">
-                <CalendarPlus size={13} className="text-zinc-400" />
+                className="w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] flex items-center justify-center transition-all hover:border-zinc-500">
+                <CalendarPlus size={13} className="text-muted" />
               </button>
             )}
           </div>
@@ -1098,22 +1098,22 @@ function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>;
 
   return (
     <div>
-      <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 mb-4">
-        <Search size={14} className="text-zinc-500 shrink-0" />
+      <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl px-3 py-2 mb-4">
+        <Search size={14} className="text-muted shrink-0" />
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="ค้นหาศิลปิน..." className="bg-transparent outline-none text-sm flex-1 text-zinc-200" />
+          placeholder="ค้นหาศิลปิน..." className="bg-transparent outline-none text-sm flex-1 text-secondary" />
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800">
-              <div className="w-10 h-10 rounded-full shrink-0" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border)]">
+              <div className="w-10 h-10 rounded-full shrink-0" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                <div className="w-3/4 h-3.5 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                <div className="w-1/2 h-3 rounded" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div className="w-3/4 h-3.5 rounded" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div className="w-1/2 h-3 rounded" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               </div>
-              <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: 'rgb(39,39,42)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             </div>
           ))}
         </div>
@@ -1123,20 +1123,20 @@ function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>;
             const followed = followedIds.has(artist.id)
             return (
               <div key={artist.id}
-                className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border)]">
                 {artist.image_url
                   ? <img src={artist.image_url} alt={artist.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                  : <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[12px] font-medium bg-zinc-800 text-pink-400">
+                  : <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[12px] font-medium bg-[var(--surface-2)] text-pink-400">
                       {(artist.name_en || artist.name).slice(0,2)}
                     </div>
                 }
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => window.location.href = `/artists/${artist.slug || artist.id}`}>
-                  <p className="text-[13px] font-medium text-white truncate">{artist.name_en || artist.name}</p>
+                  <p className="text-[13px] font-medium text-primary truncate">{artist.name_en || artist.name}</p>
                   {artist.name_en && artist.name !== artist.name_en && (
-                    <p className="text-[10px] text-zinc-500 truncate">{artist.name}</p>
+                    <p className="text-[10px] text-muted truncate">{artist.name}</p>
                   )}
                   {artist.follower_count > 0 && (
-                    <p className="text-[10px] text-zinc-600">{artist.follower_count} followers</p>
+                    <p className="text-[10px] text-muted">{artist.follower_count} followers</p>
                   )}
                 </div>
                 <button onClick={() => onFollowToggle(artist.id, artist.name)}
