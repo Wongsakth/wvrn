@@ -24,6 +24,7 @@ import {
 import Navbar from '@/components/layout/Navbar'
 import CalendarView from '@/components/calendar/CalendarView'
 import FilterBar from '@/components/events/FilterBar'
+import LiveTicker from '@/components/LiveTicker'
 
 import {
   cn,
@@ -63,6 +64,7 @@ export default function HomePage() {
 
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
   const [followedVenueIds, setFollowedVenueIds] = useState<Set<string>>(new Set())
+  const [userProvince, setUserProvince] = useState<string>('')
 
   const [followedArtistInfo, setFollowedArtistInfo] =
     useState<Map<string, any>>(new Map())
@@ -718,7 +720,12 @@ export default function HomePage() {
         {/* FILTER */}
 
         {tab !== 'ai' && (
-          <FilterBar
+          <LiveTicker
+          followedArtistIds={Array.from(followedIds)}
+          followedVenueIds={Array.from(followedVenueIds)}
+          userProvince={userProvince}
+        />
+        <FilterBar
             filters={filters}
             onChange={setFilters}
             totalCount={filtered.length}
