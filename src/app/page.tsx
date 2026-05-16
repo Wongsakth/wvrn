@@ -63,7 +63,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
 
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
-  const [followedVenueIds, setFollowedVenueIds] = useState<Set<string>>(new Set())
+  const [followedVenueIds,  setFollowedVenueIds]  = useState<Set<string>>(new Set())
+  const [followedVenueInfo, setFollowedVenueInfo] = useState<Map<string,any>>(new Map())
   const [userProvince, setUserProvince] = useState<string>('')
 
   const [followedArtistInfo, setFollowedArtistInfo] =
@@ -214,16 +215,18 @@ export default function HomePage() {
       try {
         const { data, error } = await sb
           .from('venue_follows')
-          .select('venue_id')
+          .select('venue_id, venue:venues(id,name,slug,province)')
           .eq('user_id', user.id)
 
         if (error) throw error
 
-        setFollowedVenueIds(
-          new Set(
-            (data || []).map((f: any) => f.venue_id)
-          )
-        )
+        setFollowedVenueIds(new Set((data || []).map((f: any) => f.venue_id)))
+
+        const venueInfoMap = new Map<string,any>()
+        ;(data || []).forEach((f: any) => {
+          if (f.venue) venueInfoMap.set(f.venue_id, f.venue)
+        })
+        setFollowedVenueInfo(venueInfoMap)
       } catch (err) {
         console.error('load venue follows error', err)
       }
@@ -956,10 +959,12 @@ export default function HomePage() {
               <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border)' }}>
                 {Array.from(followedVenueIds).slice(0, 4).map(venueId => {
                   const venueEvents = events.filter(ev => !isPastEvent(ev, today) && ev.venue_id === venueId)
-                  const venueName = venueEvents[0]?.venue?.name ?? venueId.slice(0,8)
+                  const venueInfo = followedVenueInfo.get(venueId)
+                  const venueName = venueInfo?.name ?? venueEvents[0]?.venue?.name ?? '—'
+                  const venueSlug = venueInfo?.slug || venueId
                   return (
                     <div key={venueId}
-                      onClick={() => window.location.href = `/venues/${venueId}`}
+                      onClick={() => window.location.href = `/venues/${venueSlug}`}
                       className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-[var(--surface-2)] transition-colors">
                       <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
                         style={{ background: 'var(--surface-2)' }}>
