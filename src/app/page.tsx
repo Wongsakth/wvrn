@@ -521,7 +521,7 @@ export default function HomePage() {
   // =========================================================
 
   return (
-    <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}"">
+    <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
 
       <main className="max-w-screen-xl mx-auto px-4 py-6">
