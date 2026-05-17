@@ -4,14 +4,13 @@ import { format, parseISO, differenceInDays } from 'date-fns'
 import { th } from 'date-fns/locale'
 import {
   Search, X, Loader2, Music, MapPin, Clock,
-  ChevronRight, Heart, Users, Ticket, Star,
-  SlidersHorizontal, Calendar, Zap, Filter,
+  Heart, Users, Ticket, Star, CalendarPlus,
+  SlidersHorizontal, Calendar, Zap,
 } from 'lucide-react'
 import Navbar from '@/components/layout/Navbar'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { cn, formatPrice, googleCalendarUrl } from '@/lib/utils'
-import { format as formatDate } from 'date-fns'
 import toast from 'react-hot-toast'
 
 const EVENT_TYPES = [
@@ -363,104 +362,146 @@ export default function EventsPage() {
   )
 }
 
-// ── EventRow Component ─────────────────────────────────────
+// ── EventCard — same style as home page ───────────────────
 function EventRow({ ev, myType, isFollowed, featured }: {
   ev: any
   myType: string | null
   isFollowed: boolean
   featured?: string
 }) {
-  const days = differenceInDays(parseISO(ev.start_date), new Date())
+  const start   = parseISO(ev.start_date)
+  const days    = differenceInDays(start, new Date())
+  const poster  = ev.poster_url
+  const [goingCount,      setGoingCount]      = useState<number | null>(null)
+  const [interestedCount, setInterestedCount] = useState<number | null>(null)
+  const sb = createClient()
+
+  useEffect(() => {
+    sb.from('event_interactions').select('type').eq('event_id', ev.id)
+      .then(({ data }) => {
+        if (!data) return
+        setGoingCount(data.filter((r: any) => r.type === 'going').length)
+        setInterestedCount(data.filter((r: any) => r.type === 'interested').length)
+      })
+  }, [ev.id])
 
   return (
     <div
       onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
-      className="rounded-xl overflow-hidden cursor-pointer transition-all"
+      className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:scale-[1.01]"
       style={{
-        background: 'var(--surface-1)',
-        border: `1px solid ${featured === 'partner' ? 'var(--accent)' : isFollowed ? 'var(--accent)' : 'var(--border)'}`,
-        borderLeft: featured === 'partner' ? '4px solid var(--accent)' : isFollowed ? '3px solid var(--accent)' : '1px solid var(--border)',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}
-      onMouseLeave={e => (e.currentTarget.style.borderColor =
-        featured === 'partner' ? 'var(--accent)' : isFollowed ? 'var(--accent)' : 'var(--border)')}>
+        border: featured === 'partner'    ? '1.5px solid #EF9F27'
+               : featured === 'wvrn_pick' ? '1.5px solid #7C3AED'
+               : '1px solid var(--border)',
+      }}>
 
-      <div className="flex">
-        {/* Date block */}
-        <div className="flex flex-col items-center justify-center px-4 py-4 shrink-0"
-          style={{
-            background: days === 0 ? 'rgba(232,0,58,.08)' : 'var(--accent-muted)',
-            borderRight: '1px solid var(--border)',
-            minWidth: 60,
-          }}>
-          <span className="text-[22px] font-medium leading-none"
-            style={{ color: days === 0 ? '#E8003A' : 'var(--accent)' }}>
-            {format(parseISO(ev.start_date), 'd')}
-          </span>
-          <span className="text-[9px] uppercase mt-0.5"
-            style={{ color: days === 0 ? '#E8003A' : 'var(--accent)', opacity: .7 }}>
-            {format(parseISO(ev.start_date), 'MMM', { locale: th })}
-          </span>
-          {days === 0 && (
-            <span className="text-[8px] font-medium mt-1 px-1.5 py-0.5 rounded-full"
-              style={{ background: '#E8003A', color: 'white' }}>TODAY</span>
-          )}
-          {days === 1 && (
-            <span className="text-[8px] font-medium mt-1" style={{ color: 'var(--accent)' }}>พรุ่งนี้</span>
-          )}
+      {/* Featured banner */}
+      {featured === 'partner' && (
+        <div style={{ background: '#EF9F27', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#412402', letterSpacing: '.06em' }}>⭐ EVENT PARTNER</span>
+          <span style={{ fontSize: 10, color: '#633806', marginLeft: 'auto' }}>WVRN Partner</span>
         </div>
+      )}
+      {featured === 'wvrn_pick' && (
+        <div style={{ background: '#7C3AED', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#EEEDFE', letterSpacing: '.06em' }}>⚡ WVRN PICKS</span>
+          <span style={{ fontSize: 10, color: '#CECBF6', marginLeft: 'auto' }}>แนะนำโดย WVRN</span>
+        </div>
+      )}
+
+      {/* Card body */}
+      <div className="flex" style={{ background: 'var(--surface-1)', minHeight: 90 }}>
+
+        {/* Poster / Date */}
+        {poster ? (
+          <div className="relative shrink-0" style={{ width: 90 }}>
+            <img src={poster} alt={ev.title} className="w-full h-full object-cover" style={{ display: 'block', minHeight: 90 }} />
+            <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,.7)', borderRadius: 8, padding: '3px 7px', textAlign: 'center', backdropFilter: 'blur(4px)' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#f472b6', lineHeight: 1 }}>{format(start, 'd')}</div>
+              <div style={{ fontSize: 8, color: '#a1a1aa', textTransform: 'uppercase' }}>{format(start, 'MMM', { locale: th })}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="shrink-0 flex flex-col items-center justify-center border-r border-[var(--border)]"
+            style={{ width: 64, background: 'var(--surface-1)' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: days === 0 ? '#E8003A' : 'var(--accent)', lineHeight: 1 }}>{format(start, 'd')}</div>
+            <div style={{ fontSize: 9, color: days === 0 ? '#E8003A' : 'var(--accent)', textTransform: 'uppercase', opacity: .7 }}>{format(start, 'MMM', { locale: th })}</div>
+            {days === 0 && <span style={{ fontSize: 8, background: '#E8003A', color: 'white', borderRadius: 20, padding: '2px 5px', marginTop: 3, fontWeight: 600 }}>TODAY</span>}
+          </div>
+        )}
 
         {/* Info */}
-        <div className="flex-1 px-4 py-3 min-w-0">
-          <p className="text-[14px] font-medium text-primary mb-1 line-clamp-1">{ev.title}</p>
+        <div className="flex-1 p-3 min-w-0">
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {isFollowed && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,83,126,.1)', color: 'var(--accent)' }}>ติดตาม</span>
+            )}
+            {myType === 'going' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(93,202,165,.12)', color: '#5DCAA5' }}>จะไป</span>
+            )}
+          </div>
+
+          <h3 className="font-semibold text-[14px] leading-tight truncate text-primary mb-0.5">{ev.title}</h3>
 
           {ev.artists?.length > 0 && (
-            <p className="text-[11px] text-muted mb-1.5 line-clamp-1">
-              {ev.artists.map((a: any) => a.name).join(' · ')}
+            <p className="text-[11px] text-muted truncate">
+              {ev.artists.map((a: any) => a.name_en || a.name).join(' · ')}
             </p>
           )}
 
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-            {ev.venue?.name && (
-              <span className="flex items-center gap-1 text-[11px] text-muted">
-                <MapPin size={10} />
-                <span className="truncate max-w-[140px]">{ev.venue.name}</span>
-              </span>
-            )}
-            {ev.start_time && (
-              <span className="flex items-center gap-1 text-[11px] text-muted">
-                <Clock size={10} />{ev.start_time.slice(0, 5)} น.
-              </span>
-            )}
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-[11px] text-muted">
+            {ev.venue?.name && <span className="flex items-center gap-1"><MapPin size={11} />{ev.venue.name}</span>}
+            {ev.start_time && <span className="flex items-center gap-1"><Clock size={11} />{ev.start_time.slice(0, 5)}</span>}
           </div>
 
-          {/* Tags */}
-          <div className="flex gap-1.5 mt-2 flex-wrap">
-            {isFollowed && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5"
-                style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
-                <Heart size={8} style={{ fill: 'var(--accent)' }} /> สนใจ
-              </span>
-            )}
-            {myType === 'going' && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
-                style={{ background: 'rgba(93,202,165,.12)', color: '#5DCAA5' }}>
-                จะไป
-              </span>
-            )}
-          </div>
+          {/* Social proof */}
+          {(goingCount! > 0 || interestedCount! > 0) && (
+            <div className="flex items-center gap-2 mt-1.5">
+              {interestedCount! > 0 && (
+                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)', color: '#a1a1aa' }}>
+                  <Heart size={9} className="text-pink-400" />{interestedCount!.toLocaleString()} สนใจ
+                </span>
+              )}
+              {goingCount! > 0 && (
+                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(232,0,58,0.1)', color: 'var(--accent)' }}>
+                  <Users size={9} />{goingCount!.toLocaleString()} จะไป
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Price + arrow */}
-        <div className="flex flex-col items-end justify-between px-4 py-3 shrink-0"
-          style={{ borderLeft: '1px solid var(--border)' }}>
-          <span className="text-[11px] font-medium"
-            style={{ color: ev.is_free ? '#5DCAA5' : 'var(--accent)' }}>
-            {ev.is_free ? 'ฟรี' : ev.ticket_price_min
-              ? `฿${Number(ev.ticket_price_min).toLocaleString()}`
-              : ''}
-          </span>
-          <ChevronRight size={14} className="text-muted" />
+        {/* Right: price + buttons */}
+        <div className="shrink-0 border-l border-[var(--border)] flex flex-col" style={{ width: 72 }}>
+          <div className="px-2 pt-2.5 pb-1.5 text-[11px] font-semibold leading-tight text-center"
+            style={{ color: featured === 'partner' ? '#EF9F27' : featured === 'wvrn_pick' ? '#A78BFA' : 'var(--accent)' }}>
+            {ev.is_free ? 'ฟรี' : ev.ticket_price_min ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : '—'}
+          </div>
+
+          {/* ซื้อบัตร */}
+          {ev.ticket_url ? (
+            <a href={ev.ticket_url} target="_blank" rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 border-t border-[var(--border)] transition-all"
+              style={{ background: 'var(--accent)' }}>
+              <Ticket size={13} style={{ color: 'white' }} />
+              <span className="text-[8px] font-medium" style={{ color: 'white' }}>ซื้อบัตร</span>
+            </a>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-0.5 border-t border-[var(--border)]"
+              style={{ background: 'var(--surface-2)', opacity: 0.4 }}>
+              <Ticket size={13} className="text-muted" />
+              <span className="text-[8px] text-muted">ซื้อบัตร</span>
+            </div>
+          )}
+
+          {/* ปฏิทิน */}
+          <button
+            onClick={e => { e.stopPropagation(); window.open(googleCalendarUrl(ev), '_blank') }}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 border-t border-[var(--border)] transition-all hover:bg-[var(--surface-2)]">
+            <CalendarPlus size={13} className="text-muted" />
+            <span className="text-[8px] text-muted">ปฏิทิน</span>
+          </button>
         </div>
       </div>
     </div>
