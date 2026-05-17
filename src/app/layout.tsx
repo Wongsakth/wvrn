@@ -8,19 +8,41 @@ import Footer from '@/components/layout/Footer'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
-  title:       'WVRN — Never Miss a Show',
+  metadataBase: new URL('https://wvrn.vercel.app'),
+  title: {
+    default:  'WVRN — Never Miss a Show',
+    template: '%s | WVRN',
+  },
   description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก ไม่มีวันพลาดอีก',
-  keywords:    'concert, เที่ยวคอนเสิร์ต, ตารางคอนเสิร์ต, WVRN',
+  keywords:    'concert, คอนเสิร์ต, ตารางคอนเสิร์ต, งานดนตรี, เทศกาลดนตรี, WVRN',
+  authors:     [{ name: 'WVRN', url: 'https://wvrn.vercel.app' }],
+  creator:     'WVRN',
+  robots: {
+    index:  true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
   icons: {
-    icon:   '/favicon.ico',
-    apple:  '/logo.png',
+    icon:  '/favicon.ico',
+    apple: '/logo.png',
   },
   openGraph: {
     title:       'WVRN — Never Miss a Show',
-    description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก',
+    description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก ไม่มีวันพลาดอีก',
     siteName:    'WVRN',
+    locale:      'th_TH',
     type:        'website',
-    images: [{ url: '/logo.png', width: 1080, height: 1080 }],
+    url:         'https://wvrn.vercel.app',
+    images: [{ url: '/logo.png', width: 1200, height: 630, alt: 'WVRN — Never Miss a Show' }],
+  },
+  twitter: {
+    card:        'summary_large_image',
+    title:       'WVRN — Never Miss a Show',
+    description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก ไม่มีวันพลาดอีก',
+    images:      ['/logo.png'],
+  },
+  alternates: {
+    canonical: 'https://wvrn.vercel.app',
   },
 }
 
