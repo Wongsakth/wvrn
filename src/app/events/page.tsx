@@ -101,7 +101,7 @@ export default function EventsPage() {
   function score(ev: any): number {
     let s = 0
     if (ev.featured_type === 'partner') s += 1000
-    if (ev.featured_type === 'wvrn_pick') s += 800
+    if (ev.featured_type === 'wvrn_picks') s += 800
     if (interactions.has(ev.id)) s += 300
     if (ev.artists?.some((a: any) => followedIds.has(a.id))) s += 200
     if (ev.venue?.id && followedVenues.has(ev.venue.id)) s += 150
@@ -155,8 +155,8 @@ export default function EventsPage() {
   const hasFilters = search || eventType || datePreset || isFree
 
   const partnerEvents  = filtered.filter(ev => ev.featured_type === 'partner')
-  const pickEvents     = filtered.filter(ev => ev.featured_type === 'wvrn_pick')
-  const regularEvents  = filtered.filter(ev => !['partner', 'wvrn_pick'].includes(ev.featured_type))
+  const pickEvents     = filtered.filter(ev => ev.featured_type === 'wvrn_picks')
+  const regularEvents  = filtered.filter(ev => !['partner', 'wvrn_picks'].includes(ev.featured_type))
 
   return (
     <div className="min-h-screen pb-24 md:pb-8" style={{ background: 'var(--surface-0)' }}>
@@ -332,7 +332,7 @@ export default function EventsPage() {
                 <div className="flex flex-col gap-3">
                   {pickEvents.map(ev => (
                     <EventRow key={ev.id} ev={ev} myType={myInteractions[ev.id] ?? null}
-                      isFollowed={interactions.has(ev.id)} featured="wvrn_pick" />
+                      isFollowed={interactions.has(ev.id)} featured="wvrn_picks" />
                   ))}
                 </div>
               </section>
@@ -391,7 +391,7 @@ function EventRow({ ev, myType, isFollowed, featured }: {
       className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:scale-[1.01]"
       style={{
         border: featured === 'partner'    ? '1.5px solid #EF9F27'
-               : featured === 'wvrn_pick' ? '1.5px solid #7C3AED'
+               : featured === 'wvrn_picks' ? '1.5px solid #7C3AED'
                : '1px solid var(--border)',
       }}>
 
@@ -402,7 +402,7 @@ function EventRow({ ev, myType, isFollowed, featured }: {
           <span style={{ fontSize: 10, color: '#633806', marginLeft: 'auto' }}>WVRN Partner</span>
         </div>
       )}
-      {featured === 'wvrn_pick' && (
+      {featured === 'wvrn_picks' && (
         <div style={{ background: '#7C3AED', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: '#EEEDFE', letterSpacing: '.06em' }}>⚡ WVRN PICKS</span>
           <span style={{ fontSize: 10, color: '#CECBF6', marginLeft: 'auto' }}>แนะนำโดย WVRN</span>
@@ -474,7 +474,7 @@ function EventRow({ ev, myType, isFollowed, featured }: {
         {/* Right: price + buttons */}
         <div className="shrink-0 border-l border-[var(--border)] flex flex-col" style={{ width: 72 }}>
           <div className="px-2 pt-2.5 pb-1.5 text-[11px] font-semibold leading-tight text-center"
-            style={{ color: featured === 'partner' ? '#EF9F27' : featured === 'wvrn_pick' ? '#A78BFA' : 'var(--accent)' }}>
+            style={{ color: featured === 'partner' ? '#EF9F27' : featured === 'wvrn_picks' ? '#A78BFA' : 'var(--accent)' }}>
             {ev.is_free ? 'ฟรี' : ev.ticket_price_min ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : '—'}
           </div>
 
