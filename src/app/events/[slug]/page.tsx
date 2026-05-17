@@ -459,27 +459,15 @@ export default function EventDetailPage() {
                   <MapPin size={14} style={{ color: 'var(--accent)' }} />
                   <span className="text-[12px] font-medium text-primary">สถานที่</span>
                 </div>
-                <div className="p-4">
-                  {/* Venue image — Style C */}
+                <div className="p-4 flex flex-col gap-3">
+                  {/* Venue image */}
                   {event.venue.image_url && (
-                    <div className="relative rounded-xl overflow-hidden mb-3"
-                      style={{ height: 110 }}>
+                    <div className="rounded-xl overflow-hidden" style={{ height: 110 }}>
                       <img
                         src={event.venue.image_url}
                         alt={event.venue.name}
                         className="w-full h-full object-cover"
                       />
-                      {event.venue.maps_url && (
-                        <a
-                          href={event.venue.maps_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px]"
-                          style={{ background: 'rgba(0,0,0,0.45)', color: '#fff', backdropFilter: 'blur(4px)' }}>
-                          <ExternalLink size={11} /> Maps
-                        </a>
-                      )}
                     </div>
                   )}
 
@@ -494,11 +482,13 @@ export default function EventDetailPage() {
                     </div>
                   </div>
 
-                  {/* Maps button — แสดงเฉพาะถ้าไม่มีรูป (มีรูปจะใช้ overlay แทน) */}
-                  {!event.venue.image_url && event.venue.maps_url && (
+                  {/* Maps button */}
+                  {event.venue.maps_url && (
                     <a href={event.venue.maps_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] btn-ghost w-full mt-3">
-                      <ExternalLink size={13} /> เปิดใน Google Maps
+                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] btn-ghost w-full"
+                      style={{ border: '1px solid var(--border)' }}>
+                      <ExternalLink size={12} />
+                      เปิด{event.venue.name} ใน Google Maps
                     </a>
                   )}
                 </div>
