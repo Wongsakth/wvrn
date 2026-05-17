@@ -450,7 +450,7 @@ export default function EventDetailPage() {
               </a>
             )}
 
-            {/* Venue map card */}
+            {/* Venue map card — Style C */}
             {event.venue && (
               <div className="rounded-xl overflow-hidden"
                 style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
@@ -460,13 +460,44 @@ export default function EventDetailPage() {
                   <span className="text-[12px] font-medium text-primary">สถานที่</span>
                 </div>
                 <div className="p-4">
-                  <p className="text-[14px] font-medium text-primary mb-1">{event.venue.name}</p>
-                  {event.venue.address && (
-                    <p className="text-[12px] text-muted mb-3">{event.venue.address}</p>
+                  {/* Venue image — Style C */}
+                  {event.venue.image_url && (
+                    <div className="relative rounded-xl overflow-hidden mb-3"
+                      style={{ height: 110 }}>
+                      <img
+                        src={event.venue.image_url}
+                        alt={event.venue.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {event.venue.maps_url && (
+                        <a
+                          href={event.venue.maps_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px]"
+                          style={{ background: 'rgba(0,0,0,0.45)', color: '#fff', backdropFilter: 'blur(4px)' }}>
+                          <ExternalLink size={11} /> Maps
+                        </a>
+                      )}
+                    </div>
                   )}
-                  {event.venue.maps_url && (
+
+                  {/* Venue name + address */}
+                  <div className="flex items-start gap-2">
+                    <MapPin size={13} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium text-primary leading-snug">{event.venue.name}</p>
+                      {event.venue.address && (
+                        <p className="text-[12px] text-muted mt-0.5">{event.venue.address}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Maps button — แสดงเฉพาะถ้าไม่มีรูป (มีรูปจะใช้ overlay แทน) */}
+                  {!event.venue.image_url && event.venue.maps_url && (
                     <a href={event.venue.maps_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] btn-ghost w-full">
+                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] btn-ghost w-full mt-3">
                       <ExternalLink size={13} /> เปิดใน Google Maps
                     </a>
                   )}
