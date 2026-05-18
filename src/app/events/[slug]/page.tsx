@@ -197,8 +197,45 @@ export default function EventDetailPage() {
     else { navigator.clipboard.writeText(url); toast.success('คัดลอก link แล้ว') }
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MusicEvent",
+    "name": event.title,
+    "startDate": event.start_date,
+    ...(event.end_date ? { "endDate": event.end_date } : {}),
+    "eventStatus": "https://schema.org/EventScheduled",
+    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+    "location": {
+      "@type": "Place",
+      "name": event.venue?.name ?? event.province,
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": event.venue?.address ?? '',
+        "addressLocality": event.venue?.province ?? event.province ?? '',
+        "addressCountry": "TH",
+      },
+    },
+    "offers": event.is_free
+      ? { "@type": "Offer", "price": "0", "priceCurrency": "THB", "availability": "https://schema.org/InStock" }
+      : {
+          "@type": "Offer",
+          "price": event.ticket_price_min ?? undefined,
+          "priceCurrency": "THB",
+          "url": event.ticket_url ?? undefined,
+          "availability": "https://schema.org/InStock",
+        },
+    "performer": event.artists?.map((a: any) => ({
+      "@type": "MusicGroup",
+      "name": a.name_en || a.name,
+    })),
+    ...(event.poster_url ? { "image": event.poster_url } : {}),
+    "url": `https://wvrn.vercel.app/events/${event.slug || event.id}`,
+    "organizer": { "@type": "Organization", "name": "WVRN", "url": "https://wvrn.vercel.app" },
+  }
+
   return (
     <div className="min-h-screen pb-24 md:pb-8" style={{ background: 'var(--surface-0)' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar />
 
       <div className="max-w-screen-lg mx-auto px-4 sm:px-6 py-6">
