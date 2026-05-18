@@ -113,7 +113,7 @@ export default function SubmitPage() {
     try {
       const { error } = await sb.from('event_submissions').insert({
         title:        eForm.title,
-        start_date:   eForm.start_date,
+        event_date:   eForm.start_date,
         venue_name:   eForm.venue_name,
         province:     eForm.province,
         artist_name:  eForm.artists.join(', ') || null,
