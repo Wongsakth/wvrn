@@ -516,9 +516,25 @@ export default function HomePage() {
     ev => !isPastEvent(ev, today)
   )
 
-  // =========================================================
-  // RENDER
-  // =========================================================
+  // Guest: แสดงเฉพาะ featured + 30 วัน ส่วนที่เหลือ blur
+  const today30 = new Date(today)
+  today30.setDate(today30.getDate() + 30)
+  const guestVisible = !isLoggedIn
+    ? upcomingEvents.filter(ev =>
+        ev.featured_type === 'partner' ||
+        ev.featured_type === 'wvrn_picks' ||
+        new Date(ev.start_date) <= today30
+      )
+    : upcomingEvents
+  const guestHidden = !isLoggedIn
+    ? upcomingEvents.filter(ev =>
+        ev.featured_type !== 'partner' &&
+        ev.featured_type !== 'wvrn_picks' &&
+        new Date(ev.start_date) > today30
+      )
+    : []
+
+  const eventsToShow = isLoggedIn ? upcomingEvents : guestVisible
 
   return (
     <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}>
@@ -804,7 +820,7 @@ export default function HomePage() {
           view === 'list' && (
             <div className="flex flex-col gap-2">
 
-              {upcomingEvents.map(ev => (
+              {eventsToShow.map(ev => (
                 <EventRow
                   key={ev.id}
                   event={ev}
@@ -816,6 +832,47 @@ export default function HomePage() {
                   isLoggedIn={isLoggedIn}
                 />
               ))}
+
+              {/* Guest blur CTA */}
+              {!isLoggedIn && guestHidden.length > 0 && (
+                <div className="relative mt-2">
+                  {/* Blur preview — 3 งานแรกที่ซ่อน */}
+                  <div style={{ filter: 'blur(4px)', opacity: 0.4, pointerEvents: 'none' }}>
+                    {guestHidden.slice(0, 3).map(ev => (
+                      <EventRow
+                        key={ev.id}
+                        event={ev}
+                        likedIds={new Set()}
+                        toggleLike={() => {}}
+                        attendance={{}}
+                        toggleAttendance={() => {}}
+                        followedIds={new Set()}
+                        isLoggedIn={false}
+                      />
+                    ))}
+                  </div>
+                  {/* CTA overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl"
+                    style={{ background: 'linear-gradient(to top, var(--surface-0) 60%, transparent)' }}>
+                    <p className="text-[15px] font-medium text-primary">
+                      ยังมีอีก {guestHidden.length} งาน
+                    </p>
+                    <p className="text-[12px] text-muted">Login เพื่อดูงานทั้งหมด</p>
+                    <div className="flex gap-2">
+                      <a href="/login"
+                        className="px-5 py-2.5 rounded-xl text-[13px] font-medium"
+                        style={{ background: 'var(--accent)', color: 'white' }}>
+                        Login
+                      </a>
+                      <a href="/login"
+                        className="px-5 py-2.5 rounded-xl text-[13px] font-medium"
+                        style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                        สมัครฟรี
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {pastEvents.length > 0 && (
                 <>
