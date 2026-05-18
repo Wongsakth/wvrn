@@ -118,7 +118,7 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
             locLoading ? <Loader2 size={10} className="animate-spin" /> : undefined)}
           {chip('Today',     filters.datePreset === 'today', () => setDatePreset('today'))}
           {chip('This Week', filters.datePreset === 'week',  () => setDatePreset('week'))}
-          {chip('Free',      !!filters.isFree, () => onChange({ ...filters, isFree: filters.isFree ? undefined : true }))}
+          {chip('ฟรีคอนเสิร์ต',      !!filters.isFree, () => onChange({ ...filters, isFree: filters.isFree ? undefined : true }))}
           {EVENT_CATEGORIES.slice(0, 3).map(t =>
             chip(t.label, filters.eventType === t.id, () =>
               onChange({ ...filters, eventType: filters.eventType === t.id ? undefined : t.id as EventType })
