@@ -845,7 +845,7 @@ export default function HomePage() {
                         event={ev}
                         likedIds={new Set()}
                         toggleLike={() => {}}
-                        attendance={{}}
+                        attendance={new Map()}
                         toggleAttendance={() => {}}
                         followedIds={new Set()}
                         isLoggedIn={false}
