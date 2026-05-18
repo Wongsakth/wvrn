@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, Loader2, Calendar, Music, MapPin, Clock, User, E
 import { format, parseISO } from 'date-fns'
 import { th } from 'date-fns/locale'
 import toast from 'react-hot-toast'
+import { logAudit } from '@/lib/audit'
 
 interface Submission {
   id: string; title: string; artist_name: string | null; venue_name: string | null
@@ -125,6 +126,8 @@ export default function PendingPage() {
         .update({ status: 'approved', reviewer_note: notes[sub.id] || null })
         .eq('id', sub.id)
       if (upErr) throw upErr
+
+      await logAudit({ action: 'approve', targetType: 'submission', targetId: sub.id, targetName: sub.title, metadata: { artist_name: sub.artist_name, venue_name: sub.venue_name } })
 
       toast.success(`อนุมัติ "${sub.title}" แล้ว — เชื่อมศิลปินสำเร็จ`)
       load()
