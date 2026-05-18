@@ -118,6 +118,7 @@ export type Theme = 'festival' | 'dark' | 'pastel' | 'vivid' | 'earth' | 'rock'
 export interface ThemeConfig {
   id:     Theme
   name:   string
+  label:  string
   emoji:  string
   dark:   boolean
 }

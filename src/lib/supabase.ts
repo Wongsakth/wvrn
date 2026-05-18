@@ -1,7 +1,7 @@
 // src/lib/supabase.ts
 // Browser client (for client components)
 import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/types'
+import type { Database } from '@/types/database.types'
 
 export function createClient() {
   return createBrowserClient<Database>(
@@ -49,7 +49,8 @@ export async function getEventById(id: string) {
     .eq('id', id)
     .single()
   if (error) throw error
-  return { ...data, artists: data.event_artists?.map((ea: any) => ea.artist) ?? [] }
+  const d = data as any
+  return { ...d, artists: d.event_artists?.map((ea: any) => ea.artist) ?? [] }
 }
 
 export async function getArtists() {
@@ -78,7 +79,7 @@ export async function toggleFollow(userId: string, artistId: string) {
       .eq('user_id', userId).eq('artist_id', artistId)
     return false
   } else {
-    await sb.from('follows').insert({ user_id: userId, artist_id: artistId })
+    await (sb.from('follows') as any).insert({ user_id: userId, artist_id: artistId })
     return true
   }
 }
@@ -94,7 +95,7 @@ export async function toggleBookmark(userId: string, eventId: string) {
       .eq('user_id', userId).eq('event_id', eventId)
     return false
   } else {
-    await sb.from('bookmarks').insert({ user_id: userId, event_id: eventId })
+    await (sb.from('bookmarks') as any).insert({ user_id: userId, event_id: eventId })
     return true
   }
 }
@@ -130,5 +131,5 @@ export async function getUserProfile(userId: string) {
 
 export async function updateUserTheme(userId: string, theme: string) {
   const sb = createClient()
-  await sb.from('profiles').update({ theme }).eq('id', userId)
+  await (sb.from('profiles') as any).update({ theme }).eq('id', userId)
 }
