@@ -11,7 +11,7 @@ import type { Venue } from '@/types'
 
 const EMPTY = {
   name: '', address: '', province: 'กรุงเทพมหานคร',
-  capacity: '', maps_url: '',
+  capacity: '', maps_url: '', aliases: [] as string[],
 }
 
 export default function VenuesAdminPage() {
@@ -23,6 +23,7 @@ export default function VenuesAdminPage() {
   const [editTarget, setEditTarget] = useState<Venue | null>(null)
   const [deleteId,   setDeleteId]   = useState<string | null>(null)
   const [form,       setForm]       = useState({ ...EMPTY })
+  const [aliasInput, setAliasInput] = useState('')
 
   const sb = createClient()
 
@@ -55,7 +56,9 @@ export default function VenuesAdminPage() {
       province: v.province,
       capacity: v.capacity?.toString() ?? '',
       maps_url: v.maps_url ?? '',
+      aliases:  (v as any).aliases ?? [],
     })
+    setAliasInput('')
     setShowForm(true)
   }
 
@@ -69,6 +72,7 @@ export default function VenuesAdminPage() {
         province: form.province,
         capacity: form.capacity ? parseInt(form.capacity) : null,
         maps_url: form.maps_url.trim() || null,
+        aliases:  form.aliases.length > 0 ? form.aliases : null,
       }
       if (editTarget) {
         const { error } = await sb.from('venues').update(payload).eq('id', editTarget.id)
@@ -236,6 +240,49 @@ export default function VenuesAdminPage() {
               <Field label="ลิงก์ Google Maps">
                 <input value={form.maps_url} onChange={e => setForm(f => ({ ...f, maps_url: e.target.value }))}
                   placeholder="https://maps.google.com/..." className="input-theme text-[13px]" />
+              </Field>
+
+              <Field label="ชื่อเรียกอื่น (Aliases)">
+                <div className="flex gap-2 mb-2">
+                  <input
+                    value={aliasInput}
+                    onChange={e => setAliasInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && aliasInput.trim()) {
+                        e.preventDefault()
+                        if (!form.aliases.includes(aliasInput.trim())) {
+                          setForm(f => ({ ...f, aliases: [...f.aliases, aliasInput.trim()] }))
+                        }
+                        setAliasInput('')
+                      }
+                    }}
+                    placeholder="พิมพ์ชื่ออื่น แล้วกด Enter..."
+                    className="input-theme text-[13px] flex-1" />
+                  <button
+                    onClick={() => {
+                      if (aliasInput.trim() && !form.aliases.includes(aliasInput.trim())) {
+                        setForm(f => ({ ...f, aliases: [...f.aliases, aliasInput.trim()] }))
+                        setAliasInput('')
+                      }
+                    }}
+                    className="btn-accent px-3 py-2 text-[12px]">
+                    เพิ่ม
+                  </button>
+                </div>
+                {form.aliases.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {form.aliases.map(a => (
+                      <span key={a} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px]"
+                        style={{ background: 'var(--accent-muted)', color: 'var(--accent)', border: '1px solid var(--accent)' }}>
+                        {a}
+                        <button onClick={() => setForm(f => ({ ...f, aliases: f.aliases.filter(x => x !== a) }))}>
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted mt-1.5">ใช้สำหรับ search — เช่น ชื่อเก่า ชื่อย่อ ชื่อภาษาอื่น</p>
               </Field>
             </div>
 
