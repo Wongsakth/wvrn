@@ -36,6 +36,7 @@ const MENU = [
     items: [
       { href: '/admin/users',       label: 'จัดการ Users',      icon: Users,   badge: null },
       { href: '/admin/permissions', label: 'Permission Matrix', icon: Shield,  badge: null },
+      { href: '/admin/audit-logs',  label: 'Audit Logs',        icon: ClipboardList, badge: null },
     ],
   },
   {
