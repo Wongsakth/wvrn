@@ -140,6 +140,7 @@ export default function HomePage() {
               )
             )
           `)
+          .is('deleted_at', null)
           .order('start_date', { ascending: true })
 
         if (error) throw error
