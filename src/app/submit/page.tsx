@@ -112,6 +112,7 @@ export default function SubmitPage() {
     setSubmitting(true)
     try {
       const { error } = await sb.from('event_submissions').insert({
+        type:         'event',
         title:        eForm.title,
         event_date:   eForm.start_date,
         venue_name:   eForm.venue_name,
@@ -134,13 +135,18 @@ export default function SubmitPage() {
     setSubmitting(true)
     try {
       const { error } = await sb.from('event_submissions').insert({
-        type:          'artist',
-        title:         aForm.name,
-        description:   aForm.description || null,
-        status:        'pending',
-        submitted_by:  user?.id ?? null,
-        ai_duplicate_check: { name_en: aForm.name_en, genres: aForm.genres,
-          facebook_url: aForm.facebook_url, instagram_url: aForm.instagram_url },
+        type:               'artist',
+        title:              aForm.name,
+        artist_name:        aForm.name,
+        description:        aForm.description || null,
+        status:             'pending',
+        submitted_by:       user?.id ?? null,
+        ai_duplicate_check: {
+          name_en:       aForm.name_en,
+          genres:        aForm.genres,
+          facebook_url:  aForm.facebook_url,
+          instagram_url: aForm.instagram_url,
+        },
       })
       if (error) throw error
       setSubmitted(true)
