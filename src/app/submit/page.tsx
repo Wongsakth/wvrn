@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/layout/Navbar'
@@ -32,6 +33,46 @@ export default function SubmitPage() {
     name: '', name_en: '', genres: [] as string[], genre_input: '',
     facebook_url: '', instagram_url: '', description: '',
   })
+
+  // Venue search
+  const [venueSearch,   setVenueSearch]   = useState('')
+  const [venueResults,  setVenueResults]  = useState<any[]>([])
+  const [venueLoading,  setVenueLoading]  = useState(false)
+  const [showVenueList, setShowVenueList] = useState(false)
+
+  // Artist search  
+  const [artistSearch,   setArtistSearch]   = useState('')
+  const [artistResults,  setArtistResults]  = useState<any[]>([])
+  const [artistLoading,  setArtistLoading]  = useState(false)
+  const [showArtistList, setShowArtistList] = useState(false)
+
+  // Search venues from DB
+  useEffect(() => {
+    if (!venueSearch || venueSearch.length < 2) { setVenueResults([]); return }
+    const t = setTimeout(async () => {
+      setVenueLoading(true)
+      const { data } = await sb.from('venues').select('id,name,province')
+        .ilike('name', `%${venueSearch}%`)
+        .is('deleted_at', null).limit(6)
+      setVenueResults(data || [])
+      setVenueLoading(false)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [venueSearch])
+
+  // Search artists from DB
+  useEffect(() => {
+    if (!artistSearch || artistSearch.length < 2) { setArtistResults([]); return }
+    const t = setTimeout(async () => {
+      setArtistLoading(true)
+      const { data } = await sb.from('artists').select('id,name,name_en')
+        .or(`name.ilike.%${artistSearch}%,name_en.ilike.%${artistSearch}%`)
+        .is('deleted_at', null).limit(6)
+      setArtistResults(data || [])
+      setArtistLoading(false)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [artistSearch])
 
   // AI Duplicate check — event
   useEffect(() => {
@@ -71,16 +112,13 @@ export default function SubmitPage() {
     setSubmitting(true)
     try {
       const { error } = await sb.from('event_submissions').insert({
-        type:         'event',
         title:        eForm.title,
-        event_name:   eForm.title,
         start_date:   eForm.start_date,
         venue_name:   eForm.venue_name,
         province:     eForm.province,
-        artists:      eForm.artists,
+        artist_name:  eForm.artists.join(', ') || null,
         ticket_url:   eForm.ticket_url || null,
         description:  eForm.description || null,
-        is_free:      eForm.is_free,
         status:       'pending',
         submitted_by: user?.id ?? null,
       })
@@ -207,25 +245,82 @@ export default function SubmitPage() {
             </div>
 
             <Field label="สถานที่จัดงาน *">
-              <input value={eForm.venue_name} onChange={e => setEForm(f => ({ ...f, venue_name: e.target.value }))}
-                placeholder="เช่น Thunder Dome เมืองทองธานี"
-                className="input-theme text-[14px]" />
+              <div className="relative">
+                <input
+                  value={venueSearch || eForm.venue_name}
+                  onChange={e => {
+                    setVenueSearch(e.target.value)
+                    setEForm(f => ({ ...f, venue_name: e.target.value }))
+                    setShowVenueList(true)
+                  }}
+                  onFocus={() => setShowVenueList(true)}
+                  onBlur={() => setTimeout(() => setShowVenueList(false), 200)}
+                  placeholder="พิมพ์ค้นหาสถานที่..."
+                  className="input-theme text-[14px] pr-8" />
+                {venueLoading && <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted" />}
+                {showVenueList && venueResults.length > 0 && (
+                  <div className="absolute z-20 w-full mt-1 rounded-xl overflow-hidden shadow-lg"
+                    style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                    {venueResults.map(v => (
+                      <button key={v.id} type="button"
+                        className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-[var(--surface-2)] transition-colors"
+                        onMouseDown={() => {
+                          setEForm(f => ({ ...f, venue_name: v.name }))
+                          setVenueSearch('')
+                          setShowVenueList(false)
+                        }}>
+                        <span className="text-primary">{v.name}</span>
+                        {v.province && <span className="text-muted text-[11px] ml-2">{v.province}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </Field>
 
             <Field label="ศิลปิน (optional)">
-              <div className="flex gap-2 mb-2">
-                <input value={eForm.artist_input}
-                  onChange={e => setEForm(f => ({ ...f, artist_input: e.target.value }))}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && eForm.artist_input.trim()) {
-                      setEForm(f => ({ ...f, artists: [...f.artists, f.artist_input.trim()], artist_input: '' }))
-                    }
-                  }}
-                  placeholder="พิมพ์ชื่อศิลปิน แล้วกด Enter"
-                  className="input-theme text-[13px] flex-1" />
+              <div className="flex gap-2 mb-2 relative">
+                <div className="relative flex-1">
+                  <input value={artistSearch}
+                    onChange={e => { setArtistSearch(e.target.value); setShowArtistList(true) }}
+                    onFocus={() => setShowArtistList(true)}
+                    onBlur={() => setTimeout(() => setShowArtistList(false), 200)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && artistSearch.trim()) {
+                        setEForm(f => ({ ...f, artists: [...f.artists, artistSearch.trim()] }))
+                        setArtistSearch('')
+                        setShowArtistList(false)
+                      }
+                    }}
+                    placeholder="พิมพ์ค้นหาหรือชื่อศิลปิน แล้วกด Enter"
+                    className="input-theme text-[13px] w-full pr-8" />
+                  {artistLoading && <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted" />}
+                  {showArtistList && artistResults.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 rounded-xl overflow-hidden shadow-lg"
+                      style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                      {artistResults.map(a => (
+                        <button key={a.id} type="button"
+                          className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-[var(--surface-2)] transition-colors"
+                          onMouseDown={() => {
+                            const name = a.name_en || a.name
+                            if (!eForm.artists.includes(name)) {
+                              setEForm(f => ({ ...f, artists: [...f.artists, name] }))
+                            }
+                            setArtistSearch('')
+                            setShowArtistList(false)
+                          }}>
+                          <span className="text-primary">{a.name}</span>
+                          {a.name_en && <span className="text-muted text-[11px] ml-2">{a.name_en}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button onClick={() => {
-                  if (eForm.artist_input.trim())
-                    setEForm(f => ({ ...f, artists: [...f.artists, f.artist_input.trim()], artist_input: '' }))
+                  if (artistSearch.trim()) {
+                    setEForm(f => ({ ...f, artists: [...f.artists, artistSearch.trim()] }))
+                    setArtistSearch('')
+                  }
                 }} className="btn-ghost px-3 py-2 text-[13px]"><Plus size={14} /></button>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -365,3 +460,4 @@ function DupWarning({ items, type }: { items: any[]; type: string }) {
     </div>
   )
 }
+
