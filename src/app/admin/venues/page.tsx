@@ -11,7 +11,7 @@ import type { Venue } from '@/types'
 
 const EMPTY = {
   name: '', address: '', province: 'กรุงเทพมหานคร',
-  capacity: '', maps_url: '', aliases: [] as string[],
+  capacity: '', maps_url: '', aliases: [] as string[], image_url: '',
 }
 
 export default function VenuesAdminPage() {
@@ -57,6 +57,7 @@ export default function VenuesAdminPage() {
       capacity: v.capacity?.toString() ?? '',
       maps_url: v.maps_url ?? '',
       aliases:  (v as any).aliases ?? [],
+      image_url: (v as any).image_url ?? '',
     })
     setAliasInput('')
     setShowForm(true)
@@ -67,12 +68,13 @@ export default function VenuesAdminPage() {
     setSaving(true)
     try {
       const payload = {
-        name:     form.name.trim(),
-        address:  form.address.trim()  || null,
-        province: form.province,
-        capacity: form.capacity ? parseInt(form.capacity) : null,
-        maps_url: form.maps_url.trim() || null,
-        aliases:  form.aliases.length > 0 ? form.aliases : null,
+        name:      form.name.trim(),
+        address:   form.address.trim()  || null,
+        province:  form.province,
+        capacity:  form.capacity ? parseInt(form.capacity) : null,
+        maps_url:  form.maps_url.trim() || null,
+        aliases:   form.aliases.length > 0 ? form.aliases : null,
+        image_url: form.image_url.trim() || null,
       }
       if (editTarget) {
         const { error } = await sb.from('venues').update(payload).eq('id', editTarget.id)
@@ -161,10 +163,15 @@ export default function VenuesAdminPage() {
                 background: 'var(--surface-1)',
                 borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
               }}>
-              {/* Icon */}
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'var(--accent-muted)' }}>
-                <MapPin size={16} style={{ color: 'var(--accent)' }} />
+              {/* Thumbnail */}
+              <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
+                style={{ background: 'var(--accent-muted)', border: '1px solid var(--border)' }}>
+                {(venue as any).image_url ? (
+                  <img src={(venue as any).image_url} alt={venue.name}
+                    className="w-full h-full object-cover" />
+                ) : (
+                  <MapPin size={16} style={{ color: 'var(--accent)' }} />
+                )}
               </div>
               {/* Info */}
               <div className="flex-1 min-w-0">
@@ -284,6 +291,27 @@ export default function VenuesAdminPage() {
                 )}
                 <p className="text-[10px] text-muted mt-1.5">ใช้สำหรับ search — เช่น ชื่อเก่า ชื่อย่อ ชื่อภาษาอื่น</p>
               </Field>
+
+              <Field label="รูปสถานที่ (Image URL)">
+                {form.image_url && (
+                  <div className="relative w-full h-36 rounded-xl overflow-hidden mb-2"
+                    style={{ border: '1px solid var(--border)' }}>
+                    <img src={form.image_url} alt="preview"
+                      className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setForm(f => ({ ...f, image_url: '' }))}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(0,0,0,0.6)' }}>
+                      <X size={12} style={{ color: 'white' }} />
+                    </button>
+                  </div>
+                )}
+                <input value={form.image_url}
+                  onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
+                  placeholder="https://..." className="input-theme text-[13px]" />
+                <p className="text-[10px] text-muted mt-1.5">วาง URL รูปภาพ จะแสดง preview ด้านบน</p>
+              </Field>
+
             </div>
 
             <div className="flex gap-2 px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
