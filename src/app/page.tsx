@@ -187,6 +187,7 @@ export default function HomePage() {
               id,
               name,
               name_en,
+              slug,
               image_url,
               genres
             )
