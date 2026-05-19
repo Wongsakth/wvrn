@@ -1157,13 +1157,71 @@ function EventRow({
                : '1px solid var(--border)',
       }}>
 
-      {/* Featured banner */}
+      {/* ── PARTNER: Style C — hero poster full width ── */}
       {featured === 'partner' && (
-        <div style={{ background: '#EF9F27', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#412402', letterSpacing: '.06em' }}>⭐ EVENT PARTNER</span>
-          <span style={{ fontSize: 10, color: '#633806', marginLeft: 'auto' }}>WVRN Partner</span>
-        </div>
+        <>
+          {/* Banner */}
+          <div style={{ background: '#EF9F27', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#412402', letterSpacing: '.06em' }}>⭐ EVENT PARTNER</span>
+            <span style={{ fontSize: 10, color: '#633806', marginLeft: 'auto' }}>WVRN Partner</span>
+          </div>
+
+          {/* Hero poster */}
+          <div style={{ position: 'relative', height: 130, background: 'var(--surface-2)', overflow: 'hidden' }}>
+            {poster ? (
+              <img src={poster} alt={event.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a0a2e, #3d1a5e)' }} />
+            )}
+            {/* Gradient overlay */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.65) 0%, transparent 55%)' }} />
+            {/* Title on image */}
+            <div style={{ position: 'absolute', bottom: 10, left: 14, right: 14 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.3 }}>{event.title}</p>
+              {event.artists?.length > 0 && (
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,.75)', margin: '2px 0 0' }}>
+                  {event.artists.slice(0, 3).map((a: any) => a.name_en || a.name).join(' · ')}
+                </p>
+              )}
+            </div>
+            {/* Date badge */}
+            <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,.6)', borderRadius: 8, padding: '4px 8px', textAlign: 'center', backdropFilter: 'blur(4px)' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#EF9F27', lineHeight: 1 }}>{format(start, 'd')}</div>
+              <div style={{ fontSize: 8, color: '#EF9F27', textTransform: 'uppercase', opacity: .8 }}>{format(start, 'MMM')}</div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ background: 'var(--surface-1)', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '0.5px solid var(--border)' }}>
+            <div>
+              {event.venue?.name && (
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <MapPin size={11} /> {event.venue.name}
+                </span>
+              )}
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#EF9F27' }}>
+                {event.is_free ? 'ฟรี' : event.ticket_price_min ? `฿${Number(event.ticket_price_min).toLocaleString()}` : 'TBA'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {event.ticket_url && (
+                <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Ticket size={13} /> ซื้อบัตร
+                </a>
+              )}
+              <button onClick={e => { e.stopPropagation(); window.open(googleCalendarUrl(event), '_blank') }}
+                style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', padding: '6px 10px', borderRadius: 8, display: 'flex', alignItems: 'center' }}>
+                <CalendarPlus size={13} className="text-muted" />
+              </button>
+            </div>
+          </div>
+        </>
       )}
+
+      {/* ── WVRN PICKS banner ── */}
       {featured === 'wvrn_picks' && (
         <div style={{ background: '#7C3AED', padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: '#EEEDFE', letterSpacing: '.06em' }}>⚡ WVRN PICKS</span>
@@ -1171,7 +1229,8 @@ function EventRow({
         </div>
       )}
 
-      {/* Card body */}
+      {/* ── Normal card body (WVRN Picks + regular) ── */}
+      {featured !== 'partner' && (
       <div className="flex" style={{ background: 'var(--surface-1)', minHeight: 90 }}>
 
         {/* POSTER / DATE */}
@@ -1298,6 +1357,7 @@ function EventRow({
         </div>
 
       </div>
+      )}
     </div>
   )
 }
