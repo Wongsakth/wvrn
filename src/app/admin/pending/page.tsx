@@ -78,6 +78,30 @@ export default function PendingPage() {
   async function handleApprove(sub: Submission) {
     setProcessing(sub.id)
     try {
+      // ถ้าเป็น submission ศิลปิน (ไม่มี event_date) → สร้างแค่ศิลปิน ไม่สร้าง event
+      if (sub.type === 'artist' || !sub.event_date) {
+        // สร้างศิลปินใหม่ถ้าไม่มีในระบบ
+        if (sub.artist_name) {
+          const { data: existing } = await sb.from('artists')
+            .select('id').or(`name.ilike.%${sub.artist_name}%,name_en.ilike.%${sub.artist_name}%`)
+            .limit(1).single()
+          if (!existing) {
+            await sb.from('artists').insert({
+              name:    sub.artist_name,
+              name_en: sub.artist_name,
+            })
+          }
+        }
+        const { error: upErr } = await sb.from('event_submissions')
+          .update({ status: 'approved', reviewer_note: notes[sub.id] || null })
+          .eq('id', sub.id)
+        if (upErr) throw upErr
+        await logAudit({ action: 'approve', targetType: 'submission', targetId: sub.id, targetName: sub.title })
+        toast.success(`อนุมัติ "${sub.title}" แล้ว`)
+        load()
+        return
+      }
+
       // 1. สร้าง event จริง
       const { data: ev, error: evErr } = await sb.from('events').insert({
         title:            sub.title,
