@@ -58,7 +58,7 @@ export default function AdminDashboard() {
       if (error) throw error
 
       if (sub.artist_name && ev) {
-        const names = sub.artist_name.split(/[,\/x&+]/).map((s: string) => s.trim()).filter(Boolean)
+        const names = (sub.artist_name || '').split(/[,\/x&+]/).map((s: string) => s.trim()).filter(Boolean)
         for (let i = 0; i < names.length; i++) {
           const { data: found } = await sb.from('artists')
             .select('id').or(`name.ilike.%${names[i]}%,name_en.ilike.%${names[i]}%`).limit(1).single()
@@ -161,12 +161,12 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[12px] text-muted mb-4">
                     {sub.artist_name && <span className="flex items-center gap-1.5"><Music size={11}/>{sub.artist_name}</span>}
                     {sub.venue_name  && <span className="flex items-center gap-1.5"><MapPin size={11}/>{sub.venue_name}</span>}
-                    {(sub.event_date || sub.start_date) && (
+                    {(sub.event_date || sub.start_date) ? (
                       <span className="flex items-center gap-1.5">
                         <Calendar size={11}/>
-                        {format(parseISO(sub.event_date || sub.start_date), 'd MMM yyyy', { locale: th })}
+                        {format(parseISO((sub.event_date || sub.start_date)!), 'd MMM yyyy', { locale: th })}
                       </span>
-                    )}
+                    ) : null}
                     {sub.province && <span className="flex items-center gap-1.5"><MapPin size={11}/>{sub.province}</span>}
                     {sub.ticket_price && <span>฿{sub.ticket_price}</span>}
                   </div>
@@ -215,10 +215,10 @@ export default function AdminDashboard() {
               <div className="w-9 h-9 rounded-lg shrink-0 flex flex-col items-center justify-center"
                 style={{ background: 'var(--accent-muted)' }}>
                 <span className="text-[13px] font-medium leading-none" style={{ color: 'var(--accent)' }}>
-                  {format(parseISO(ev.start_date), 'd')}
+                  {ev.start_date ? format(parseISO(ev.start_date), 'd') : '-'}
                 </span>
                 <span className="text-[8px] uppercase" style={{ color: 'var(--accent)', opacity:.7 }}>
-                  {format(parseISO(ev.start_date), 'MMM', { locale: th })}
+                  {ev.start_date ? format(parseISO(ev.start_date), 'MMM', { locale: th }) : ''}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
