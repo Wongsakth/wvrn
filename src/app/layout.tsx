@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     default:  'WVRN — Never Miss a Show',
     template: '%s | WVRN',
   },
-  description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก ไม่มีวันพลาดอีก',
+  description: 'ปฏิทินคอนเสิร์ตและงานดนตรีสด ค้นหา Concert, Live Show และงาน Festival ติดตามศิลปินที่คุณรัก รู้ก่อนใครเมื่อมีงานใหม่ ไม่พลาดทุก Show',
   keywords:    'concert, คอนเสิร์ต, ตารางคอนเสิร์ต, งานดนตรี, เทศกาลดนตรี, WVRN',
   authors:     [{ name: 'WVRN', url: 'https://wvrn.vercel.app' }],
   creator:     'WVRN',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title:       'WVRN — Never Miss a Show',
-    description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก ไม่มีวันพลาดอีก',
+    description: 'ปฏิทินคอนเสิร์ตและงานดนตรีสด ค้นหา Concert, Live Show และงาน Festival ติดตามศิลปินที่คุณรัก รู้ก่อนใครเมื่อมีงานใหม่ ไม่พลาดทุก Show',
     siteName:    'WVRN',
     locale:      'th_TH',
     type:        'website',
