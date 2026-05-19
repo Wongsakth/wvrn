@@ -813,6 +813,39 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* VIEW TOGGLE */}
+        {!loading && tab !== 'ai' && tab !== 'artists' && (
+          <div className="flex items-center justify-end gap-1 mb-1">
+            <button onClick={() => setView('list')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] transition-all"
+              style={{
+                background: view === 'list' ? 'var(--accent-muted)' : 'transparent',
+                color: view === 'list' ? 'var(--accent)' : 'var(--text-muted)',
+                border: `1px solid ${view === 'list' ? 'var(--accent)' : 'var(--border)'}`,
+              }}>
+              <List size={13} /> รายการ
+            </button>
+            <button onClick={() => setView('calendar')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] transition-all"
+              style={{
+                background: view === 'calendar' ? 'var(--accent-muted)' : 'transparent',
+                color: view === 'calendar' ? 'var(--accent)' : 'var(--text-muted)',
+                border: `1px solid ${view === 'calendar' ? 'var(--accent)' : 'var(--border)'}`,
+              }}>
+              <Calendar size={13} /> ปฏิทิน
+            </button>
+          </div>
+        )}
+
+        {/* CALENDAR VIEW */}
+        {!loading && tab !== 'ai' && tab !== 'artists' && view === 'calendar' && (
+          <CalendarView
+            events={filtered as any}
+            likedIds={likedIds}
+            onLike={id => toggleLike(id, '')}
+          />
+        )}
+
         {/* LIST */}
 
         {!loading &&
