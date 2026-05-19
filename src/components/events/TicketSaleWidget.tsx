@@ -65,7 +65,7 @@ export default function TicketSaleWidget({ event, compact }: Props) {
     const url = `https://www.google.com/calendar/render?action=TEMPLATE`
       + `&text=${encodeURIComponent(`🎟 เปิดจำหน่ายบัตร: ${event.title}`)}`
       + `&dates=${fmt(remind)}/${fmt(date)}`
-      + `&details=${encodeURIComponent(`บัตรคอนเสิร์ต ${event.title} เปิดจำหน่าย ${date.toLocaleString('th-TH')}`)}`
+      + `&details=${encodeURIComponent(`บัตรคอนเสิร์ต ${event.title} เปิดจำหน่าย ${date.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}`)}`
     window.open(url, '_blank')
   }
 
@@ -131,7 +131,8 @@ export default function TicketSaleWidget({ event, compact }: Props) {
               <Clock size={11} />
               เปิดจำหน่าย {new Date(event.ticket_sale_start).toLocaleString('th-TH', {
                 day: 'numeric', month: 'short', year: '2-digit',
-                hour: '2-digit', minute: '2-digit'
+                hour: '2-digit', minute: '2-digit',
+                timeZone: 'Asia/Bangkok'
               })} น.
             </div>
             {/* Countdown boxes */}
@@ -164,7 +165,7 @@ export default function TicketSaleWidget({ event, compact }: Props) {
             </span>
             {event.ticket_sale_end && (
               <span className="text-[11px] text-muted ml-auto">
-                ถึง {new Date(event.ticket_sale_end).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                ถึง {new Date(event.ticket_sale_end).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' })}
               </span>
             )}
           </div>
