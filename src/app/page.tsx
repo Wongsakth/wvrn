@@ -50,7 +50,7 @@ import type {
   ViewMode,
 } from '@/types'
 
-type TabMode = 'all' | 'artists' | 'following' | 'ai'
+type TabMode = 'all' | 'artists' | 'venues' | 'following'
 type AttendStatus = 'going' | 'attended' | null
 
 export default function HomePage() {
@@ -426,7 +426,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (
-      tab === 'ai' &&
+      tab === 'venues' &&
       aiEvents.length === 0 &&
       !aiLoading
     ) {
@@ -549,11 +549,11 @@ export default function HomePage() {
             {[
               { id: 'all',       label: 'Shows',     icon: Music       },
               { id: 'artists',   label: 'Artists',   icon: Heart       },
+              { id: 'venues',    label: 'Venues',    icon: MapPin      },
               { id: 'following', label: 'Following', icon: CalendarCheck },
-              { id: 'ai',        label: 'For You',   icon: Sparkles    },
             ].map(item => {
               const Icon = item.icon
-              const needLogin = (item.id === 'following' || item.id === 'ai') && !isLoggedIn
+              const needLogin = (item.id === 'following') && !isLoggedIn
               return (
                 <button
                   key={item.id}
@@ -723,7 +723,7 @@ export default function HomePage() {
 
         {/* FILTER */}
 
-        {tab !== 'ai' && (
+        {tab !== 'venues' && (
           <>
             <LiveTicker
               followedArtistIds={Array.from(followedIds)}
@@ -756,9 +756,24 @@ export default function HomePage() {
           }} />
         )}
 
+        {/* VENUES TAB */}
+        {!loading && tab === 'venues' && (
+          <VenuesTab followedVenueIds={followedVenueIds} onFollowToggle={(id) => {
+            if (!isLoggedIn) { window.location.href = '/login'; return }
+            const sb = createClient()
+            const prev = followedVenueIds.has(id)
+            setFollowedVenueIds(s => { const n = new Set(s); prev ? n.delete(id) : n.add(id); return n })
+            if (prev) {
+              sb.from('venue_follows').delete().eq('user_id', user!.id).eq('venue_id', id)
+            } else {
+              sb.from('venue_follows').insert({ user_id: user!.id, venue_id: id })
+            }
+          }} />
+        )}
+
         {/* AI */}
 
-        {!loading && tab === 'ai' && (
+        {!loading && tab === 'venues' && (
           <div>
 
             <div className="flex items-center justify-between mb-4">
@@ -814,7 +829,7 @@ export default function HomePage() {
         )}
 
         {/* VIEW TOGGLE */}
-        {!loading && tab !== 'ai' && tab !== 'artists' && (
+        {!loading && tab !== 'venues' && tab !== 'artists' && (
           <div className="flex items-center justify-end gap-1 mb-1">
             <button onClick={() => setView('list')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] transition-all"
@@ -838,7 +853,7 @@ export default function HomePage() {
         )}
 
         {/* CALENDAR VIEW */}
-        {!loading && tab !== 'ai' && tab !== 'artists' && view === 'calendar' && (
+        {!loading && tab !== 'venues' && tab !== 'artists' && view === 'calendar' && (
           <CalendarView
             events={filtered as any}
             likedIds={likedIds}
@@ -849,7 +864,7 @@ export default function HomePage() {
         {/* LIST */}
 
         {!loading &&
-          tab !== 'ai' &&
+          tab !== 'venues' &&
           tab !== 'artists' &&
           view === 'list' && (
             <div className="flex flex-col gap-2">
@@ -1431,6 +1446,94 @@ function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>;
               </div>
             )
           })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── VenuesTab ──────────────────────────────────────────────
+function VenuesTab({ followedVenueIds, onFollowToggle }: { followedVenueIds: Set<string>; onFollowToggle: (id: string) => void }) {
+  const [venues,  setVenues]  = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
+  const sb = createClient()
+
+  useEffect(() => {
+    sb.from('venues').select('id,name,slug,province,image_url,follower_count,event_count')
+      .is('deleted_at', null)
+      .order('follower_count', { ascending: false })
+      .then(({ data }) => { setVenues(data || []); setLoading(false) })
+  }, [])
+
+  const followed = venues.filter(v => followedVenueIds.has(v.id))
+  const others   = venues.filter(v => !followedVenueIds.has(v.id))
+  const filtered = (arr: any[]) => !search ? arr : arr.filter(v =>
+    v.name?.toLowerCase().includes(search.toLowerCase()) ||
+    v.province?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const VenueCard = ({ venue }: { venue: any }) => {
+    const isFollowed = followedVenueIds.has(venue.id)
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border)]">
+        {venue.image_url
+          ? <img src={venue.image_url} alt={venue.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+          : <div className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center bg-[var(--surface-2)]">
+              <MapPin size={16} style={{ color: 'var(--accent)' }} />
+            </div>
+        }
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => window.location.href = `/venues/${venue.slug || venue.id}`}>
+          <p className="text-[13px] font-medium text-primary truncate">{venue.name}</p>
+          {venue.province && <p className="text-[11px] text-muted truncate">{venue.province}</p>}
+        </div>
+        <button onClick={() => onFollowToggle(venue.id)}
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all"
+          style={{ background: isFollowed ? '#E8003A' : 'rgba(255,255,255,.06)', border: isFollowed ? 'none' : '1px solid rgba(255,255,255,.1)' }}>
+          <Heart size={14} style={{ color: 'white', fill: isFollowed ? 'white' : 'none' }} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl px-3 py-2 mb-4">
+        <Search size={14} className="text-muted shrink-0" />
+        <input value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="ค้นหาสถานที่..." className="bg-transparent outline-none text-sm flex-1 text-secondary" />
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border)]">
+              <div className="w-10 h-10 rounded-lg shrink-0" style={{ background: 'var(--surface-2)' }} />
+              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                <div className="w-3/4 h-3.5 rounded" style={{ background: 'var(--surface-2)' }} />
+                <div className="w-1/2 h-3 rounded" style={{ background: 'var(--surface-2)' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {/* ติดตามอยู่ */}
+          {followed.length > 0 && filtered(followed).length > 0 && (
+            <div>
+              <p className="text-[10px] font-medium text-muted uppercase tracking-widest mb-2">ติดตามอยู่</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {filtered(followed).map(v => <VenueCard key={v.id} venue={v} />)}
+              </div>
+            </div>
+          )}
+          {/* สถานที่ทั้งหมด */}
+          <div>
+            {followed.length > 0 && <p className="text-[10px] font-medium text-muted uppercase tracking-widest mb-2">สถานที่ทั้งหมด</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {filtered(others).map(v => <VenueCard key={v.id} venue={v} />)}
+            </div>
+          </div>
         </div>
       )}
     </div>
