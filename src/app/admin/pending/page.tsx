@@ -95,7 +95,7 @@ export default function PendingPage() {
 
       // 2. หาศิลปินจาก artist_name (คั่นด้วย , หรือ / หรือ x)
       if (sub.artist_name && ev?.id) {
-        const artistNames = (sub.artist_name || '')
+        const artistNames = (sub.artist_name ?? '')
           .split(/[,\/x&+]/)
           .map((s: string) => s.trim())
           .filter(Boolean)
@@ -224,7 +224,7 @@ export default function PendingPage() {
                       <InfoRow
                         icon={<Calendar size={13} />}
                         label="วันที่"
-                        value={format(parseISO(sub.event_date), 'd MMMM yyyy', { locale: th })}
+                        value={sub.event_date ? format(parseISO(sub.event_date), 'd MMMM yyyy', { locale: th }) : 'ไม่ระบุ'}
                       />
                       {sub.start_time && (
                         <InfoRow icon={<Clock size={13} />} label="เวลา" value={`${sub.start_time.slice(0,5)} น.`} />
