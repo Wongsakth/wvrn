@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { cn, formatPrice, statusLabel, genreTagClass, googleCalendarUrl } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
 
 export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -241,10 +242,7 @@ export default function EventDetailPage() {
       <div className="max-w-screen-lg mx-auto px-4 sm:px-6 py-6">
 
         {/* Back */}
-        <button onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-[13px] text-muted hover:text-primary transition-colors mb-5">
-          <ChevronLeft size={16} /> กลับ
-        </button>
+<BackButton />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
