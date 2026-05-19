@@ -94,8 +94,8 @@ export default function PendingPage() {
       if (evErr) throw evErr
 
       // 2. หาศิลปินจาก artist_name (คั่นด้วย , หรือ / หรือ x)
-      if (sub.artist_name && ev) {
-        const artistNames = sub.artist_name
+      if (sub.artist_name && ev?.id) {
+        const artistNames = (sub.artist_name || '')
           .split(/[,\/x&+]/)
           .map((s: string) => s.trim())
           .filter(Boolean)
