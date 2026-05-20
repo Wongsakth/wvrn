@@ -45,6 +45,7 @@ export default function ImportPosterPage() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [parsed,      setParsed]      = useState<ParsedEvent | null>(null)
   const [newArtist,   setNewArtist]   = useState('')
+  const [similarEvents, setSimilarEvents] = useState<any[]>([])
 
   // ── Upload image ────────────────────────────────────────
   function handleFile(file: File) {
@@ -67,12 +68,18 @@ export default function ImportPosterPage() {
     setStep('parsing')
 
     try {
-      // Convert to base64
+      // Resize image 50% before sending to Gemini
       const base64 = await new Promise<string>((res, rej) => {
-        const r = new FileReader()
-        r.onload = () => res((r.result as string).split(',')[1])
-        r.onerror = rej
-        r.readAsDataURL(imageFile)
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width  = Math.round(img.width  * 0.5)
+          canvas.height = Math.round(img.height * 0.5)
+          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+          res(canvas.toDataURL(imageFile.type, 0.8).split(',')[1])
+        }
+        img.onerror = rej
+        img.src = imagePreview
       })
 
       const prompt = `อ่านข้อมูลจากโปสเตอร์คอนเสิร์ต/เทศกาลดนตรีนี้ แล้วตอบเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
@@ -94,7 +101,7 @@ export default function ImportPosterPage() {
 วันที่ให้แปลงเป็น YYYY-MM-DD เสมอ`
 
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -111,8 +118,6 @@ export default function ImportPosterPage() {
 
       const data = await res.json()
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      console.log('Gemini raw response:', JSON.stringify(data, null, 2))
-      console.log('Gemini text:', text)
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('ไม่สามารถแกะข้อมูลจากโปสเตอร์ได้')
 
@@ -137,6 +142,68 @@ export default function ImportPosterPage() {
           } as ParsedArtist
         })
       )
+
+
+      // ── Duplicate check ──────────────────────────────────
+      const similar: any[] = []
+      const titleWords = (raw.title || '').toLowerCase().split(' ').filter((w: string) => w.length > 2)
+      const artistNames = matchedArtists.filter(a => a.matched).map(a => a.name.toLowerCase())
+
+      // Query events ใกล้เคียง — เช็คหลายมิติ
+      let q = sb.from('events').select('id,title,start_date,venue:venues(name),event_artists(artist:artists(name,name_en))')
+        .is('deleted_at', null)
+
+      // ถ้ามีวันที่ → เช็ค ±30 วัน
+      if (raw.event_date) {
+        const d = new Date(raw.event_date)
+        const from = new Date(d); from.setDate(d.getDate() - 30)
+        const to   = new Date(d); to.setDate(d.getDate() + 30)
+        q = q.gte('start_date', from.toISOString().slice(0,10))
+             .lte('start_date', to.toISOString().slice(0,10))
+      }
+
+      const { data: candidates } = await q.limit(200)
+
+      for (const ev of (candidates || [])) {
+        let score = 0
+        const evTitle   = (ev.title || '').toLowerCase()
+        const evArtists = (ev.event_artists || []).flatMap((ea: any) => [
+          ea.artist?.name?.toLowerCase(), ea.artist?.name_en?.toLowerCase()
+        ]).filter(Boolean)
+        const evVenue  = (ev.venue?.name || '').toLowerCase()
+        const rawVenue = (raw.venue_name || '').toLowerCase()
+        const rawTitle = (raw.title || '').toLowerCase()
+
+        // P1: วันที่ตรง + ศิลปินซ้ำ
+        const dateMatch     = raw.event_date && ev.start_date === raw.event_date
+        const artistOverlap = artistNames.filter((n: string) =>
+          evArtists.some((a: string) => a && (a.includes(n) || n.includes(a)))
+        )
+        if (dateMatch && artistOverlap.length > 0) score += 80
+
+        // P2: ชื่อสถานที่
+        if (rawVenue.length >= 3 && evVenue.length >= 3 &&
+            (evVenue.includes(rawVenue.slice(0, 6)) || rawVenue.includes(evVenue.slice(0, 6)))) {
+          score += 30
+        }
+
+        // P3: ชื่องาน
+        if (evTitle === rawTitle) score += 50
+        else {
+          const matched = titleWords.filter((w: string) => w.length > 2 && evTitle.includes(w))
+          score += matched.length * 10
+        }
+
+        if (score >= 51) similar.push({ ...ev, score })
+      }
+
+      similar.sort((a, b) => b.score - a.score)
+
+      // ซ้ำมาก (≥80) → 1 อัน, คล้ายกัน (51-79) → 2 อัน
+      const exact    = similar.filter(e => e.score >= 80).slice(0, 1)
+      const closeMatch = similar.filter(e => e.score >= 51 && e.score < 80).slice(0, 2)
+      setSimilarEvents([...exact, ...closeMatch])
+      // ── End duplicate check ───────────────────────────────
 
       setParsed({
         title:        raw.title || '',
@@ -307,6 +374,40 @@ export default function ImportPosterPage() {
             <div className="rounded-xl overflow-hidden h-48"
               style={{ border: '1px solid var(--border)' }}>
               <img src={imagePreview} alt="poster" className="w-full h-full object-contain" style={{ background: 'var(--surface-2)' }} />
+            </div>
+          )}
+
+
+          {/* Duplicate Warning */}
+          {similarEvents.length > 0 && (
+            <div className="rounded-xl overflow-hidden"
+              style={{ border: '1.5px solid #EF9F27', background: 'rgba(239,159,39,.04)' }}>
+              <div className="px-4 py-2.5 flex items-center gap-2"
+                style={{ background: 'rgba(239,159,39,.1)', borderBottom: '1px solid rgba(239,159,39,.2)' }}>
+                <AlertCircle size={14} style={{ color: '#EF9F27' }} />
+                <span className="text-[12px] font-medium" style={{ color: '#EF9F27' }}>
+                  ⚠️ พบงานใกล้เคียง — กรุณาตรวจสอบก่อน Submit
+                </span>
+              </div>
+              <div className="divide-y divide-[var(--border)]">
+                {similarEvents.map(ev => (
+                  <div key={ev.id} className="px-4 py-3 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-primary truncate">{ev.title}</p>
+                      <div className="flex gap-2 text-[11px] text-muted mt-0.5 flex-wrap">
+                        {ev.start_date && <span>📅 {ev.start_date}</span>}
+                        {ev.venue?.name && <span>📍 {ev.venue.name}</span>}
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2 py-1 rounded-full font-medium shrink-0"
+                      style={{ background: ev.score >= 80 ? 'rgba(226,75,74,.1)' : 'rgba(239,159,39,.1)', color: ev.score >= 80 ? '#E24B4A' : '#EF9F27' }}>
+                      {ev.score >= 80 ? '🔴 ซ้ำมาก' : '🟡 คล้ายกัน'}
+                    </span>
+                    <a href={`/events/${ev.id}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[11px] shrink-0" style={{ color: 'var(--accent)' }}>ดู →</a>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
