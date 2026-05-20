@@ -67,12 +67,18 @@ export default function ImportPosterPage() {
     setStep('parsing')
 
     try {
-      // Convert to base64
+      // Resize image 50% before sending to Gemini
       const base64 = await new Promise<string>((res, rej) => {
-        const r = new FileReader()
-        r.onload = () => res((r.result as string).split(',')[1])
-        r.onerror = rej
-        r.readAsDataURL(imageFile)
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width  = Math.round(img.width  * 0.5)
+          canvas.height = Math.round(img.height * 0.5)
+          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+          res(canvas.toDataURL(imageFile.type, 0.8).split(',')[1])
+        }
+        img.onerror = rej
+        img.src = imagePreview
       })
 
       const prompt = `อ่านข้อมูลจากโปสเตอร์คอนเสิร์ต/เทศกาลดนตรีนี้ แล้วตอบเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
@@ -94,7 +100,7 @@ export default function ImportPosterPage() {
 วันที่ให้แปลงเป็น YYYY-MM-DD เสมอ`
 
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -111,8 +117,6 @@ export default function ImportPosterPage() {
 
       const data = await res.json()
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      console.log('Gemini raw response:', JSON.stringify(data, null, 2))
-      console.log('Gemini text:', text)
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('ไม่สามารถแกะข้อมูลจากโปสเตอร์ได้')
 
