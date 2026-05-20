@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase'
 import {
   Shield, Music, MapPin, CalendarDays,
   ClipboardList, ChevronRight, Menu, X,
-  LayoutDashboard, Tag, FileUp, LayoutList, Building2, Users,
+  LayoutDashboard, Tag, FileUp, LayoutList, Building2, Users, Image as ImageIcon,
 } from 'lucide-react'
 
 const MENU = [
@@ -42,7 +42,8 @@ const MENU = [
   {
     group: 'นำเข้าข้อมูล',
     items: [
-      { href: '/admin/import-artists', label: 'Import ศิลปิน', icon: FileUp, badge: null },
+      { href: '/admin/import-artists', label: 'Import ศิลปิน',   icon: FileUp,  badge: null },
+      { href: '/admin/import-poster',  label: 'Import โปสเตอร์', icon: ImageIcon, badge: null },
     ],
   },
 ]
