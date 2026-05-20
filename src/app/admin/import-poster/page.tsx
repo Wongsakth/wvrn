@@ -111,6 +111,8 @@ export default function ImportPosterPage() {
 
       const data = await res.json()
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      console.log('Gemini raw response:', JSON.stringify(data, null, 2))
+      console.log('Gemini text:', text)
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('ไม่สามารถแกะข้อมูลจากโปสเตอร์ได้')
 
