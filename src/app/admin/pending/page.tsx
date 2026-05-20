@@ -111,6 +111,7 @@ export default function PendingPage() {
         is_free:          !sub.ticket_price,
         ticket_price_min: sub.ticket_price,
         ticket_url:       sub.ticket_url,
+        poster_url:       sub.poster_url || null,
         event_type:       'concert',
         status:           'confirmed',
         province:         sub.province ?? 'กรุงเทพมหานคร',
