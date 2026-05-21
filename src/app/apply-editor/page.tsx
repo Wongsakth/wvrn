@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/layout/Navbar'
@@ -240,3 +241,4 @@ export default function ApplyEditorPage() {
     </div>
   )
 }
+

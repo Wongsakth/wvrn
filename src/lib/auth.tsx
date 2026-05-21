@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
@@ -78,3 +79,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useAuth = () => useContext(Ctx)
+

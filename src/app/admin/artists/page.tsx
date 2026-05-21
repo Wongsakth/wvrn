@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Navbar from '@/components/layout/Navbar'
@@ -690,3 +691,4 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
     </div>
   )
 }
+

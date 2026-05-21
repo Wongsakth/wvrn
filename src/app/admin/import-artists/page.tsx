@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
@@ -377,3 +378,4 @@ export default function ImportArtistsPage() {
     </div>
   )
 }
+

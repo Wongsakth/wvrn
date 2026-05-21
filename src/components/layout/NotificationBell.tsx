@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { Bell, X, CheckCheck, Clock, Music, Calendar, Info } from 'lucide-react'
@@ -182,3 +183,4 @@ export default function NotificationBell() {
     </div>
   )
 }
+

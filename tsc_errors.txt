@@ -1,0 +1,143 @@
+src/app/admin/artists/page.tsx(148,35): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'never'.
+src/app/admin/artists/page.tsx(152,59): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'never[]'.
+src/app/admin/artists/page.tsx(169,57): error TS2345: Argument of type '{ deleted_at: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/artists/page.tsx(181,13): error TS2345: Argument of type '(f: { name: string; name_en: string; bio: string; image_url: string; genres: Genre[]; facebook_url: string; instagram_url: string; tiktok_url: string; website_url: string; label_url: string; label_id: string | null; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ name: string; name_en: string; bio: string; image_url: string; genres: Genre[]; facebook_url: string; instagram_url: string; tiktok_url: string; website_url: string; label_url: string; label_id: string | null; }>'.
+src/app/admin/artists/page.tsx(312,49): error TS2339: Property 'color' does not exist on type '{ id: string; label_th: string; label_en: string; category: string; }'.
+src/app/admin/artists/page.tsx(313,40): error TS2339: Property 'color' does not exist on type '{ id: string; label_th: string; label_en: string; category: string; }'.
+src/app/admin/artists/page.tsx(316,32): error TS2339: Property 'label' does not exist on type '{ id: string; label_th: string; label_en: string; category: string; }'.
+src/app/admin/categories/page.tsx(66,68): error TS2345: Argument of type '{ name: string; name_th: string | null; icon: string; color: string; description: string | null; sort_order: number; is_active: boolean; }' is not assignable to parameter of type 'never'.
+src/app/admin/categories/page.tsx(70,68): error TS2345: Argument of type '{ name: string; name_th: string | null; icon: string; color: string; description: string | null; sort_order: number; is_active: boolean; }' is not assignable to parameter of type 'never[]'.
+src/app/admin/categories/page.tsx(89,66): error TS2345: Argument of type '{ is_active: boolean; }' is not assignable to parameter of type 'never'.
+src/app/admin/events/[id]/page.tsx(48,39): error TS2339: Property 'event_artists' does not exist on type 'never'.
+src/app/admin/events/[id]/page.tsx(52,18): error TS2698: Spread types may only be created from object types.
+src/app/admin/events/page.tsx(187,58): error TS2345: Argument of type '{ title: string; description: string | null; event_type: EventType; status: EventStatus; start_date: string; end_date: string | null; start_time: string | null; ... 13 more ...; slug: string | null; }' is not assignable to parameter of type 'never'.
+src/app/admin/events/page.tsx(190,64): error TS2345: Argument of type '{ title: string; description: string | null; event_type: EventType; status: EventStatus; start_date: string; end_date: string | null; start_time: string | null; ... 13 more ...; slug: string | null; }' is not assignable to parameter of type 'never[]'.
+src/app/admin/events/page.tsx(192,24): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/events/page.tsx(200,13): error TS2345: Argument of type '{ event_id: any; artist_id: string; sort_order: number; is_headliner: boolean; start_time: string | null; }[]' is not assignable to parameter of type 'never[]'.
+src/app/admin/events/page.tsx(224,17): error TS2345: Argument of type '{ deleted_at: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/genres/page.tsx(93,15): error TS2339: Property 'name' does not exist on type '{ emoji: string; color: string; label_en: string; sort_order: number; is_active: boolean; label_th: string | null; }'.
+src/app/admin/genres/page.tsx(105,58): error TS2345: Argument of type '{ label_en: string; label_th: string | null; color: string; emoji: string; sort_order: number; is_active: boolean; }' is not assignable to parameter of type 'never'.
+src/app/admin/genres/page.tsx(107,38): error TS2339: Property 'name' does not exist on type '{ emoji: string; color: string; label_en: string; sort_order: number; is_active: boolean; label_th: string | null; }'.
+src/app/admin/genres/page.tsx(109,58): error TS2345: Argument of type '{ label_en: string; label_th: string | null; color: string; emoji: string; sort_order: number; is_active: boolean; }' is not assignable to parameter of type 'never[]'.
+src/app/admin/genres/page.tsx(111,38): error TS2339: Property 'name' does not exist on type '{ emoji: string; color: string; label_en: string; sort_order: number; is_active: boolean; label_th: string | null; }'.
+src/app/admin/genres/page.tsx(137,32): error TS2345: Argument of type '{ is_active: boolean; }' is not assignable to parameter of type 'never'.
+src/app/admin/genres/page.tsx(283,52): error TS2339: Property 'name' does not exist on type 'Genre'.
+src/app/admin/genres/page.tsx(296,38): error TS2339: Property 'name' does not exist on type '{ emoji: string; color: string; label_en: string; sort_order: number; is_active: boolean; label_th: string | null; }'.
+src/app/admin/genres/page.tsx(302,36): error TS2339: Property 'name' does not exist on type '{ emoji: string; color: string; label_en: string; sort_order: number; is_active: boolean; label_th: string | null; }'.
+src/app/admin/import-artists/page.tsx(97,11): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'never[]'.
+src/app/admin/labels/page.tsx(63,9): error TS2698: Spread types may only be created from object types.
+src/app/admin/labels/page.tsx(64,43): error TS2339: Property 'label_id' does not exist on type 'never'.
+src/app/admin/labels/page.tsx(64,58): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/labels/page.tsx(99,58): error TS2345: Argument of type '{ name: string; name_en: string | null; description: string | null; logo_url: string | null; website_url: string | null; facebook_url: string | null; instagram_url: string | null; color: string; is_active: boolean; }' is not assignable to parameter of type 'never'.
+src/app/admin/labels/page.tsx(103,58): error TS2345: Argument of type '{ name: string; name_en: string | null; description: string | null; logo_url: string | null; website_url: string | null; facebook_url: string | null; instagram_url: string | null; color: string; is_active: boolean; }' is not assignable to parameter of type 'never[]'.
+src/app/admin/labels/page.tsx(115,39): error TS2345: Argument of type '{ label_id: null; }' is not assignable to parameter of type 'never'.
+src/app/admin/labels/page.tsx(125,57): error TS2345: Argument of type '{ label_id: string | null; }' is not assignable to parameter of type 'never'.
+src/app/admin/labels/page.tsx(140,38): error TS2345: Argument of type '{ is_active: boolean; }' is not assignable to parameter of type 'never'.
+src/app/admin/page.tsx(45,9): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'never[]'.
+src/app/admin/page.tsx(63,62): error TS2353: Object literal may only specify known properties, and 'event_id' does not exist in type 'never[]'.
+src/app/admin/page.tsx(63,75): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/page.tsx(63,96): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/page.tsx(67,49): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/page.tsx(74,47): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/pending/page.tsx(51,51): error TS2345: Argument of type '{ status: string; reviewed_by: string | undefined; reviewed_at: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/pending/page.tsx(52,40): error TS2345: Argument of type '{ role: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/pending/page.tsx(54,47): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/admin/pending/page.tsx(66,51): error TS2345: Argument of type '{ status: string; reviewed_by: string | undefined; reviewed_at: string; reject_reason: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/pending/page.tsx(67,47): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/admin/pending/page.tsx(81,9): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'never[]'.
+src/app/admin/pending/page.tsx(113,15): error TS2353: Object literal may only specify known properties, and 'event_id' does not exist in type 'never[]'.
+src/app/admin/pending/page.tsx(113,31): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/pending/page.tsx(114,34): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/pending/page.tsx(117,16): error TS2339: Property 'on' does not exist on type 'PostgrestFilterBuilder<{ PostgrestVersion: "14.5"; }, never, never, null, "event_artists", never, "POST">'.
+src/app/admin/pending/page.tsx(124,17): error TS2345: Argument of type '{ status: string; reviewer_note: string | null; }' is not assignable to parameter of type 'never'.
+src/app/admin/pending/page.tsx(145,17): error TS2345: Argument of type '{ status: string; reviewer_note: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/pending/page.tsx(254,26): error TS2339: Property 'contact_info' does not exist on type 'Submission'.
+src/app/admin/pending/page.tsx(259,72): error TS2339: Property 'contact_info' does not exist on type 'Submission'.
+src/app/admin/permissions/page.tsx(80,69): error TS2345: Argument of type '{ admin: boolean; editor: boolean; artist_manager: boolean; venue_manager: boolean; user: boolean; updated_at: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/users/page.tsx(37,22): error TS2339: Property 'role' does not exist on type 'never'.
+src/app/admin/users/page.tsx(53,58): error TS2345: Argument of type '{ role: string; }' is not assignable to parameter of type 'never'.
+src/app/admin/users/page.tsx(62,58): error TS2345: Argument of type '{ artist_id: string | null; }' is not assignable to parameter of type 'never'.
+src/app/admin/users/page.tsx(71,58): error TS2345: Argument of type '{ venue_id: string | null; }' is not assignable to parameter of type 'never'.
+src/app/admin/users/page.tsx(80,58): error TS2345: Argument of type '{ target_user_id: string; }' is not assignable to parameter of type 'undefined'.
+src/app/admin/venues/page.tsx(80,58): error TS2345: Argument of type '{ name: string; address: string | null; province: string; capacity: number | null; maps_url: string | null; aliases: string[] | null; image_url: string | null; }' is not assignable to parameter of type 'never'.
+src/app/admin/venues/page.tsx(84,58): error TS2345: Argument of type '{ name: string; address: string | null; province: string; capacity: number | null; maps_url: string | null; aliases: string[] | null; image_url: string | null; }' is not assignable to parameter of type 'never[]'.
+src/app/admin/venues/page.tsx(100,17): error TS2345: Argument of type '{ deleted_at: string; }' is not assignable to parameter of type 'never'.
+src/app/apply-editor/page.tsx(43,8): error TS2339: Property 'catch' does not exist on type 'PromiseLike<void>'.
+src/app/apply-editor/page.tsx(54,9): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/artists/[slug]/page.tsx(58,32): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/artists/[slug]/page.tsx(59,24): error TS2339: Property 'label' does not exist on type 'never'.
+src/app/artists/[slug]/page.tsx(59,51): error TS2339: Property 'label' does not exist on type 'never'.
+src/app/artists/[slug]/page.tsx(65,53): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/artists/[slug]/page.tsx(100,43): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/artists/page.tsx(132,13): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/auth/callback/route.ts(19,15): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/app/auth/callback/route.ts(19,21): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/app/auth/callback/route.ts(19,28): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/app/auth/callback/route.ts(20,18): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/app/auth/callback/route.ts(20,24): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/app/events/[slug]/layout.tsx(17,25): error TS2339: Property 'event_artists' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(18,24): error TS2339: Property 'start_date' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(18,51): error TS2339: Property 'start_date' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(19,35): error TS2339: Property 'venue' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(20,42): error TS2339: Property 'slug' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(21,67): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(21,180): error TS2339: Property 'venue' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(21,214): error TS2339: Property 'poster_url' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(21,262): error TS2339: Property 'poster_url' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(24,26): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(27,25): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(32,66): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/events/[slug]/layout.tsx(36,19): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/events/[slug]/opengraph-image.tsx(17,26): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/events/[slug]/opengraph-image.tsx(18,27): error TS2339: Property 'event_artists' does not exist on type 'never'.
+src/app/events/[slug]/opengraph-image.tsx(19,26): error TS2339: Property 'start_date' does not exist on type 'never'.
+src/app/events/[slug]/opengraph-image.tsx(19,54): error TS2339: Property 'start_date' does not exist on type 'never'.
+src/app/events/[slug]/opengraph-image.tsx(20,27): error TS2339: Property 'venue' does not exist on type 'never'.
+src/app/events/[slug]/opengraph-image.tsx(21,26): error TS2339: Property 'poster_url' does not exist on type 'never'.
+src/app/events/[slug]/page.tsx(89,43): error TS2339: Property 'type' does not exist on type 'never'.
+src/app/events/[slug]/page.tsx(110,11): error TS2353: Object literal may only specify known properties, and 'event_id' does not exist in type 'never[]'.
+src/app/page.tsx(320,13): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/page.tsx(329,19): error TS2345: Argument of type '{ status: "going" | "attended"; }' is not assignable to parameter of type 'never'.
+src/app/page.tsx(755,13): error TS2304: Cannot find name 'toggleFollow'.
+src/app/profile/page.tsx(85,58): error TS2345: Argument of type '{ target_user_id: string; }' is not assignable to parameter of type 'undefined'.
+src/app/profile/page.tsx(233,98): error TS2339: Property 'label' does not exist on type 'ThemeConfig'.
+src/app/profile/page.tsx(338,24): error TS2339: Property 'label' does not exist on type 'ThemeConfig'.
+src/app/sitemap.ts(22,30): error TS2339: Property 'slug' does not exist on type 'never'.
+src/app/sitemap.ts(23,30): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/app/sitemap.ts(29,31): error TS2339: Property 'slug' does not exist on type 'never'.
+src/app/sitemap.ts(30,30): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/app/sitemap.ts(36,30): error TS2339: Property 'slug' does not exist on type 'never'.
+src/app/sitemap.ts(37,30): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/app/submit/page.tsx(74,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type 'never[]'.
+src/app/submit/page.tsx(99,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type 'never[]'.
+src/app/venues/[slug]/page.tsx(53,39): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/venues/[slug]/page.tsx(59,39): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/venues/[slug]/page.tsx(64,99): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/venues/[slug]/page.tsx(104,49): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/venues/page.tsx(83,49): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/components/events/EventLineupTimeline.tsx(180,24): error TS18048: 'entry.artist.genres.length' is possibly 'undefined'.
+src/components/events/EventLineupTimeline.tsx(182,28): error TS18048: 'entry.artist' is possibly 'undefined'.
+src/components/layout/NotificationBell.tsx(73,42): error TS2339: Property 'is_read' does not exist on type 'never'.
+src/components/layout/NotificationBell.tsx(78,15): error TS2345: Argument of type '{ is_read: boolean; }' is not assignable to parameter of type 'never'.
+src/components/layout/NotificationBell.tsx(86,45): error TS2345: Argument of type '{ is_read: boolean; }' is not assignable to parameter of type 'never'.
+src/components/search/SmartSearchBar.tsx(207,26): error TS2339: Property 'matchType' does not exist on type 'SearchHit'.
+src/components/search/SmartSearchBar.tsx(209,30): error TS2339: Property 'matchType' does not exist on type 'SearchHit'.
+src/lib/auth.tsx(52,27): error TS2339: Property 'role' does not exist on type 'never'.
+src/lib/auth.tsx(59,15): error TS2339: Property 'permission' does not exist on type 'never'.
+src/lib/supabase.ts(52,12): error TS2698: Spread types may only be created from object types.
+src/lib/supabase.ts(52,35): error TS2339: Property 'event_artists' does not exist on type 'never'.
+src/lib/supabase.ts(81,39): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/lib/supabase.ts(97,41): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/lib/supabase.ts(133,36): error TS2345: Argument of type '{ theme: string; }' is not assignable to parameter of type 'never'.
+src/lib/theme.tsx(7,39): error TS2353: Object literal may only specify known properties, and 'label' does not exist in type 'ThemeConfig'.
+src/lib/theme.tsx(8,39): error TS2353: Object literal may only specify known properties, and 'label' does not exist in type 'ThemeConfig'.
+src/lib/theme.tsx(9,39): error TS2353: Object literal may only specify known properties, and 'label' does not exist in type 'ThemeConfig'.
+src/lib/theme.tsx(10,39): error TS2353: Object literal may only specify known properties, and 'label' does not exist in type 'ThemeConfig'.
+src/lib/theme.tsx(11,39): error TS2353: Object literal may only specify known properties, and 'label' does not exist in type 'ThemeConfig'.
+src/lib/theme.tsx(12,39): error TS2353: Object literal may only specify known properties, and 'label' does not exist in type 'ThemeConfig'.
+src/lib/theme.tsx(43,19): error TS2339: Property 'theme' does not exist on type 'never'.
+src/lib/theme.tsx(43,59): error TS2339: Property 'theme' does not exist on type 'never'.
+src/lib/theme.tsx(44,30): error TS2339: Property 'theme' does not exist on type 'never'.
+src/lib/theme.tsx(45,51): error TS2339: Property 'theme' does not exist on type 'never'.
+src/lib/theme.tsx(59,40): error TS2345: Argument of type '{ theme: Theme; }' is not assignable to parameter of type 'never'.
+src/lib/usePermission.ts(29,17): error TS2339: Property 'permission' does not exist on type 'never'.

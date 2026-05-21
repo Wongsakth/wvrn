@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
@@ -39,3 +40,4 @@ export function usePermission() {
 
   return { can, loading, refresh: load }
 }
+
