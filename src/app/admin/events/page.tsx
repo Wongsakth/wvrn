@@ -69,6 +69,11 @@ export default function EventsAdminPage() {
   const [artistSearch, setArtistSearch] = useState('')
   const [venueSearch,  setVenueSearch]  = useState('')
   const [showForm,   setShowForm]   = useState(false)
+  const [newArtistModal, setNewArtistModal] = useState(false)
+  const [newVenueModal,  setNewVenueModal]  = useState(false)
+  const [newArtistForm,  setNewArtistForm]  = useState({ name: '', name_en: '' })
+  const [newVenueForm,   setNewVenueForm]   = useState({ name: '', province: 'กรุงเทพมหานคร' })
+  const [creating,       setCreating]       = useState(false)
   const [editTarget, setEditTarget] = useState<any | null>(null)
   const [deleteId,   setDeleteId]   = useState<string | null>(null)
   const [form,       setForm]       = useState({ ...EMPTY_FORM })
@@ -230,6 +235,42 @@ export default function EventsAdminPage() {
     } catch (e: any) {
       toast.error('ลบไม่ได้: ' + e.message)
     }
+  }
+
+  async function createArtist() {
+    if (!newArtistForm.name.trim()) { toast.error('กรุณากรอกชื่อศิลปิน'); return }
+    setCreating(true)
+    try {
+      const { data, error } = await sb.from('artists')
+        .insert({ name: newArtistForm.name.trim(), name_en: newArtistForm.name_en.trim() || null })
+        .select('id,name,name_en').single()
+      if (error) throw error
+      setArtists(prev => [...prev, data])
+      toggleArtist(data.id)
+      setNewArtistModal(false)
+      setNewArtistForm({ name: '', name_en: '' })
+      setArtistSearch('')
+      toast.success('สร้างศิลปินใหม่แล้ว')
+    } catch (e: any) { toast.error('สร้างไม่ได้: ' + e.message) }
+    finally { setCreating(false) }
+  }
+
+  async function createVenue() {
+    if (!newVenueForm.name.trim()) { toast.error('กรุณากรอกชื่อสถานที่'); return }
+    setCreating(true)
+    try {
+      const { data, error } = await sb.from('venues')
+        .insert({ name: newVenueForm.name.trim(), province: newVenueForm.province })
+        .select('id,name,province').single()
+      if (error) throw error
+      setVenues(prev => [...prev, data])
+      setForm(f => ({ ...f, venue_id: data.id, province: data.province }))
+      setNewVenueModal(false)
+      setNewVenueForm({ name: '', province: 'กรุงเทพมหานคร' })
+      setVenueSearch('')
+      toast.success('สร้างสถานที่ใหม่แล้ว')
+    } catch (e: any) { toast.error('สร้างไม่ได้: ' + e.message) }
+    finally { setCreating(false) }
   }
 
   function toggleGenre(g: Genre) {
@@ -600,6 +641,15 @@ export default function EventsAdminPage() {
                       </button>
                     ))}
                 </div>
+                {/* Create new venue button */}
+                {venueSearch && venues.filter(v => v.name.toLowerCase().includes(venueSearch.toLowerCase())).length === 0 && (
+                  <button type="button"
+                    onClick={() => { setNewVenueForm({ name: venueSearch, province: 'กรุงเทพมหานคร' }); setNewVenueModal(true) }}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[12px] font-medium mt-1 transition-all"
+                    style={{ background: 'var(--accent-muted)', border: '1px dashed var(--accent)', color: 'var(--accent)' }}>
+                    <Plus size={13} /> สร้างสถานที่ใหม่ "{venueSearch}"
+                  </button>
+                )}
                 {/* Province */}
                 <Field label="จังหวัด">
                   <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
@@ -723,6 +773,74 @@ export default function EventsAdminPage() {
                 {saving
                   ? <><Loader2 size={14} className="animate-spin" /> กำลังบันทึก...</>
                   : <><Check size={14} /> {editTarget ? 'บันทึกการแก้ไข' : 'เพิ่ม Event'}</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Artist Modal */}
+      {newArtistModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-6"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+            <h3 className="text-[15px] font-medium text-primary mb-4 flex items-center gap-2">
+              <Plus size={16} style={{ color: 'var(--accent)' }} /> สร้างศิลปินใหม่
+            </h3>
+            <div className="flex flex-col gap-3 mb-4">
+              <Field label="ชื่อไทย *">
+                <input value={newArtistForm.name}
+                  onChange={e => setNewArtistForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="เช่น บอดี้สแลม" className="input-theme text-[13px]" autoFocus />
+              </Field>
+              <Field label="ชื่ออังกฤษ">
+                <input value={newArtistForm.name_en}
+                  onChange={e => setNewArtistForm(f => ({ ...f, name_en: e.target.value }))}
+                  placeholder="เช่น Bodyslam" className="input-theme text-[13px]" />
+              </Field>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setNewArtistModal(false); setNewArtistForm({ name: '', name_en: '' }) }}
+                className="btn-ghost flex-1 py-2.5 text-[13px]">ยกเลิก</button>
+              <button onClick={createArtist} disabled={creating}
+                className="btn-accent flex-1 py-2.5 text-[13px] flex items-center justify-center gap-2">
+                {creating ? <><Loader2 size={13} className="animate-spin" /> สร้าง...</> : <><Check size={13} /> สร้างเลย</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Venue Modal */}
+      {newVenueModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-6"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+            <h3 className="text-[15px] font-medium text-primary mb-4 flex items-center gap-2">
+              <Plus size={16} style={{ color: 'var(--accent)' }} /> สร้างสถานที่ใหม่
+            </h3>
+            <div className="flex flex-col gap-3 mb-4">
+              <Field label="ชื่อสถานที่ *">
+                <input value={newVenueForm.name}
+                  onChange={e => setNewVenueForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="เช่น Thunder Dome" className="input-theme text-[13px]" autoFocus />
+              </Field>
+              <Field label="จังหวัด">
+                <select value={newVenueForm.province}
+                  onChange={e => setNewVenueForm(f => ({ ...f, province: e.target.value }))}
+                  className="input-theme text-[13px]">
+                  {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </Field>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setNewVenueModal(false); setNewVenueForm({ name: '', province: 'กรุงเทพมหานคร' }) }}
+                className="btn-ghost flex-1 py-2.5 text-[13px]">ยกเลิก</button>
+              <button onClick={createVenue} disabled={creating}
+                className="btn-accent flex-1 py-2.5 text-[13px] flex items-center justify-center gap-2">
+                {creating ? <><Loader2 size={13} className="animate-spin" /> สร้าง...</> : <><Check size={13} /> สร้างเลย</>}
               </button>
             </div>
           </div>
