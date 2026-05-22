@@ -113,6 +113,10 @@ export default function PendingPage() {
         ticket_url:       sub.ticket_url,
         poster_url:       sub.poster_url || null,
         event_type:       'concert',
+        category_id:      await (async () => {
+          const { data } = await sb.from('event_categories').select('id').eq('name', 'Concert').single()
+          return data?.id ?? null
+        })(),
         status:           'confirmed',
         province:         sub.province ?? 'กรุงเทพมหานคร',
       }).select().single()
