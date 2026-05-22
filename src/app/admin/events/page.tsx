@@ -465,69 +465,6 @@ export default function EventsAdminPage() {
                 </div>
               </Section>
 
-              {/* Venue */}
-              <Section title="สถานที่">
-                <Field label="สถานที่">
-                  <div className="relative">
-                    <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                    <input
-                      value={venueSearch}
-                      onChange={e => setVenueSearch(e.target.value)}
-                      placeholder="ค้นหาสถานที่..."
-                      className="input-theme text-[13px] pl-8 mb-1"
-                    />
-                  </div>
-                  <div className="max-h-36 overflow-y-auto rounded-xl"
-                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                    <button type="button"
-                      onClick={() => setForm(f => ({ ...f, venue_id: '' }))}
-                      className="w-full text-left px-3 py-2 text-[12px] transition-colors"
-                      style={{
-                        background: !form.venue_id ? 'var(--accent-muted)' : 'transparent',
-                        color: !form.venue_id ? 'var(--accent)' : 'var(--text-muted)',
-                        borderBottom: '1px solid var(--border)',
-                      }}>
-                      -- ไม่ระบุสถานที่ --
-                    </button>
-                    {venues
-                      .filter(v => v.name.toLowerCase().includes(venueSearch.toLowerCase()))
-                      .map(v => (
-                        <button key={v.id} type="button"
-                          onClick={() => {
-                            setForm(f => ({
-                              ...f,
-                              venue_id: v.id,
-                              province: (v as any).province || f.province,
-                            }))
-                            setVenueSearch('')
-                          }}
-                          className="w-full text-left px-3 py-2 text-[12px] transition-colors"
-                          style={{
-                            background: form.venue_id === v.id ? 'var(--accent-muted)' : 'transparent',
-                            color: form.venue_id === v.id ? 'var(--accent)' : 'var(--text-primary)',
-                            borderBottom: '1px solid var(--border)',
-                          }}>
-                          {v.name}
-                          {(v as any).province && (
-                            <span className="ml-1 text-[10px] text-muted">({(v as any).province})</span>
-                          )}
-                        </button>
-                      ))}
-                  </div>
-                  {form.venue_id && (
-                    <p className="text-[11px] text-muted mt-1">
-                      ✓ {venues.find(v => v.id === form.venue_id)?.name}
-                    </p>
-                  )}
-                </Field>
-                <Field label="จังหวัด">
-                  <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
-                    className="input-theme text-[13px]">
-                    {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </Field>
-              </Section>
-
               {/* Artists */}
               <Section title={`ศิลปิน ${form.artist_ids.length > 0 ? `(${form.artist_ids.length} คน)` : ''}`}>
                 {/* Selected artists with order */}
@@ -611,7 +548,71 @@ export default function EventsAdminPage() {
                 </div>
               </Section>
 
-              {/* Genre */}
+                            {/* Venue */}
+              <Section title="สถานที่">
+                {/* Selected venue */}
+                {form.venue_id && (
+                  <div className="flex items-center gap-2 p-2 rounded-xl mb-1"
+                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                    <span className="text-[12px] text-primary flex-1 truncate">
+                      ✓ {venues.find(v => v.id === form.venue_id)?.name}
+                    </span>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, venue_id: '' }))}
+                      className="w-5 h-5 rounded flex items-center justify-center"
+                      style={{ background: 'rgba(226,75,74,.1)', color: '#E24B4A' }}>
+                      <X size={10} />
+                    </button>
+                  </div>
+                )}
+                {/* Search */}
+                <div className="relative">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                  <input
+                    value={venueSearch}
+                    onChange={e => setVenueSearch(e.target.value)}
+                    placeholder="ค้นหาสถานที่..."
+                    className="input-theme text-[13px] pl-8 mb-1"
+                  />
+                </div>
+                {/* Venue list */}
+                <div className="max-h-40 overflow-y-auto flex flex-wrap gap-1.5 p-2 rounded-xl"
+                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                  {venues
+                    .filter(v => v.name.toLowerCase().includes(venueSearch.toLowerCase()))
+                    .map(v => (
+                      <button key={v.id} type="button"
+                        onClick={() => {
+                          setForm(f => ({
+                            ...f,
+                            venue_id: v.id,
+                            province: (v as any).province || f.province,
+                          }))
+                          setVenueSearch('')
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-all border"
+                        style={{
+                          background: form.venue_id === v.id ? 'var(--accent-muted)' : 'var(--surface-1)',
+                          borderColor: form.venue_id === v.id ? 'var(--accent)' : 'var(--border)',
+                          color: form.venue_id === v.id ? 'var(--accent)' : 'var(--text-secondary)',
+                        }}>
+                        {form.venue_id !== v.id && <Plus size={9} />}
+                        {v.name}
+                        {(v as any).province && (
+                          <span className="text-[9px] opacity-60 ml-0.5">({(v as any).province})</span>
+                        )}
+                      </button>
+                    ))}
+                </div>
+                {/* Province */}
+                <Field label="จังหวัด">
+                  <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
+                    className="input-theme text-[13px]">
+                    {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </Field>
+              </Section>
+
+{/* Genre */}
               <Section title="แนวเพลง">
                 <div className="flex flex-wrap gap-2">
                   {GENRE_OPTIONS.map(g => {
