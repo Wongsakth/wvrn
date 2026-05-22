@@ -10,7 +10,6 @@ import {
 import toast from 'react-hot-toast'
 import { PROVINCES } from '@/lib/utils'
 
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || ''
 const SUPABASE_URL   = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 
 // ── Types ──────────────────────────────────────────────────
@@ -82,46 +81,16 @@ export default function ImportPosterPage() {
         img.src = imagePreview
       })
 
-      const prompt = `อ่านข้อมูลจากโปสเตอร์คอนเสิร์ต/เทศกาลดนตรีนี้ แล้วตอบเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
 
-{
-  "title": "ชื่องาน",
-  "event_date": "YYYY-MM-DD",
-  "venue_name": "ชื่อสถานที่",
-  "province": "จังหวัด",
-  "is_free": true/false,
-  "ticket_price": "ราคาบัตร เช่น 500-1500 หรือ FREE",
-  "ticket_url": "URL ซื้อบัตร ถ้ามี",
-  "description": "รายละเอียดงานสั้นๆ",
-  "artists": ["ชื่อศิลปิน1", "ชื่อศิลปิน2", ...]
-}
-
-ถ้าไม่รู้ค่าไหนให้ใส่ "" หรือ null
-ศิลปินให้เอาชื่อจริงๆ ไม่รวม DJ prefix ที่ไม่ใช่ชื่อ
-วันที่ให้แปลงเป็น YYYY-MM-DD เสมอ`
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: prompt },
-                { inline_data: { mime_type: imageFile.type, data: base64 } },
-              ]
-            }]
-          })
-        }
-      )
+      const res = await fetch('/api/parse-poster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64, mimeType: imageFile.type }),
+      })
 
       const data = await res.json()
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('ไม่สามารถแกะข้อมูลจากโปสเตอร์ได้')
-
-      const raw = JSON.parse(jsonMatch[0])
+      if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด')
+      const raw = data.parsed
 
       // Match artists with DB
       const artistList = (raw.artists || []) as string[]
