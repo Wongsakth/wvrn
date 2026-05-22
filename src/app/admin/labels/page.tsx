@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import {
   Plus, Search, X, Edit2, Trash2, Check, Loader2,
   Building2, Music, ChevronDown, ChevronUp, Globe,
-  Instagram, Facebook, ToggleLeft, ToggleRight,
+  Instagram, Facebook, ToggleLeft, ToggleRight, Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -47,8 +47,70 @@ export default function LabelsAdminPage() {
   const [form,       setForm]       = useState({ ...EMPTY })
   const [expanded,   setExpanded]   = useState<string | null>(null) // label id ที่ขยาย
   const [artistSearch, setArtistSearch] = useState('')
-  const [showColors, setShowColors] = useState(false)
+  const [showColors,    setShowColors]    = useState(false)
+  const [checking,      setChecking]      = useState(false)
+  const [checkResults,  setCheckResults]  = useState<Record<string, boolean>>({})
+  const [showCheckModal,setShowCheckModal]= useState(false)
   const sb = createClient()
+
+  async function checkAllLabels() {
+    setChecking(true)
+    const results: Record<string, boolean> = {}
+    const BATCH = 10
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || ''
+    for (let i = 0; i < labels.length; i += BATCH) {
+      const batch = labels.slice(i, i + BATCH)
+      const names = batch.map(l => l.name_en || l.name).join(', ')
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `ค่ายเพลงไทยเหล่านี้ยังดำเนินการอยู่ไหม ตอบเป็น JSON เท่านั้น format {"ชื่อค่าย": true/false} true=ยังเปิดอยู่ false=ปิดแล้วหรือไม่มีข้อมูล\nค่ายเพลง: ${names}` }] }]
+            })
+          }
+        )
+        const data = await res.json()
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
+        const match = text.match(/\{[\s\S]*\}/)
+        if (match) {
+          const parsed = JSON.parse(match[0])
+          batch.forEach(l => {
+            const key = l.name_en || l.name
+            const found = Object.entries(parsed).find(([k]) =>
+              k.toLowerCase().includes(key.toLowerCase().slice(0,6)) ||
+              key.toLowerCase().includes(k.toLowerCase().slice(0,6))
+            )
+            results[l.id] = found ? Boolean(found[1]) : false
+          })
+        } else {
+          batch.forEach(l => { results[l.id] = false })
+        }
+      } catch { batch.forEach(l => { results[l.id] = false }) }
+      setCheckResults({ ...results })
+    }
+    setChecking(false)
+    setShowCheckModal(true)
+  }
+
+  async function saveCheckResults() {
+    try {
+      await Promise.all(
+        Object.entries(checkResults).map(([id, is_active]) =>
+          sb.from('labels').update({ is_active }).eq('id', id)
+        )
+      )
+      setLabels(prev => prev.map(l => ({
+        ...l,
+        is_active: checkResults[l.id] ?? l.is_active,
+      })))
+      toast.success('อัพเดทสถานะทั้งหมดแล้ว')
+      setShowCheckModal(false)
+      setCheckResults({})
+    } catch (e: any) { toast.error(e.message) }
+  }
 
   async function load() {
     setLoading(true)
@@ -163,9 +225,18 @@ export default function LabelsAdminPage() {
             {labels.length} ค่าย · {artists.filter(a => a.label_id).length} ศิลปินในค่าย
           </p>
         </div>
-        <button onClick={openAdd} className="btn-accent flex items-center gap-2 py-2 px-4 text-[13px]">
-          <Plus size={15} /> เพิ่มค่ายเพลง
-        </button>
+        <div className="flex gap-2">
+          <button onClick={checkAllLabels} disabled={checking || labels.length === 0}
+            className="flex items-center gap-2 py-2 px-4 text-[13px] rounded-xl font-medium transition-all"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+            {checking
+              ? <><Loader2 size={14} className="animate-spin" /> {Object.keys(checkResults).length}/{labels.length}</>
+              : <><Zap size={14} style={{ color: 'var(--accent)' }} /> Check สถานะ</>}
+          </button>
+          <button onClick={openAdd} className="btn-accent flex items-center gap-2 py-2 px-4 text-[13px]">
+            <Plus size={15} /> เพิ่มค่ายเพลง
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -401,6 +472,56 @@ export default function LabelsAdminPage() {
               <button onClick={handleSave} disabled={saving}
                 className="btn-accent flex-1 py-2.5 text-[13px] flex items-center justify-center gap-2">
                 {saving ? <><Loader2 size={14} className="animate-spin" /> กำลังบันทึก...</> : <><Check size={14} /> {editTarget ? 'บันทึก' : 'เพิ่มค่าย'}</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Check Results Modal */}
+      {showCheckModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', maxHeight: '80vh' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+              <h2 className="text-[15px] font-medium text-primary flex items-center gap-2">
+                <Zap size={15} style={{ color: 'var(--accent)' }} /> ผลตรวจสอบสถานะค่ายเพลง
+              </h2>
+              <button onClick={() => setShowCheckModal(false)} className="icon-btn w-8 h-8"><X size={16} /></button>
+            </div>
+            <div className="px-5 py-2.5 flex gap-4 text-[12px]" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+              <span style={{ color: '#1D9E75' }}>✓ Active: {Object.values(checkResults).filter(v => v).length}</span>
+              <span style={{ color: '#E24B4A' }}>✗ Inactive: {Object.values(checkResults).filter(v => !v).length}</span>
+              <span className="text-muted ml-auto text-[11px]">กดสลับสถานะก่อน Save ได้</span>
+            </div>
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(80vh - 180px)' }}>
+              {labels.map(l => {
+                if (checkResults[l.id] === undefined) return null
+                const active = checkResults[l.id]
+                return (
+                  <div key={l.id} className="flex items-center gap-3 px-5 py-2.5"
+                    style={{ borderBottom: '1px solid var(--border)' }}>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: l.color }} />
+                    <span className="flex-1 text-[13px] text-primary truncate">{l.name}</span>
+                    {l.name_en && <span className="text-[11px] text-muted truncate max-w-[120px]">{l.name_en}</span>}
+                    <button onClick={() => setCheckResults(r => ({ ...r, [l.id]: !r[l.id] }))}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium shrink-0"
+                      style={{
+                        background: active ? 'rgba(29,158,117,.1)' : 'rgba(226,75,74,.1)',
+                        color: active ? '#1D9E75' : '#E24B4A',
+                      }}>
+                      {active ? '✓ Active' : '✗ Inactive'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex gap-2 px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
+              <button onClick={() => setShowCheckModal(false)} className="btn-ghost flex-1 py-2.5 text-[13px]">ยกเลิก</button>
+              <button onClick={saveCheckResults}
+                className="btn-accent flex-1 py-2.5 text-[13px] flex items-center justify-center gap-2">
+                <Check size={14} /> บันทึกสถานะทั้งหมด
               </button>
             </div>
           </div>
