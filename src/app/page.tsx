@@ -468,7 +468,7 @@ export default function HomePage() {
         if (filters.genre && !ev.genres?.includes(filters.genre)) return false
 
         // ── Event type ──
-        if (filters.eventType && ev.event_type !== filters.eventType) return false
+        if (filters.categoryId && ev.category_id !== filters.categoryId) return false
 
         // ── Free ──
         if (filters.isFree && !ev.is_free) return false
@@ -504,7 +504,7 @@ export default function HomePage() {
     filters.nearMe,
     filters.province,
     filters.isFree,
-    filters.eventType,
+    filters.categoryId,
     search,
     tab,
     followedIds,

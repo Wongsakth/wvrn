@@ -3,21 +3,21 @@
 export type EventStatus = 'confirmed' | 'tba' | 'cancelled' | 'postponed' | 'sold_out'
 export type UserRole    = 'admin' | 'user'
 export type Genre       = 'pop' | 'rock' | 'indie' | 'hiphop' | 'jazz' | 'electronic' | 'folk' | 'rnb' | 'other'
-export type EventType   = 'concert' | 'festival' | 'acoustic' | 'showcase' | 'fanmeeting' | 'other'
+export type EventType   = string  // ใช้ string แทน hardcode เพราะดึงจาก DB แล้ว
 
 export interface Artist {
   id:             string
   name:           string
   name_en?:       string
-  slug?:          string        // ← เพิ่ม
+  slug?:          string
   bio?:           string
   image_url?:     string
   genres:         Genre[]
   facebook_url?:  string
   instagram_url?: string
-  tiktok_url?:    string        // ← เพิ่ม
-  website_url?:   string        // ← เพิ่ม
-  label_url?:     string        // ← เพิ่ม
+  tiktok_url?:    string
+  website_url?:   string
+  label_url?:     string
   created_at:     string
 }
 
@@ -36,9 +36,10 @@ export interface Venue {
 export interface Event {
   id:           string
   title:        string
-  slug?:        string          // ← เพิ่ม (ใช้ใน event link แล้ว)
+  slug?:        string
   description?: string
   event_type:   EventType
+  category_id?: string        // ← ใหม่ link ไป event_categories
   status:       EventStatus
   start_date:   string
   end_date?:    string
@@ -93,21 +94,22 @@ export interface EventSubmission {
   created_at:  string
 }
 
-// ─── UI / Filter Types ────────────────────────────────────────────────────────
+// ─── UI / Filter Types ───────────────────────────────────────────────────────
 
 export interface EventFilters {
   search?:      string
   province?:    string
   genre?:       Genre
-  eventType?:   EventType
+  categoryId?:  string      // ← ใหม่ ใช้ UUID จาก event_categories แทน eventType
+  eventType?:   EventType   // ← เก็บไว้ backward compat ลบทีหลัง
   isFree?:      boolean
   dateFrom?:    string
   dateTo?:      string
   artistId?:    string
   status?:      EventStatus
-  nearMe?:      boolean   // filter by user province or GPS
-  datePreset?:  'today' | 'week' | 'month'  // quick date shortcuts
-  userLat?:     number    // GPS coords for radius search
+  nearMe?:      boolean
+  datePreset?:  'today' | 'week' | 'month'
+  userLat?:     number
   userLng?:     number
 }
 
@@ -123,7 +125,7 @@ export interface ThemeConfig {
   dark:   boolean
 }
 
-// ─── Supabase DB Schema ───────────────────────────────────────────────────────
+// ─── Supabase DB Schema ──────────────────────────────────────────────────────
 
 export interface Database {
   public: {
