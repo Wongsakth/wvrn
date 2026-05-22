@@ -19,14 +19,7 @@ const STATUS_OPTIONS: { id: EventStatus; label: string }[] = [
   { id: 'sold_out',  label: 'Sold Out'    },
 ]
 
-const TYPE_OPTIONS: { id: EventType; label: string }[] = [
-  { id: 'concert',    label: 'Concert'     },
-  { id: 'festival',   label: 'Festival'    },
-  { id: 'acoustic',   label: 'Acoustic'    },
-  { id: 'showcase',   label: 'Showcase'    },
-  { id: 'fanmeeting', label: 'Fan Meeting' },
-  { id: 'other',      label: 'อื่นๆ'       },
-]
+// TYPE_OPTIONS removed — now loaded from DB
 
 const GENRE_OPTIONS: { id: Genre; label: string }[] = [
   { id: 'pop',        label: 'Pop'        },
@@ -51,6 +44,7 @@ const EMPTY_FORM = {
   start_time: '', end_time: '', venue_id: '', genres: [] as Genre[],
   ticket_price_min: '', ticket_price_max: '', ticket_url: '',
   poster_url: '', is_free: false, province: 'กรุงเทพมหานคร',
+  category_id:          '' as string,
   artist_ids: [] as string[],
   artist_orders: {} as Record<string, number>,
   artist_times:  {} as Record<string, string>,
@@ -62,7 +56,8 @@ const EMPTY_FORM = {
 export default function EventsAdminPage() {
   const [events,     setEvents]     = useState<any[]>([])
   const [artists,    setArtists]    = useState<Artist[]>([])
-  const [venues,     setVenues]     = useState<Venue[]>([])
+  const [venues,      setVenues]      = useState<Venue[]>([])
+  const [categories,  setCategories]  = useState<{id:string,name:string,name_th:string}[]>([])
   const [loading,    setLoading]    = useState(true)
   const [saving,     setSaving]     = useState(false)
   const [search,       setSearch]       = useState('')
@@ -83,10 +78,11 @@ export default function EventsAdminPage() {
   async function load() {
     setLoading(true)
     try {
-      const [evRes, arRes, veRes] = await Promise.all([
+      const [evRes, arRes, veRes, catRes] = await Promise.all([
         sb.from('events').select('*, venue:venues(name,province), event_artists(sort_order,start_time,is_headliner,artist:artists(id,name))').is('deleted_at', null).order('start_date', { ascending: false }),
         sb.from('artists').select('id,name,name_en').is('deleted_at', null).order('name_en', { nullsFirst: false }).order('name'),
         sb.from('venues').select('id,name,province').is('deleted_at', null).order('name'),
+        sb.from('event_categories').select('id,name,name_th').eq('is_active', true).order('sort_order'),
       ])
       if (evRes.error) throw evRes.error
       setEvents((evRes.data || []).map((ev: any) => ({
@@ -98,6 +94,7 @@ export default function EventsAdminPage() {
       })))
       setArtists(arRes.data || [])
       setVenues(veRes.data || [])
+      setCategories(catRes.data || [])
     } catch (e: any) {
       toast.error('โหลดไม่ได้: ' + e.message)
     } finally {
@@ -133,6 +130,7 @@ export default function EventsAdminPage() {
       title:           ev.title,
       description:     ev.description   ?? '',
       event_type:      ev.event_type,
+      category_id:     ev.category_id ?? '',
       status:          ev.status,
       start_date:      ev.start_date,
       end_date:        ev.end_date       ?? '',
@@ -165,6 +163,7 @@ export default function EventsAdminPage() {
         title:            form.title.trim(),
         description:      form.description.trim() || null,
         event_type:       form.event_type,
+        category_id:      form.category_id || null,
         status:           form.status,
         start_date:       form.start_date,
         end_date:         form.end_date   || null,
@@ -457,9 +456,12 @@ export default function EventsAdminPage() {
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="ประเภทงาน">
-                    <select value={form.event_type} onChange={e => setForm(f => ({ ...f, event_type: e.target.value as EventType }))}
+                    <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
                       className="input-theme text-[13px]">
-                      {TYPE_OPTIONS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      <option value="">-- เลือกประเภท --</option>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} — {c.name_th}</option>
+                      ))}
                     </select>
                   </Field>
                   <Field label="สถานะ">
