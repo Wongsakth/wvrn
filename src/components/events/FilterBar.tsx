@@ -3,16 +3,7 @@ import { useState, useEffect } from 'react'
 import { SlidersHorizontal, X, ChevronDown, Loader2 } from 'lucide-react'
 import { cn, PROVINCES } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
-import type { EventFilters, Genre, EventType } from '@/types'
-
-const EVENT_CATEGORIES = [
-  { id: 'concert',    label: 'Concert'     },
-  { id: 'festival',   label: 'Festival'    },
-  { id: 'acoustic',   label: 'Acoustic'    },
-  { id: 'showcase',   label: 'Showcase'    },
-  { id: 'fanmeeting', label: 'Fan Meeting' },
-  { id: 'other',      label: 'Other'       },
-]
+import type { EventFilters, Genre } from '@/types'
 
 interface Props {
   filters:       EventFilters
@@ -22,15 +13,23 @@ interface Props {
 }
 
 export default function FilterBar({ filters, onChange, totalCount, userProvince }: Props) {
-  const [expanded,   setExpanded]   = useState(false)
-  const [locLoading, setLocLoading] = useState(false)
-  const [locError,   setLocError]   = useState('')
-  const [genreList,  setGenreList]  = useState<{id:string;label_en:string;label_th:string}[]>([])
+  const [expanded,    setExpanded]    = useState(false)
+  const [locLoading,  setLocLoading]  = useState(false)
+  const [locError,    setLocError]    = useState('')
+  const [genreList,   setGenreList]   = useState<{id:string;label_en:string;label_th:string}[]>([])
+  const [categories,  setCategories]  = useState<{id:string;name:string;name_th:string}[]>([])
   const sb = createClient()
 
   useEffect(() => {
-    sb.from('genres').select('id,label_en,label_th,category').order('category').order('label_en')
-      .then(({ data }) => setGenreList(data || []))
+    const today = new Date().toISOString().slice(0, 10)
+    Promise.all([
+      sb.from('genres').select('id,label_en,label_th,category').order('category').order('label_en'),
+      // ดึง categories เรียงตาม event_count มากไปน้อย เฉพาะที่มี event จริง
+      sb.rpc('get_categories_with_event_count', { from_date: today }),
+    ]).then(([genreRes, catRes]) => {
+      setGenreList(genreRes.data || [])
+      setCategories((catRes.data || []).sort((a: any, b: any) => b.event_count - a.event_count))
+    })
   }, [])
 
   function chip(label: string, active: boolean, onClick: () => void, icon?: React.ReactNode) {
@@ -47,7 +46,6 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
     )
   }
 
-  // ── Near Me: GPS first → fallback province ──
   async function handleNearMe() {
     if (filters.nearMe) {
       onChange({ ...filters, nearMe: undefined, province: undefined, userLat: undefined, userLng: undefined })
@@ -65,7 +63,7 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
           if (userProvince) {
             onChange({ ...filters, nearMe: true, province: userProvince })
           } else {
-            setLocError('ไม่ได้รับอนุญาต GPS — กรุณาเลือกจังหวัดด้านล่าง')
+            setLocError('ไม่ได้รับอนุญาต GPS – กรุณาเลือกจังหวัดด้านล่าง')
             setExpanded(true)
           }
         },
@@ -78,7 +76,6 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
     }
   }
 
-  // ── Date presets ──
   const today    = new Date().toISOString().slice(0, 10)
   const weekEnd  = new Date(); weekEnd.setDate(weekEnd.getDate() + 7)
   const monthEnd = new Date(); monthEnd.setDate(monthEnd.getDate() + 30)
@@ -89,11 +86,11 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
     onChange({ ...filters, datePreset: p, dateFrom: today, dateTo })
   }
 
-  const nearLabel  = filters.nearMe
+  const nearLabel = filters.nearMe
     ? (filters.userLat ? '📍 GPS' : `📍 ${filters.province || userProvince || 'ใกล้ฉัน'}`)
     : '📍 ใกล้ฉัน'
 
-  const hasFilters = !!(filters.province || filters.genre || filters.eventType || filters.isFree || filters.nearMe || filters.datePreset)
+  const hasFilters = !!(filters.province || filters.genre || filters.categoryId || filters.isFree || filters.nearMe || filters.datePreset)
 
   return (
     <div className="rounded-xl mb-4 p-3"
@@ -118,10 +115,10 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
             locLoading ? <Loader2 size={10} className="animate-spin" /> : undefined)}
           {chip('Today',     filters.datePreset === 'today', () => setDatePreset('today'))}
           {chip('This Week', filters.datePreset === 'week',  () => setDatePreset('week'))}
-          {chip('ฟรีคอนเสิร์ต',      !!filters.isFree, () => onChange({ ...filters, isFree: filters.isFree ? undefined : true }))}
-          {EVENT_CATEGORIES.slice(0, 3).map(t =>
-            chip(t.label, filters.eventType === t.id, () =>
-              onChange({ ...filters, eventType: filters.eventType === t.id ? undefined : t.id as EventType })
+          {chip('ฟรีเข้าชม', !!filters.isFree, () => onChange({ ...filters, isFree: filters.isFree ? undefined : true }))}
+          {categories.slice(0, 3).map(c =>
+            chip(c.name, filters.categoryId === c.id, () =>
+              onChange({ ...filters, categoryId: filters.categoryId === c.id ? undefined : c.id })
             )
           )}
         </div>
@@ -146,13 +143,13 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
             </select>
           </div>
 
-          {/* Event Type */}
+          {/* Event Category — from DB */}
           <div>
             <label className="block text-[10px] text-muted mb-1.5 uppercase tracking-wide font-medium">ประเภทงาน</label>
             <div className="flex flex-wrap gap-1.5">
-              {EVENT_CATEGORIES.map(t =>
-                chip(t.label, filters.eventType === t.id, () =>
-                  onChange({ ...filters, eventType: filters.eventType === t.id ? undefined : t.id as EventType })
+              {categories.map(c =>
+                chip(c.name, filters.categoryId === c.id, () =>
+                  onChange({ ...filters, categoryId: filters.categoryId === c.id ? undefined : c.id })
                 )
               )}
             </div>
