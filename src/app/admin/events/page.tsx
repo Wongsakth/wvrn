@@ -38,10 +38,10 @@ const GENRE_OPTIONS: { id: Genre; label: string }[] = [
   { id: 'folk',       label: 'Folk'       },
 ]
 
-// Generate time options ทุก 5 นาที แบบ 24 ชม.
-const TIME_OPTIONS = Array.from({ length: 24 * 12 }, (_, i) => {
-  const h = Math.floor(i / 12).toString().padStart(2, '0')
-  const m = ((i % 12) * 5).toString().padStart(2, '0')
+// Generate time options ทุก 30 นาที แบบ 24 ชม.
+const TIME_OPTIONS = Array.from({ length: 24 * 2 }, (_, i) => {
+  const h = Math.floor(i / 2).toString().padStart(2, '0')
+  const m = i % 2 === 0 ? '00' : '30'
   return `${h}:${m}`
 })
 
@@ -56,7 +56,6 @@ const EMPTY_FORM = {
   artist_times:  {} as Record<string, string>,
   ticket_sale_start:    '',
   ticket_sale_end:      '',
-  ticket_announce_date: '',
   featured_type:        '' as '' | 'partner' | 'wvrn_picks',
 }
 
@@ -147,7 +146,6 @@ export default function EventsAdminPage() {
       artist_times:    times,
       ticket_sale_start:    ev.ticket_sale_start ? ev.ticket_sale_start.slice(0,16) : '',
       ticket_sale_end:      ev.ticket_sale_end   ? ev.ticket_sale_end.slice(0,16)   : '',
-      ticket_announce_date: ev.ticket_announce_date ?? '',
       featured_type:        ev.featured_type ?? '',
     })
     setShowForm(true)
@@ -177,7 +175,6 @@ export default function EventsAdminPage() {
         province:         form.province,
         ticket_sale_start:    form.ticket_sale_start    || null,
         ticket_sale_end:      form.ticket_sale_end      || null,
-        ticket_announce_date: form.ticket_announce_date || null,
         featured_type:        form.featured_type        || null,
         slug: form.title
           ? (form.title.toLowerCase().replace(/[^a-z0-9\u0e00-\u0e7f\s]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim())
@@ -663,24 +660,17 @@ export default function EventsAdminPage() {
                   <input value={form.ticket_url} onChange={e => setForm(f => ({ ...f, ticket_url: e.target.value }))}
                     placeholder="https://..." className="input-theme text-[13px]" />
                 </Field>
-                <div className="grid grid-cols-1 gap-3 mt-3">
-                  <Field label="📅 วันประกาศขายบัตร">
-                    <input type="date" value={form.ticket_announce_date}
-                      onChange={e => setForm(f => ({ ...f, ticket_announce_date: e.target.value }))}
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <Field label="🎟 เริ่มจำหน่ายบัตร">
+                    <input type="datetime-local" value={form.ticket_sale_start}
+                      onChange={e => setForm(f => ({ ...f, ticket_sale_start: e.target.value }))}
                       className="input-theme text-[13px]" />
                   </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="🎟 เริ่มจำหน่ายบัตร">
-                      <input type="datetime-local" value={form.ticket_sale_start}
-                        onChange={e => setForm(f => ({ ...f, ticket_sale_start: e.target.value }))}
-                        className="input-theme text-[13px]" />
-                    </Field>
-                    <Field label="🔚 สิ้นสุดจำหน่าย">
-                      <input type="datetime-local" value={form.ticket_sale_end}
-                        onChange={e => setForm(f => ({ ...f, ticket_sale_end: e.target.value }))}
-                        className="input-theme text-[13px]" />
-                    </Field>
-                  </div>
+                  <Field label="🔚 สิ้นสุดจำหน่าย">
+                    <input type="datetime-local" value={form.ticket_sale_end}
+                      onChange={e => setForm(f => ({ ...f, ticket_sale_end: e.target.value }))}
+                      className="input-theme text-[13px]" />
+                  </Field>
                 </div>
               </Section>
 
