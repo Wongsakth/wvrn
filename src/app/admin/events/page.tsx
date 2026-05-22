@@ -584,6 +584,18 @@ export default function EventsAdminPage() {
                       </button>
                     ))}
                 </div>
+                {/* Create new artist button */}
+                {artistSearch && artists.filter(a => !form.artist_ids.includes(a.id)).filter(a => {
+                  const q = artistSearch.toLowerCase()
+                  return a.name.toLowerCase().includes(q) || ((a as any).name_en || '').toLowerCase().includes(q)
+                }).length === 0 && (
+                  <button type="button"
+                    onClick={() => { setNewArtistForm({ name: artistSearch, name_en: artistSearch }); setNewArtistModal(true) }}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[12px] font-medium mt-1 transition-all"
+                    style={{ background: 'var(--accent-muted)', border: '1px dashed var(--accent)', color: 'var(--accent)' }}>
+                    <Plus size={13} /> สร้างศิลปินใหม่ "{artistSearch}"
+                  </button>
+                )}
               </Section>
 
                             {/* Venue */}
