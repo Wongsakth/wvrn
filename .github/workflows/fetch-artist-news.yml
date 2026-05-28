@@ -2,8 +2,8 @@ name: Fetch Artist News
 
 on:
   schedule:
-    - cron: '0 2 * * 1'  # ทุกวันจันทร์ 02:00 UTC (09:00 Bangkok)
-  workflow_dispatch:       # รันมือได้จาก GitHub Actions tab
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
 
 jobs:
   fetch-news:
@@ -12,10 +12,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies
-        run: npm install xml2js node-fetch@2
+        run: npm install xml2js
 
       - name: Fetch and save artist news
         env:
@@ -40,14 +40,17 @@ jobs:
                   'apikey': SUPABASE_KEY,
                   'Authorization': `Bearer ${SUPABASE_KEY}`,
                   'Content-Type': 'application/json',
+                  'Accept': 'application/json',
                 }
               }
               const req = https.request(opts, res => {
                 let d = ''
                 res.on('data', c => d += c)
                 res.on('end', () => {
-                  try { resolve(JSON.parse(d || '[]')) }
-                  catch { resolve([]) }
+                  try {
+                    const parsed = JSON.parse(d || '[]')
+                    resolve(Array.isArray(parsed) ? parsed : [])
+                  } catch { resolve([]) }
                 })
               })
               req.on('error', reject)
@@ -102,9 +105,7 @@ jobs:
 
                 if (news.length === 0) continue
 
-                // ลบข่าวเก่าก่อน
                 await sbFetch(`/rest/v1/artist_news?artist_id=eq.${artist.id}`, 'DELETE')
-                // Insert ใหม่
                 await sbFetch('/rest/v1/artist_news', 'POST', news)
 
                 console.log(`✓ ${name}: ${news.length} news`)
