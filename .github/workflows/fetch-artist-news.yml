@@ -2,7 +2,7 @@ name: Fetch Artist News
 
 on:
   schedule:
-    - cron: '0 2 * * 1'
+    - cron: '0 2 */3 * *'
   workflow_dispatch:
 
 jobs:
@@ -109,8 +109,17 @@ jobs:
 
                 if (news.length === 0) continue
 
+                // กรองเฉพาะข่าวไม่เกิน 2 ปี
+                const twoYearsAgo = new Date()
+                twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
+                const filtered = news.filter(n =>
+                  !n.published_at || new Date(n.published_at) >= twoYearsAgo
+                )
+                if (filtered.length === 0) continue
+
+                // ลบของเก่า แล้ว insert ใหม่ (max 3)
                 await sbFetch(`/rest/v1/artist_news?artist_id=eq.${artist.id}`, 'DELETE')
-                await sbFetch('/rest/v1/artist_news', 'POST', news)
+                await sbFetch('/rest/v1/artist_news', 'POST', filtered.slice(0, 3))
 
                 console.log(`✓ ${name}: ${news.length} news`)
                 saved += news.length

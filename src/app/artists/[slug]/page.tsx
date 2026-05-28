@@ -323,7 +323,7 @@ export default function ArtistProfilePage() {
                         {item.source && <span>{item.source}</span>}
                         {item.source && item.published_at && <span>·</span>}
                         {item.published_at && (
-                          <span>{Math.floor((Date.now() - new Date(item.published_at).getTime()) / 86400000)} วันที่แล้ว</span>
+                          <span>{item.published_at ? format(parseISO(item.published_at), 'd MMM yyyy', { locale: th }) : ''}</span>
                         )}
                       </div>
                     </div>
