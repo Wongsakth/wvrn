@@ -1,0 +1,122 @@
+name: Fetch Artist News
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # ทุกวันจันทร์ 02:00 UTC (09:00 Bangkok)
+  workflow_dispatch:       # รันมือได้จาก GitHub Actions tab
+
+jobs:
+  fetch-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install xml2js node-fetch@2
+
+      - name: Fetch and save artist news
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          cat << 'SCRIPT' > run.js
+          const https = require('https')
+          const { parseStringPromise } = require('xml2js')
+
+          const SUPABASE_URL = process.env.SUPABASE_URL
+          const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
+
+          async function sbFetch(path, method = 'GET', body = null) {
+            return new Promise((resolve, reject) => {
+              const url = new URL(SUPABASE_URL + path)
+              const opts = {
+                hostname: url.hostname,
+                path: url.pathname + url.search,
+                method,
+                headers: {
+                  'apikey': SUPABASE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_KEY}`,
+                  'Content-Type': 'application/json',
+                }
+              }
+              const req = https.request(opts, res => {
+                let d = ''
+                res.on('data', c => d += c)
+                res.on('end', () => {
+                  try { resolve(JSON.parse(d || '[]')) }
+                  catch { resolve([]) }
+                })
+              })
+              req.on('error', reject)
+              if (body) req.write(JSON.stringify(body))
+              req.end()
+            })
+          }
+
+          async function fetchRSS(artistName) {
+            return new Promise((resolve) => {
+              const q = encodeURIComponent(`"${artistName}"`)
+              const path = `/rss/search?q=${q}&hl=th&gl=TH&ceid=TH:th`
+              const opts = {
+                hostname: 'news.google.com',
+                path,
+                method: 'GET',
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+              }
+              const req = https.request(opts, res => {
+                let d = ''
+                res.on('data', c => d += c)
+                res.on('end', () => resolve(d))
+              })
+              req.on('error', () => resolve(''))
+              req.end()
+            })
+          }
+
+          async function main() {
+            console.log('Loading artists...')
+            const artists = await sbFetch('/rest/v1/artists?select=id,name,name_en&is=deleted_at,null&limit=500&order=name')
+            console.log(`Total: ${artists.length} artists`)
+
+            let saved = 0
+            for (const artist of artists) {
+              const name = artist.name_en || artist.name
+              try {
+                const xml = await fetchRSS(name)
+                if (!xml) continue
+
+                const result = await parseStringPromise(xml, { explicitArray: true })
+                const items = result?.rss?.channel?.[0]?.item || []
+                if (items.length === 0) continue
+
+                const news = items.slice(0, 3).map(item => ({
+                  artist_id: artist.id,
+                  title: (item.title?.[0] || '').replace(/ - [^-]+$/, '').trim(),
+                  url: item.link?.[0] || '',
+                  source: item.source?.[0]?._ || '',
+                  published_at: item.pubDate?.[0] ? new Date(item.pubDate[0]).toISOString() : null,
+                })).filter(n => n.title && n.url)
+
+                if (news.length === 0) continue
+
+                // ลบข่าวเก่าก่อน
+                await sbFetch(`/rest/v1/artist_news?artist_id=eq.${artist.id}`, 'DELETE')
+                // Insert ใหม่
+                await sbFetch('/rest/v1/artist_news', 'POST', news)
+
+                console.log(`✓ ${name}: ${news.length} news`)
+                saved += news.length
+              } catch (e) {
+                console.log(`✗ ${name}: ${e.message}`)
+              }
+              await new Promise(r => setTimeout(r, 300))
+            }
+            console.log(`\nDone! Saved ${saved} news items total.`)
+          }
+
+          main().catch(console.error)
+          SCRIPT
+          node run.js
