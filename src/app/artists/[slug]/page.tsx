@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth'
 import {
   Heart, Instagram, Facebook, Globe, Building2,
   MapPin, Clock, ChevronLeft, ChevronRight,
-  Loader2, Music, ExternalLink,
+  Loader2, Music, ExternalLink, Flame,
 } from 'lucide-react'
 import { cn, genreTagClass, formatPrice } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
@@ -35,6 +35,7 @@ export default function ArtistProfilePage() {
   const [events,   setEvents]   = useState<any[]>([])
   const [followed, setFollowed] = useState(false)
   const [loading,  setLoading]  = useState(true)
+  const [news,     setNews]     = useState<any[]>([])
 
   // Load artist + events
   useEffect(() => {
@@ -68,6 +69,15 @@ export default function ArtistProfilePage() {
           .order('start_date', { ascending: true })
 
         setEvents((evData || []).map((ev: any) => ({ ...ev, artists: [] })))
+
+        // Fetch news
+        const { data: newsData } = await sb
+          .from('artist_news')
+          .select('*')
+          .eq('artist_id', artistData.id)
+          .order('published_at', { ascending: false })
+          .limit(3)
+        setNews(newsData || [])
       } catch (e) {
         console.error(e)
       } finally {
@@ -293,6 +303,41 @@ export default function ArtistProfilePage() {
               </div>
             )}
           </div>
+
+          {/* ── ฟีด [ชื่อศิลปิน] ── */}
+          {news.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Flame size={16} style={{ color: '#D85A30' }} />
+                <h2 className="text-[16px] font-medium text-primary">ฟีด {artist.name}</h2>
+              </div>
+              <div className="rounded-xl overflow-hidden"
+                style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                {news.map((item, i) => (
+                  <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-2)]"
+                    style={{ borderBottom: i < news.length - 1 ? '1px solid var(--border)' : 'none', textDecoration: 'none' }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-primary leading-snug mb-1 line-clamp-2">{item.title}</p>
+                      <div className="flex items-center gap-2 text-[11px] text-muted">
+                        {item.source && <span>{item.source}</span>}
+                        {item.source && item.published_at && <span>·</span>}
+                        {item.published_at && (
+                          <span>{Math.floor((Date.now() - new Date(item.published_at).getTime()) / 86400000)} วันที่แล้ว</span>
+                        )}
+                      </div>
+                    </div>
+                    <ExternalLink size={13} className="text-muted shrink-0 mt-0.5" />
+                  </a>
+                ))}
+                <div className="px-4 py-2 text-[10px] text-muted"
+                  style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+                  ข้อมูลจาก Google News
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
