@@ -47,10 +47,15 @@ jobs:
                 let d = ''
                 res.on('data', c => d += c)
                 res.on('end', () => {
+                  console.log('RAW RESPONSE:', d.slice(0, 200))
                   try {
                     const parsed = JSON.parse(d || '[]')
-                    resolve(Array.isArray(parsed) ? parsed : [])
-                  } catch { resolve([]) }
+                    console.log('PARSED TYPE:', typeof parsed, Array.isArray(parsed))
+                    resolve(Array.isArray(parsed) ? parsed : (parsed?.data || []))
+                  } catch(e) {
+                    console.log('PARSE ERROR:', e.message)
+                    resolve([])
+                  }
                 })
               })
               req.on('error', reject)
@@ -59,63 +64,13 @@ jobs:
             })
           }
 
-          async function fetchRSS(artistName) {
-            return new Promise((resolve) => {
-              const q = encodeURIComponent(`"${artistName}"`)
-              const path = `/rss/search?q=${q}&hl=th&gl=TH&ceid=TH:th`
-              const opts = {
-                hostname: 'news.google.com',
-                path,
-                method: 'GET',
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-              }
-              const req = https.request(opts, res => {
-                let d = ''
-                res.on('data', c => d += c)
-                res.on('end', () => resolve(d))
-              })
-              req.on('error', () => resolve(''))
-              req.end()
-            })
-          }
-
           async function main() {
+            console.log('SUPABASE_URL:', SUPABASE_URL ? 'set' : 'NOT SET')
+            console.log('SUPABASE_KEY:', SUPABASE_KEY ? 'set' : 'NOT SET')
             console.log('Loading artists...')
-            const artists = await sbFetch('/rest/v1/artists?select=id,name,name_en&is=deleted_at,null&limit=500&order=name')
+            const artists = await sbFetch('/rest/v1/artists?select=id,name,name_en&is=deleted_at,null&limit=5&order=name')
             console.log(`Total: ${artists.length} artists`)
-
-            let saved = 0
-            for (const artist of artists) {
-              const name = artist.name_en || artist.name
-              try {
-                const xml = await fetchRSS(name)
-                if (!xml) continue
-
-                const result = await parseStringPromise(xml, { explicitArray: true })
-                const items = result?.rss?.channel?.[0]?.item || []
-                if (items.length === 0) continue
-
-                const news = items.slice(0, 3).map(item => ({
-                  artist_id: artist.id,
-                  title: (item.title?.[0] || '').replace(/ - [^-]+$/, '').trim(),
-                  url: item.link?.[0] || '',
-                  source: item.source?.[0]?._ || '',
-                  published_at: item.pubDate?.[0] ? new Date(item.pubDate[0]).toISOString() : null,
-                })).filter(n => n.title && n.url)
-
-                if (news.length === 0) continue
-
-                await sbFetch(`/rest/v1/artist_news?artist_id=eq.${artist.id}`, 'DELETE')
-                await sbFetch('/rest/v1/artist_news', 'POST', news)
-
-                console.log(`✓ ${name}: ${news.length} news`)
-                saved += news.length
-              } catch (e) {
-                console.log(`✗ ${name}: ${e.message}`)
-              }
-              await new Promise(r => setTimeout(r, 300))
-            }
-            console.log(`\nDone! Saved ${saved} news items total.`)
+            console.log('First artist:', JSON.stringify(artists[0]))
           }
 
           main().catch(console.error)
