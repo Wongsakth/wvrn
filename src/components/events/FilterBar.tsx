@@ -57,10 +57,11 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
     setLocLoading(true); setLocError('')
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        pos => {
-          setLocLoading(false)
-          onChange({ ...filters, nearMe: true, userLat: pos.coords.latitude, userLng: pos.coords.longitude, province: undefined, regionProvinces: undefined })
-        },
+pos => {
+  setLocLoading(false)
+  const regionProvinces = userProvince ? getRegionProvinces(userProvince) : undefined
+  onChange({ ...filters, nearMe: true, userLat: pos.coords.latitude, userLng: pos.coords.longitude, province: userProvince || undefined, regionProvinces })
+},
         () => {
           setLocLoading(false)
           if (userProvince) {
