@@ -179,6 +179,10 @@ export default function HomePage() {
       }
 
       try {
+        // Load user province
+        const { data: profileData } = await sb.from('profiles').select('province').eq('id', user.id).single()
+        if (profileData?.province) setUserProvince(profileData.province)
+
         const { data, error } = await sb
           .from('follows')
           .select(`
