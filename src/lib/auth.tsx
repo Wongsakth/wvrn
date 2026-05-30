@@ -1,3 +1,5 @@
+// @ts-nocheck
+'use client'
 
 // ── Region map ──────────────────────────────────────────────────────────────
 export const REGIONS: Record<string, string[]> = {
@@ -16,8 +18,6 @@ export function getRegionProvinces(province: string): string[] {
   return [province]
 }
 
-// @ts-nocheck
-'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
