@@ -2,7 +2,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { CheckCircle2, XCircle, Loader2, Calendar, Music, MapPin, Clock, User, Edit3, ExternalLink } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Calendar, Music, MapPin, Clock, User, Edit3, ExternalLink, TrendingUp, Flame, AlertCircle } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { th } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -29,9 +29,36 @@ export default function PendingPage() {
   const [loading,     setLoading]     = useState(true)
   const [notes,       setNotes]       = useState<Record<string, string>>({})
   const [processing,  setProcessing]  = useState<string | null>(null)
+  const [dashStats,   setDashStats]   = useState<any>(null)
   const sb = createClient()
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); loadDash() }, [])
+
+  async function loadDash() {
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString()
+
+      const [latestEvent, weekEvents, staleArtists] = await Promise.all([
+        // event ล่าสุดที่เพิ่ม
+        sb.from('events').select('id,title,created_at').is('deleted_at', null)
+          .order('created_at', { ascending: false }).limit(1).single(),
+        // event เพิ่มสัปดาห์นี้
+        sb.from('events').select('id', { count: 'exact', head: true })
+          .is('deleted_at', null).gte('created_at', weekAgo),
+        // ศิลปินที่ไม่มีงานใน 90 วัน
+        sb.rpc('get_artists_without_recent_events', { cutoff: ninetyDaysAgo }),
+      ])
+
+      setDashStats({
+        latestEvent: latestEvent.data,
+        weekEventCount: weekEvents.count ?? 0,
+        staleArtists: (staleArtists.data || []).slice(0, 5),
+        staleCount: (staleArtists.data || []).length,
+      })
+    } catch (e) { console.error('dash error', e) }
+  }
 
   async function load() {
     setLoading(true)
@@ -193,6 +220,56 @@ export default function PendingPage() {
         <h1 className="text-[20px] font-medium text-primary">รออนุมัติ</h1>
         <button onClick={load} className="btn-ghost text-[13px] py-2 px-3">รีเฟรช</button>
       </div>
+
+      {/* Dashboard Summary */}
+      {dashStats && (
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <p className="text-[11px] text-muted mb-1">Event ล่าสุดที่เพิ่ม</p>
+              <p className="text-[13px] font-medium text-primary truncate">{dashStats.latestEvent?.title ?? '-'}</p>
+              {dashStats.latestEvent?.created_at && (
+                <p className="text-[11px] text-muted mt-0.5">{format(new Date(dashStats.latestEvent.created_at), 'd MMM yyyy', { locale: th })}</p>
+              )}
+            </div>
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <p className="text-[11px] text-muted mb-1">Event เพิ่มสัปดาห์นี้</p>
+              <p className="text-[24px] font-medium text-primary">{dashStats.weekEventCount}</p>
+              <p className="text-[11px] text-muted mt-0.5">งาน</p>
+            </div>
+            <div className="rounded-xl p-4 col-span-2 sm:col-span-1" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <p className="text-[11px] text-muted mb-1">ศิลปินไม่มีงานใน 90 วัน</p>
+              <p className="text-[24px] font-medium" style={{ color: dashStats.staleCount > 20 ? '#E24B4A' : 'var(--text-primary)' }}>{dashStats.staleCount}</p>
+              <p className="text-[11px] text-muted mt-0.5">คน</p>
+            </div>
+          </div>
+
+          {dashStats.staleArtists?.length > 0 && (
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+                <AlertCircle size={13} style={{ color: '#EF9F27' }} />
+                <span className="text-[12px] font-medium text-primary">ศิลปินที่นานที่สุดที่ยังไม่มีงานใหม่</span>
+              </div>
+              {dashStats.staleArtists.map((a: any, i: number) => (
+                <div key={a.id} className="flex items-center gap-3 px-4 py-2.5"
+                  style={{ borderBottom: i < dashStats.staleArtists.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <span className="flex-1 text-[13px] text-primary truncate">{a.name}</span>
+                  {a.last_event_date && (
+                    <span className="text-[11px] text-muted">{format(new Date(a.last_event_date), 'd MMM yyyy', { locale: th })}</span>
+                  )}
+                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0"
+                    style={{
+                      background: a.days_since > 365 ? 'rgba(226,75,74,.1)' : 'rgba(239,159,39,.1)',
+                      color: a.days_since > 365 ? '#E24B4A' : '#EF9F27'
+                    }}>
+                    {a.days_since} วัน
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl mb-5"
