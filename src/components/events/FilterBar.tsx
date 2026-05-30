@@ -48,6 +48,8 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
   }
 
   async function handleNearMe() {
+  console.log('userProvince:', userProvince)  // เพิ่มบรรทัดนี้
+  console.log('regionProvinces:', getRegionProvinces(userProvince))
     if (filters.nearMe) {
       onChange({ ...filters, nearMe: undefined, province: undefined, regionProvinces: undefined, userLat: undefined, userLng: undefined })
       return
