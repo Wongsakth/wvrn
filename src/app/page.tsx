@@ -453,8 +453,7 @@ export default function HomePage() {
     return base
       .filter(ev => {
         // ── Province / Near Me ──
-        if (filters.nearMe && filters.province && ev.province !== filters.province) return false
-        if (!filters.nearMe && filters.province && ev.province !== filters.province) return false
+        // province filter handled by regionProvinces below
 
         // ── Date preset / range ──
         if (filters.dateFrom) {
