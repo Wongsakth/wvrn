@@ -55,7 +55,7 @@ type AttendStatus = 'going' | 'attended' | null
 
 export default function HomePage() {
   const sb = createClient()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, province } = useAuth()
 
   const isLoggedIn = !authLoading && !!user
 
@@ -65,10 +65,14 @@ export default function HomePage() {
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
   const [followedVenueIds,  setFollowedVenueIds]  = useState<Set<string>>(new Set())
   const [followedVenueInfo, setFollowedVenueInfo] = useState<Map<string,any>>(new Map())
-  const [userProvince, setUserProvince] = useState<string>('')
+  const [userProvince, setUserProvince] = useState<string>(province || '')
 
   const [followedArtistInfo, setFollowedArtistInfo] =
     useState<Map<string, any>>(new Map())
+
+  useEffect(() => {
+    if (province) setUserProvince(province)
+  }, [province])
 
   const [attendance, setAttendance] =
     useState<Map<string, AttendStatus>>(new Map())
