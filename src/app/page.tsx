@@ -744,6 +744,7 @@ export default function HomePage() {
               filters={filters}
               onChange={setFilters}
               totalCount={filtered.length}
+  userProvince={province}  // ← เพิ่มบรรทัดนี้
             />
           </>
         )}
