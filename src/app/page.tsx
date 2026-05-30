@@ -742,7 +742,8 @@ export default function HomePage() {
             />
             <FilterBar
               filters={filters}
-              onChange={setFilters}
+onChange={(f) => { console.log('filters:', f); setFilters(f) }}
+
               totalCount={filtered.length}
   userProvince={province}  // ← เพิ่มบรรทัดนี้
             />
