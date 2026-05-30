@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import {
   Plus, Search, Edit2, Trash2, X, Check,
   Music, Instagram, Facebook, Upload, Loader2, ChevronDown,
-  Globe, Building2,
+  Globe, Building2, Star, Calendar,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -66,7 +66,7 @@ export default function ArtistsAdminPage() {
     setLoading(true)
     try {
       const { data, error } = await sb
-        .from('artists').select('*').is('deleted_at', null).order('name')
+        .from('artists').select('*, last_event:event_artists(event:events(start_date))').is('deleted_at', null).order('is_featured', { ascending: false }).order('featured_order').order('name')
       if (error) throw error
       setArtists(data || [])
     } catch (e: any) {
@@ -175,6 +175,16 @@ export default function ArtistsAdminPage() {
     } catch (e: any) {
       toast.error('ลบไม่ได้: ' + e.message)
     }
+  }
+
+  // ─── Toggle featured ──────────────────────────────────────
+  async function toggleFeatured(artist: any) {
+    try {
+      const newVal = !artist.is_featured
+      await sb.from('artists').update({ is_featured: newVal }).eq('id', artist.id)
+      setArtists(prev => prev.map(a => a.id === artist.id ? { ...a, is_featured: newVal } : a))
+      toast.success(newVal ? `⭐ ${artist.name} เป็น Top Artist แล้ว` : `ยกเลิก Top Artist`)
+    } catch (e: any) { toast.error(e.message) }
   }
 
   // ─── Toggle genre ─────────────────────────────────────────
@@ -292,6 +302,12 @@ export default function ArtistsAdminPage() {
                     {artist.name_en && (
                       <span className="text-[11px] text-muted">{artist.name_en}</span>
                     )}
+                    {artist.is_featured && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
+                        style={{ background: 'rgba(239,159,39,.15)', color: '#BA7517' }}>
+                        <Star size={9} /> Top Artist
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-1.5 mt-1 flex-wrap">
                     {(artist as any).label_id && (() => {
@@ -319,6 +335,17 @@ export default function ArtistsAdminPage() {
                       )
                     })}
                   </div>
+                  {(() => {
+                    const dates = (artist.last_event || []).map((ea: any) => ea.event?.start_date).filter(Boolean).sort().reverse()
+                    const last = dates[0]
+                    return last ? (
+                      <p className="text-[10px] text-muted mt-1 flex items-center gap-1">
+                        <Calendar size={10} /> อัพเดทล่าสุด: {last}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] mt-1" style={{ color: '#E24B4A' }}>ยังไม่มีงานในระบบ</p>
+                    )
+                  })()}
                 </div>
 
                 {/* Social links */}
@@ -339,6 +366,14 @@ export default function ArtistsAdminPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => toggleFeatured(artist)}
+                    className="icon-btn w-8 h-8"
+                    title={artist.is_featured ? 'ยกเลิก Top Artist' : 'ตั้งเป็น Top Artist'}
+                    style={{ color: artist.is_featured ? '#EF9F27' : undefined }}
+                  >
+                    <Star size={14} style={{ fill: artist.is_featured ? '#EF9F27' : 'none' }} />
+                  </button>
                   <button
                     onClick={() => openEdit(artist)}
                     className="icon-btn w-8 h-8"

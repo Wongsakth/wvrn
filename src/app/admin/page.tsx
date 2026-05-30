@@ -40,7 +40,7 @@ export default function PendingPage() {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
       const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString()
 
-      const [latestEvent, weekEvents, staleArtists] = await Promise.all([
+      const [latestEvent, weekEvents, staleArtists, featuredArtists] = await Promise.all([
         // event ล่าสุดที่เพิ่ม
         sb.from('events').select('id,title,created_at').is('deleted_at', null)
           .order('created_at', { ascending: false }).limit(1).single(),
@@ -49,6 +49,8 @@ export default function PendingPage() {
           .is('deleted_at', null).gte('created_at', weekAgo),
         // ศิลปินที่ไม่มีงานใน 90 วัน
         sb.rpc('get_artists_without_recent_events', { cutoff: ninetyDaysAgo }),
+        // Top Artists
+        sb.from('artists').select('id,name,name_en,image_url,is_featured,featured_order,event_artists(event:events(start_date,title))').eq('is_featured', true).is('deleted_at', null).order('featured_order').limit(10),
       ])
 
       setDashStats({
@@ -56,6 +58,11 @@ export default function PendingPage() {
         weekEventCount: weekEvents.count ?? 0,
         staleArtists: (staleArtists.data || []).slice(0, 5),
         staleCount: (staleArtists.data || []).length,
+        featuredArtists: (featuredArtists.data || []).map((a: any) => {
+          const dates = (a.event_artists || []).map((ea: any) => ea.event?.start_date).filter(Boolean).sort().reverse()
+          const upcoming = (a.event_artists || []).filter((ea: any) => ea.event?.start_date >= new Date().toISOString().slice(0,10)).length
+          return { ...a, lastEventDate: dates[0] ?? null, upcomingCount: upcoming }
+        }),
       })
     } catch (e) { console.error('dash error', e) }
   }
@@ -243,6 +250,34 @@ export default function PendingPage() {
               <p className="text-[11px] text-muted mt-0.5">คน</p>
             </div>
           </div>
+
+          {dashStats.featuredArtists?.length > 0 && (
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+                <TrendingUp size={13} style={{ color: '#EF9F27' }} />
+                <span className="text-[12px] font-medium text-primary">Top Artists — อัพเดทล่าสุด</span>
+              </div>
+              {dashStats.featuredArtists.map((a: any, i: number) => (
+                <div key={a.id} className="flex items-center gap-3 px-4 py-2.5"
+                  style={{ borderBottom: i < dashStats.featuredArtists.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  {a.image_url
+                    ? <img src={a.image_url} alt={a.name} className="w-7 h-7 rounded-lg object-cover shrink-0" />
+                    : <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-medium shrink-0"
+                        style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>{a.name.slice(0,2)}</div>
+                  }
+                  <span className="flex-1 text-[13px] text-primary truncate">{a.name}</span>
+                  <span className="text-[11px] text-muted shrink-0">
+                    {a.upcomingCount > 0
+                      ? <span style={{ color: '#1D9E75' }}>{a.upcomingCount} งานที่กำลังมา</span>
+                      : <span style={{ color: '#E24B4A' }}>ไม่มีงาน</span>}
+                  </span>
+                  <span className="text-[11px] text-muted shrink-0 ml-2">
+                    {a.lastEventDate ? a.lastEventDate : 'ไม่มีข้อมูล'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {dashStats.staleArtists?.length > 0 && (
             <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
