@@ -469,6 +469,8 @@ export default function HomePage() {
 
         // ── Event type ──
         if (filters.categoryId && ev.category_id !== filters.categoryId) return false
+        if (filters.regionProvinces?.length && !filters.regionProvinces.includes(ev.province)) return false
+        else if (!filters.regionProvinces && filters.province && ev.province !== filters.province) return false
 
         // ── Free ──
         if (filters.isFree && !ev.is_free) return false

@@ -31,6 +31,8 @@ export default function ProfilePage() {
   const [pwLoading, setPwLoading] = useState(false)
   const [showPw,    setShowPw]    = useState({ next: false, confirm: false })
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [userProvince,  setUserProvince]  = useState('')
+  const [savingProvince, setSavingProvince] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameInput,   setNameInput]   = useState('')
@@ -57,7 +59,7 @@ export default function ProfilePage() {
       sb.from('follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('event_attendance').select('id,status').eq('user_id', user.id),
-      sb.from('profiles').select('score,score_rank').eq('id', user.id).single(),
+      sb.from('profiles').select('score,score_rank,province').eq('id', user.id).single(),
       sb.from('event_submissions').select('id,status').eq('submitted_by', user.id),
     ]).then(([ar, vr, at, prof, subs]) => {
       const att   = (at as any).data || []
@@ -69,6 +71,7 @@ export default function ProfilePage() {
         attended: att.filter((a: any) => a.status === 'attended').length,
       })
       const p = (prof as any).data
+      if (p?.province) setUserProvince(p.province)
       setScoreData({
         score:     p?.score      ?? 0,
         rank:      p?.score_rank ?? 'listener',
@@ -103,6 +106,16 @@ export default function ProfilePage() {
       setSection('main')
     } catch (e: any) { toast.error(e.message || 'เกิดข้อผิดพลาด') }
     finally { setPwLoading(false) }
+  }
+
+  async function saveProvince(province: string) {
+    setUserProvince(province)
+    setSavingProvince(true)
+    try {
+      await sb.from('profiles').update({ province }).eq('id', user!.id)
+      toast.success('บันทึกจังหวัดแล้ว')
+    } catch (e: any) { toast.error(e.message) }
+    finally { setSavingProvince(false) }
   }
 
   if (!user) return (
@@ -235,6 +248,26 @@ export default function ProfilePage() {
                 </div>
                 <ChevronRight size={14} className="text-muted" />
               </button>
+
+              {/* Province */}
+              <div className="w-full flex items-center gap-3 px-4 py-3.5"
+                style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'var(--surface-2)' }}>
+                  <MapPin size={15} className="text-muted" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[14px] text-primary mb-1">จังหวัดของฉัน</p>
+                  <select
+                    value={userProvince}
+                    onChange={e => saveProvince(e.target.value)}
+                    className="input-theme text-[12px] w-full"
+                    disabled={savingProvince}>
+                    <option value="">-- ไม่ระบุ --</option>
+                    {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
 
               {/* Password — email users only */}
               {isEmailUser && (

@@ -1,3 +1,21 @@
+
+// ── Region map ──────────────────────────────────────────────────────────────
+export const REGIONS: Record<string, string[]> = {
+  'ภาคกลาง': ['กรุงเทพมหานคร','นนทบุรี','ปทุมธานี','สมุทรปราการ','สมุทรสาคร','นครปฐม','สมุทรสงคราม','ราชบุรี','กาญจนบุรี','สุพรรณบุรี','พระนครศรีอยุธยา','อ่างทอง','สิงห์บุรี','ชัยนาท','ลพบุรี','สระบุรี','นครนายก','ปราจีนบุรี','ฉะเชิงเทรา','สระแก้ว'],
+  'ภาคเหนือ': ['เชียงใหม่','เชียงราย','ลำปาง','ลำพูน','แม่ฮ่องสอน','พะเยา','น่าน','แพร่','อุตรดิตถ์','สุโขทัย','พิษณุโลก','พิจิตร','กำแพงเพชร','ตาก','เพชรบูรณ์'],
+  'ภาคอีสาน': ['นครราชสีมา','ขอนแก่น','อุดรธานี','อุบลราชธานี','บึงกาฬ','หนองคาย','หนองบัวลำภู','เลย','สกลนคร','นครพนม','มุกดาหาร','กาฬสินธุ์','มหาสารคาม','ร้อยเอ็ด','ยโสธร','อำนาจเจริญ','ชัยภูมิ','บุรีรัมย์','สุรินทร์','ศรีสะเกษ'],
+  'ภาคตะวันออก': ['ชลบุรี','ระยอง','จันทบุรี','ตราด'],
+  'ภาคตะวันตก': ['เพชรบุรี','ประจวบคีรีขันธ์'],
+  'ภาคใต้': ['สุราษฎร์ธานี','นครศรีธรรมราช','กระบี่','พังงา','ภูเก็ต','ตรัง','พัทลุง','สงขลา','สตูล','ปัตตานี','ยะลา','นราธิวาส','ชุมพร','ระนอง'],
+}
+
+export function getRegionProvinces(province: string): string[] {
+  for (const [, provinces] of Object.entries(REGIONS)) {
+    if (provinces.includes(province)) return provinces
+  }
+  return [province]
+}
+
 // @ts-nocheck
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -13,12 +31,13 @@ interface AuthCtx {
   role:      UserRole
   canSubmit: boolean   // จาก permission_matrix
   isAdmin:   boolean   // จาก permission_matrix
+  province:  string
   signOut:   () => Promise<void>
 }
 
 const Ctx = createContext<AuthCtx>({
   user: null, session: null, loading: true,
-  role: 'user', canSubmit: false, isAdmin: false,
+  role: 'user', canSubmit: false, isAdmin: false, province: '',
   signOut: async () => {},
 })
 
@@ -29,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role,      setRole]      = useState<UserRole>('user')
   const [canSubmit, setCanSubmit] = useState(false)
   const [isAdmin,   setIsAdmin]   = useState(false)
+  const [province,  setProvince]  = useState('')
   const sb = createClient()
 
   useEffect(() => {
@@ -49,9 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loadRole(userId: string) {
     try {
-      const { data: profile } = await sb.from('profiles').select('role').eq('id', userId).single()
+      const { data: profile } = await sb.from('profiles').select('role,province').eq('id', userId).single()
       const r = (profile?.role as UserRole) ?? 'user'
       setRole(r)
+      setProvince(profile?.province ?? '')
 
       // อ่าน permission_matrix จริงจาก DB
       const { data: perms } = await sb.from('permission_matrix').select('permission,' + r)
@@ -68,11 +89,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     await sb.auth.signOut()
-    setRole('user'); setCanSubmit(false); setIsAdmin(false)
+    setRole('user'); setCanSubmit(false); setIsAdmin(false); setProvince('')
   }
 
   return (
-    <Ctx.Provider value={{ user, session, loading, role, canSubmit, isAdmin, signOut }}>
+    <Ctx.Provider value={{ user, session, loading, role, canSubmit, isAdmin, province, signOut }}>
       {children}
     </Ctx.Provider>
   )

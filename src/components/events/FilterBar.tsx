@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { SlidersHorizontal, X, ChevronDown, Loader2 } from 'lucide-react'
 import { cn, PROVINCES } from '@/lib/utils'
+import { getRegionProvinces } from '@/lib/auth'
 import { createClient } from '@/lib/supabase'
 import type { EventFilters, Genre } from '@/types'
 
@@ -48,7 +49,7 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
 
   async function handleNearMe() {
     if (filters.nearMe) {
-      onChange({ ...filters, nearMe: undefined, province: undefined, userLat: undefined, userLng: undefined })
+      onChange({ ...filters, nearMe: undefined, province: undefined, regionProvinces: undefined, userLat: undefined, userLng: undefined })
       return
     }
     setLocLoading(true); setLocError('')
@@ -56,14 +57,15 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
       navigator.geolocation.getCurrentPosition(
         pos => {
           setLocLoading(false)
-          onChange({ ...filters, nearMe: true, userLat: pos.coords.latitude, userLng: pos.coords.longitude, province: undefined })
+          onChange({ ...filters, nearMe: true, userLat: pos.coords.latitude, userLng: pos.coords.longitude, province: undefined, regionProvinces: undefined })
         },
         () => {
           setLocLoading(false)
           if (userProvince) {
-            onChange({ ...filters, nearMe: true, province: userProvince })
+            const regionProvinces = getRegionProvinces(userProvince)
+            onChange({ ...filters, nearMe: true, province: userProvince, regionProvinces })
           } else {
-            setLocError('ไม่ได้รับอนุญาต GPS – กรุณาเลือกจังหวัดด้านล่าง')
+            setLocError('ไม่ได้รับอนุญาต GPS – กรุณาตั้งจังหวัดในโปรไฟล์')
             setExpanded(true)
           }
         },
@@ -71,7 +73,10 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
       )
     } else {
       setLocLoading(false)
-      if (userProvince) { onChange({ ...filters, nearMe: true, province: userProvince }) }
+      if (userProvince) {
+        const regionProvinces = getRegionProvinces(userProvince)
+        onChange({ ...filters, nearMe: true, province: userProvince, regionProvinces })
+      }
       else { setLocError('Browser ไม่รองรับ GPS'); setExpanded(true) }
     }
   }

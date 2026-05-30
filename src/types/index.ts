@@ -100,7 +100,8 @@ export interface EventFilters {
   search?:      string
   province?:    string
   genre?:       Genre
-  categoryId?:  string      // ← ใหม่ ใช้ UUID จาก event_categories แทน eventType
+  categoryId?:      string
+  regionProvinces?: string[]  // ← จังหวัดในภาคเดียวกัน
   eventType?:   EventType   // ← เก็บไว้ backward compat ลบทีหลัง
   isFree?:      boolean
   dateFrom?:    string
