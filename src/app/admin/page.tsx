@@ -53,12 +53,7 @@ export default function PendingPage() {
         sb.from('artists').select('id,name,name_en,image_url,is_featured,featured_order,event_artists(event:events(id,title,start_date,created_at))').eq('is_featured', true).is('deleted_at', null).order('featured_order').limit(10),
       ])
 
-      setDashStats({
-        latestEvent: latestEvent.data,
-        weekEventCount: weekEvents.count ?? 0,
-        staleArtists: (staleArtists.data || []).slice(0, 5),
-        staleCount: (staleArtists.data || []).length,
-        featuredArtists: (featuredArtists.data || []).map((a: any) => {
+      const mappedFeatured = (featuredArtists.data || []).map((a: any) => {
           const today = new Date().toISOString().slice(0,10)
           const dates = (a.event_artists || []).map((ea: any) => ea.event?.start_date).filter(Boolean).sort().reverse()
           const upcoming = (a.event_artists || []).filter((ea: any) => ea.event?.start_date >= today)
@@ -81,7 +76,15 @@ export default function PendingPage() {
             lastEventTitle,
             daysSince,
           }
-        }),
+        })
+      const staleTopArtists = mappedFeatured.filter((a: any) => a.daysSince === null || a.daysSince > 30)
+      setDashStats({
+        latestEvent: latestEvent.data,
+        weekEventCount: weekEvents.count ?? 0,
+        staleArtists: (staleArtists.data || []).slice(0, 5),
+        staleCount: (staleArtists.data || []).length,
+        featuredArtists: mappedFeatured,
+        staleTopArtists,
       })
     } catch (e) { console.error('dash error', e) }
   }
@@ -309,6 +312,34 @@ export default function PendingPage() {
                       </p>
                     )}
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {dashStats.staleTopArtists?.length > 0 && (
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-1)', border: '1.5px solid rgba(226,75,74,.3)' }}>
+              <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)', background: 'rgba(226,75,74,.05)' }}>
+                <AlertCircle size={13} style={{ color: '#E24B4A' }} />
+                <span className="text-[12px] font-medium text-primary">Top Artists ที่ยังไม่ได้ Update &gt; 1 เดือน</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full ml-auto font-medium"
+                  style={{ background: 'rgba(226,75,74,.1)', color: '#E24B4A' }}>
+                  {dashStats.staleTopArtists.length} คน
+                </span>
+              </div>
+              {dashStats.staleTopArtists.map((a: any, i: number) => (
+                <div key={a.id} className="flex items-center gap-3 px-4 py-2.5"
+                  style={{ borderBottom: i < dashStats.staleTopArtists.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  {a.image_url
+                    ? <img src={a.image_url} alt={a.name} className="w-7 h-7 rounded-lg object-cover shrink-0" />
+                    : <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-medium shrink-0"
+                        style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>{a.name.slice(0,2)}</div>
+                  }
+                  <span className="flex-1 text-[13px] text-primary truncate">{a.name}</span>
+                  <span className="text-[11px] font-medium shrink-0" style={{ color: '#E24B4A' }}>
+                    {a.daysSince === null ? 'ไม่มีข้อมูลเลย'
+                      : `${Math.floor(a.daysSince/30)} เดือนที่แล้ว`}
+                  </span>
                 </div>
               ))}
             </div>
