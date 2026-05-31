@@ -18,6 +18,87 @@ import { cn, formatPrice, statusLabel, genreTagClass, googleCalendarUrl } from '
 import toast from 'react-hot-toast'
 import BackButton from '@/components/ui/BackButton'
 
+
+function VenueCard({ venue }: { venue: any }) {
+  const [expanded, setExpanded] = useState(false)
+  const catColor = venue.category?.color || 'var(--accent)'
+  const slug = venue.slug || venue.id
+
+  return (
+    <div className="rounded-xl overflow-hidden"
+      style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+
+      {/* Venue image */}
+      {venue.image_url && (
+        <div className="overflow-hidden" style={{ height: 100 }}>
+          <img src={venue.image_url} alt={venue.name} className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      {/* Main row */}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+              <MapPin size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+              <span className="text-[14px] font-medium text-primary">{venue.name}</span>
+              {venue.category && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                  style={{ background: catColor + '20', color: catColor }}>
+                  {venue.category.name_th}
+                </span>
+              )}
+            </div>
+            <span className="text-[12px] text-muted">{venue.province}</span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
+            {venue.maps_url && (
+              <a href={venue.maps_url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg"
+                style={{ border: '1px solid var(--border)', color: '#378ADD', textDecoration: 'none' }}>
+                <MapPin size={11} /> Maps
+              </a>
+            )}
+            <a href={`/venues/${slug}`}
+              className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg"
+              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', textDecoration: 'none' }}>
+              ดูสถานที่ <ExternalLink size={11} />
+            </a>
+            {(venue.address || venue.capacity) && (
+              <button onClick={() => setExpanded(v => !v)}
+                className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+                รายละเอียด <span style={{ display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Expandable detail */}
+        {expanded && (venue.address || venue.capacity) && (
+          <div className="mt-3 pt-3 flex gap-6 flex-wrap"
+            style={{ borderTop: '1px solid var(--border)' }}>
+            {venue.address && (
+              <div>
+                <p className="text-[10px] text-muted mb-0.5">ที่อยู่</p>
+                <p className="text-[12px] text-primary">{venue.address}</p>
+              </div>
+            )}
+            {venue.capacity && (
+              <div>
+                <p className="text-[10px] text-muted mb-0.5">ความจุ</p>
+                <p className="text-[12px] font-medium text-primary">{venue.capacity.toLocaleString()} คน</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const id = slug  // slug อาจเป็น uuid หรือ slug จริง
@@ -38,7 +119,7 @@ export default function EventDetailPage() {
       const decoded = decodeURIComponent(id)
       const isUuid  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded)
 
-      const select = `*, venue:venues(*), event_artists(sort_order, is_headliner, start_time, artist:artists(*))`
+      const select = `*, venue:venues(*, category:venue_categories(id,name,name_th,color)), event_artists(sort_order, is_headliner, start_time, artist:artists(*))`
 
       let data: any = null
 
@@ -487,47 +568,7 @@ export default function EventDetailPage() {
 
             {/* Venue map card — Style C */}
             {event.venue && (
-              <div className="rounded-xl overflow-hidden"
-                style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                <div className="px-4 py-3 flex items-center gap-2"
-                  style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
-                  <MapPin size={14} style={{ color: 'var(--accent)' }} />
-                  <span className="text-[12px] font-medium text-primary">สถานที่</span>
-                </div>
-                <div className="p-4 flex flex-col gap-3">
-                  {/* Venue image */}
-                  {event.venue.image_url && (
-                    <div className="rounded-xl overflow-hidden" style={{ height: 110 }}>
-                      <img
-                        src={event.venue.image_url}
-                        alt={event.venue.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-
-                  {/* Venue name + address */}
-                  <div className="flex items-start gap-2">
-                    <MapPin size={13} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-medium text-primary leading-snug">{event.venue.name}</p>
-                      {event.venue.address && (
-                        <p className="text-[12px] text-muted mt-0.5">{event.venue.address}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Maps button */}
-                  {event.venue.maps_url && (
-                    <a href={event.venue.maps_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] btn-ghost w-full"
-                      style={{ border: '1px solid var(--border)' }}>
-                      <ExternalLink size={12} />
-                      เปิด{event.venue.name} ใน Google Maps
-                    </a>
-                  )}
-                </div>
-              </div>
+              <VenueCard venue={event.venue} />
             )}
 
             {/* Disclaimer */}
