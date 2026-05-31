@@ -20,7 +20,7 @@ export default function ReportedPhotosPage() {
         .select(`
           *,
           profile:profiles(id, display_name, avatar_url),
-          reporter:event_photo_reports(user_id, profile:profiles(display_name)),
+          reports:event_photo_reports(user_id, created_at, profile:profiles(display_name)),
           event:events(id, title, slug, start_date)
         `)
         .order('report_count', { ascending: false })
@@ -64,8 +64,11 @@ export default function ReportedPhotosPage() {
   }
 
   async function clearReport(id: string) {
-    await sb.from('event_photos').update({ report_count: 0 }).eq('id', id)
-    setPhotos(prev => prev.map(p => p.id === id ? { ...p, report_count: 0 } : p))
+    await Promise.all([
+      sb.from('event_photos').update({ report_count: 0 }).eq('id', id),
+      sb.from('event_photo_reports').delete().eq('photo_id', id),
+    ])
+    setPhotos(prev => prev.map(p => p.id === id ? { ...p, report_count: 0, reports: [] } : p))
     toast.success('ล้าง report แล้ว')
   }
 
@@ -143,9 +146,24 @@ export default function ReportedPhotosPage() {
                       {photo.event?.title ?? 'ไม่ทราบงาน'}
                     </p>
                     <p className="text-[11px] text-muted">
-                      โดย {photo.profile?.display_name ?? `user:${photo.user_id?.slice(0,8)}`} ·{' '}
+                      โพสต์โดย {photo.profile?.display_name ?? `user:${photo.user_id?.slice(0,8)}`} ·{' '}
                       {format(parseISO(photo.created_at), 'd MMM yyyy', { locale: th })}
                     </p>
+                    {photo.reports?.length > 0 && (
+                      <div className="mt-1.5 p-2 rounded-lg" style={{ background: 'rgba(226,75,74,.06)', border: '1px solid rgba(226,75,74,.15)' }}>
+                        <p className="text-[10px] font-medium mb-1" style={{ color: '#E24B4A' }}>
+                          Report โดย ({photo.reports.length} คน):
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {photo.reports.map((r: any) => (
+                            <span key={r.user_id} className="text-[10px] px-1.5 py-0.5 rounded"
+                              style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)' }}>
+                              {r.profile?.display_name ?? `user:${r.user_id?.slice(0,8)}`}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {photo.event && (
                     <a href={`/events/${photo.event.slug || photo.event.id}`} target="_blank"
