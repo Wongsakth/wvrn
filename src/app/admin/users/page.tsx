@@ -253,6 +253,18 @@ export default function AdminUsersPage() {
                     </button>
                   )}
 
+                  {/* History */}
+                  <button
+                    onClick={() => {
+                      if (selectedUser?.id === u.id) { setSelectedUser(null); setUserHistory(null) }
+                      else { setSelectedUser(u); loadUserHistory(u.id) }
+                    }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors text-muted"
+                    style={{ background: selectedUser?.id === u.id ? 'var(--accent-muted)' : 'var(--surface-2)', border: '1px solid var(--border)', color: selectedUser?.id === u.id ? 'var(--accent)' : undefined }}
+                    title="ดูประวัติ">
+                    <History size={13} />
+                  </button>
+
                   {/* Delete */}
                   {myRole === 'super_admin' && (
                     <button onClick={() => setDeleteId(u.id)}
