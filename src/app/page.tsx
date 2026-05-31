@@ -1163,7 +1163,7 @@ function EventRow({
   const sb2 = createClient()
 
   useEffect(() => {
-    if (isPast) return
+    if (isPast) { window.location.href = `/events/${event.slug || event.id}`; return }
     sb2.from('event_interactions')
       .select('type')
       .eq('event_id', event.id)
@@ -1177,7 +1177,7 @@ function EventRow({
   return (
     <div
       onClick={() => { if (!isPast) window.location.href = `/events/${event.slug || event.id}` }}
-      className={cn('rounded-2xl overflow-hidden flex flex-col', isPast ? 'opacity-40' : 'cursor-pointer transition-all hover:scale-[1.01]')}
+      className={cn('rounded-2xl overflow-hidden flex flex-col', isPast ? 'opacity-40 cursor-pointer' : 'cursor-pointer transition-all hover:scale-[1.01]')}
       style={{
         border: featured === 'partner'   ? '1.5px solid #EF9F27'
                : featured === 'wvrn_picks' ? '1.5px solid #7C3AED'
