@@ -19,7 +19,8 @@ export default function ReportedPhotosPage() {
       let q = sb.from('event_photos')
         .select(`
           *,
-          profile:profiles(display_name, avatar_url),
+          profile:profiles(id, display_name, avatar_url),
+          reporter:event_photo_reports(user_id, profile:profiles(display_name)),
           event:events(id, title, slug, start_date)
         `)
         .order('report_count', { ascending: false })
@@ -50,11 +51,16 @@ export default function ReportedPhotosPage() {
   }
 
   async function deletePhoto(photo: any) {
-    await sb.from('event_photos').delete().eq('id', photo.id)
-    const path = photo.url.split('/event-photos/')[1]
-    if (path) await sb.storage.from('event-photos').remove([decodeURIComponent(path)])
-    setPhotos(prev => prev.filter(p => p.id !== photo.id))
-    toast.success('ลบรูปแล้ว')
+    try {
+      const { error } = await sb.from('event_photos').delete().eq('id', photo.id)
+      if (error) throw error
+      const path = photo.url.split('/event-photos/')[1]
+      if (path) await sb.storage.from('event-photos').remove([decodeURIComponent(path)])
+      setPhotos(prev => prev.filter(p => p.id !== photo.id))
+      toast.success('ลบรูปแล้ว')
+    } catch (e: any) {
+      toast.error('ลบไม่ได้: ' + e.message)
+    }
   }
 
   async function clearReport(id: string) {
@@ -137,7 +143,7 @@ export default function ReportedPhotosPage() {
                       {photo.event?.title ?? 'ไม่ทราบงาน'}
                     </p>
                     <p className="text-[11px] text-muted">
-                      โดย {photo.profile?.display_name ?? 'ไม่ทราบ'} ·{' '}
+                      โดย {photo.profile?.display_name ?? `user:${photo.user_id?.slice(0,8)}`} ·{' '}
                       {format(parseISO(photo.created_at), 'd MMM yyyy', { locale: th })}
                     </p>
                   </div>
@@ -171,7 +177,7 @@ export default function ReportedPhotosPage() {
                       ล้าง Report
                     </button>
                   )}
-                  <button onClick={() => deletePhoto(photo)}
+                  <button onClick={() => { if (window.confirm('ลบรูปนี้ถาวรหรือ? ไม่สามารถกู้คืนได้')) deletePhoto(photo) }}
                     className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg ml-auto"
                     style={{ background: 'rgba(226,75,74,.1)', color: '#E24B4A', border: '1px solid rgba(226,75,74,.2)' }}>
                     <Trash2 size={11} /> ลบถาวร
