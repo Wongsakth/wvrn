@@ -69,7 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loadRole(userId: string) {
     try {
-      const { data: profile } = await sb.from('profiles').select('role,province').eq('id', userId).single()
+      const { data: { user: authUser } } = await sb.auth.getUser()
+const { data: profile } = await sb.from('profiles').select('role,province,email,display_name').eq('id', userId).single()
+// Sync email ถ้ายังไม่มี
+if (!profile?.email && authUser?.email) {
+  await sb.from('profiles').update({ email: authUser.email }).eq('id', userId)
+}
       const r = (profile?.role as UserRole) ?? 'user'
       setRole(r)
       setProvince(profile?.province ?? '')
