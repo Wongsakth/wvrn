@@ -13,6 +13,7 @@ import type { Venue } from '@/types'
 const EMPTY = {
   name: '', address: '', province: 'กรุงเทพมหานคร',
   capacity: '', maps_url: '', aliases: [] as string[], image_url: '',
+  category_id: '' as string,
 }
 
 export default function VenuesAdminPage() {
@@ -24,16 +25,21 @@ export default function VenuesAdminPage() {
   const [editTarget, setEditTarget] = useState<Venue | null>(null)
   const [deleteId,   setDeleteId]   = useState<string | null>(null)
   const [form,       setForm]       = useState({ ...EMPTY })
-  const [aliasInput, setAliasInput] = useState('')
+  const [aliasInput,  setAliasInput]  = useState('')
+  const [categories,  setCategories]  = useState<any[]>([])
 
   const sb = createClient()
 
   async function load() {
     setLoading(true)
     try {
-      const { data, error } = await sb.from('venues').select('*').is('deleted_at', null).order('name')
-      if (error) throw error
-      setVenues(data || [])
+      const [vRes, catRes] = await Promise.all([
+        sb.from('venues').select('*, category:venue_categories(id,name,name_th,color,icon)').is('deleted_at', null).order('name'),
+        sb.from('venue_categories').select('*').eq('is_active', true).order('sort_order'),
+      ])
+      if (vRes.error) throw vRes.error
+      setVenues(vRes.data || [])
+      setCategories(catRes.data || [])
     } catch (e: any) {
       toast.error('โหลดไม่ได้: ' + e.message)
     } finally {
@@ -59,6 +65,7 @@ export default function VenuesAdminPage() {
       maps_url: v.maps_url ?? '',
       aliases:  (v as any).aliases ?? [],
       image_url: (v as any).image_url ?? '',
+      category_id: (v as any).category_id ?? '',
     })
     setAliasInput('')
     setShowForm(true)
@@ -74,8 +81,9 @@ export default function VenuesAdminPage() {
         province:  form.province,
         capacity:  form.capacity ? parseInt(form.capacity) : null,
         maps_url:  form.maps_url.trim() || null,
-        aliases:   form.aliases.length > 0 ? form.aliases : null,
-        image_url: form.image_url.trim() || null,
+        aliases:    form.aliases.length > 0 ? form.aliases : null,
+        image_url:  form.image_url.trim() || null,
+        category_id: form.category_id || null,
       }
       if (editTarget) {
         const { error } = await sb.from('venues').update(payload).eq('id', editTarget.id)
@@ -176,7 +184,15 @@ export default function VenuesAdminPage() {
               </div>
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-primary">{venue.name}</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="text-[14px] font-medium text-primary">{venue.name}</div>
+                  {(venue as any).category && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{ background: ((venue as any).category.color || '#7F77DD') + '20', color: (venue as any).category.color || '#7F77DD' }}>
+                      {(venue as any).category.name_th}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <span className="text-[11px] text-muted">{venue.province}</span>
                   {venue.address && (
@@ -244,6 +260,15 @@ export default function VenuesAdminPage() {
               <Field label="ความจุ (คน)">
                 <input value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))}
                   type="number" placeholder="เช่น 5000" className="input-theme text-[13px]" />
+              </Field>
+              <Field label="ประเภทสถานที่">
+                <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
+                  className="input-theme text-[13px]">
+                  <option value="">-- เลือกประเภท --</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name_th} ({c.name})</option>
+                  ))}
+                </select>
               </Field>
               <Field label="ลิงก์ Google Maps">
                 <input value={form.maps_url} onChange={e => setForm(f => ({ ...f, maps_url: e.target.value }))}
