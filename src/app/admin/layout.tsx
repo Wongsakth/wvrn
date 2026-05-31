@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase'
 import {
   Shield, Music, MapPin, CalendarDays,
   ClipboardList, ChevronRight, Menu, X,
-  LayoutDashboard, Tag, FileUp, LayoutList, Building2, Users, Image as ImageIcon,
+  LayoutDashboard, Tag, FileUp, LayoutList, Building2, Users, Image as ImageIcon, Flag,
 } from 'lucide-react'
 
 const MENU = [
@@ -36,7 +36,8 @@ const MENU = [
     items: [
       { href: '/admin/users',       label: 'จัดการ Users',      icon: Users,   badge: null },
       { href: '/admin/permissions', label: 'Permission Matrix', icon: Shield,  badge: null },
-      { href: '/admin/audit-logs',  label: 'Audit Logs',        icon: ClipboardList, badge: null },
+      { href: '/admin/audit-logs',    label: 'Audit Logs',        icon: ClipboardList, badge: null },
+      { href: '/admin/reported-photos', label: 'รูปที่ถูก Report',  icon: Flag,          badge: 'reported' },
     ],
   },
   {
@@ -51,7 +52,8 @@ const MENU = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [sidebarOpen,  setSidebarOpen]  = useState(false)
-  const [pendingCount, setPendingCount] = useState<number>(0)
+  const [pendingCount,  setPendingCount]  = useState<number>(0)
+  const [reportedCount, setReportedCount] = useState<number>(0)
   const sb = createClient()
 
   useEffect(() => {
@@ -59,6 +61,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending')
       .then(({ count }) => setPendingCount(count ?? 0))
+    sb.from('event_photos')
+      .select('id', { count: 'exact', head: true })
+      .gt('report_count', 0)
+      .eq('is_hidden', false)
+      .then(({ count }) => setReportedCount(count ?? 0))
   }, [])
 
   return (
@@ -108,6 +115,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             {pendingCount}
                           </span>
                         )}
+                        {item.href === '/admin/reported-photos' && reportedCount > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                            style={{ background: '#E24B4A', color: 'white' }}>
+                            {reportedCount}
+                          </span>
+                        )}
                       </Link>
                     )
                   })}
@@ -154,6 +167,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
                           style={{ background: 'var(--accent)', color: 'var(--surface-0)' }}>
                           {pendingCount}
+                        </span>
+                      )}
+                      {item.href === '/admin/reported-photos' && reportedCount > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={{ background: '#E24B4A', color: 'white' }}>
+                          {reportedCount}
                         </span>
                       )}
                       {active && <ChevronRight size={12} style={{ color: 'var(--accent)' }} />}
