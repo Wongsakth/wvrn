@@ -2,7 +2,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Search, X, Loader2, Trash2, User, ChevronDown } from 'lucide-react'
+import { Search, X, Loader2, Trash2, User, ChevronDown, History, Camera, Flag, Star, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const ROLES = [
@@ -24,10 +24,40 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [myRole,     setMyRole]     = useState('')
   const [deleteId,   setDeleteId]   = useState<string | null>(null)
-  const [linking,    setLinking]    = useState<string | null>(null) // user id ที่กำลัง link
+  const [linking,     setLinking]     = useState<string | null>(null)
+  const [selectedUser, setSelectedUser] = useState<any | null>(null)
+  const [userHistory,  setUserHistory]  = useState<any>(null)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const sb = createClient()
 
   useEffect(() => { load() }, [])
+
+  async function loadUserHistory(userId: string) {
+    setLoadingHistory(true)
+    try {
+      const [photosRes, reportsRes, submissionsRes] = await Promise.all([
+        sb.from('event_photos')
+          .select('id, url, created_at, is_hidden, report_count, event:events(title, start_date)')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false }),
+        sb.from('event_photo_reports')
+          .select('id, created_at, photo:event_photos(url, event:events(title))')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false }),
+        sb.from('event_submissions')
+          .select('id, title, status, created_at')
+          .eq('submitted_by', userId)
+          .order('created_at', { ascending: false })
+          .limit(10),
+      ])
+      setUserHistory({
+        photos: photosRes.data || [],
+        reports: reportsRes.data || [],
+        submissions: submissionsRes.data || [],
+      })
+    } catch (e: any) { console.error(e) }
+    finally { setLoadingHistory(false) }
+  }
 
   async function load() {
     setLoading(true)
@@ -272,6 +302,100 @@ export default function AdminUsersPage() {
                     )}
                   </div>
                 )}
+
+              {/* History Panel */}
+              {selectedUser?.id === u.id && (
+                <div className="border-t border-[var(--border)] p-4" style={{ background: 'var(--surface-2)' }}>
+                  {loadingHistory ? (
+                    <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin text-muted" /></div>
+                  ) : userHistory && (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex gap-4 flex-wrap">
+                        <div className="text-center">
+                          <p className="text-[18px] font-medium text-primary">{u.score ?? 0}</p>
+                          <p className="text-[10px] text-muted">คะแนน</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[18px] font-medium text-primary">{userHistory.photos.length}</p>
+                          <p className="text-[10px] text-muted">รูปโพสต์</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[18px] font-medium text-primary">{userHistory.reports.length}</p>
+                          <p className="text-[10px] text-muted">Report ที่ส่ง</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[18px] font-medium text-primary">{userHistory.submissions.length}</p>
+                          <p className="text-[10px] text-muted">ส่ง Event</p>
+                        </div>
+                      </div>
+
+                      {userHistory.photos.length > 0 && (
+                        <div>
+                          <p className="text-[11px] font-medium text-muted uppercase tracking-wide mb-2">รูปที่โพสต์</p>
+                          <div className="flex flex-col gap-1.5">
+                            {userHistory.photos.map((p: any) => (
+                              <div key={p.id} className="flex items-center gap-2 rounded-lg p-2"
+                                style={{ background: 'var(--surface-1)' }}>
+                                <img src={p.url} alt="" className="w-10 h-8 rounded object-cover shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[11px] text-primary truncate">{p.event?.title ?? '-'}</p>
+                                  <p className="text-[10px] text-muted">{p.created_at?.slice(0,10)}</p>
+                                </div>
+                                <div className="flex gap-1 shrink-0">
+                                  {p.is_hidden && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(226,75,74,.1)', color: '#E24B4A' }}>ซ่อน</span>}
+                                  {p.report_count > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,159,39,.1)', color: '#854F0B' }}>Report {p.report_count}</span>}
+                                  {!p.is_hidden && p.report_count === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(29,158,117,.1)', color: '#1D9E75' }}>ปกติ</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {userHistory.reports.length > 0 && (
+                        <div>
+                          <p className="text-[11px] font-medium text-muted uppercase tracking-wide mb-2">Report ที่ส่ง</p>
+                          <div className="flex flex-col gap-1.5">
+                            {userHistory.reports.map((r: any) => (
+                              <div key={r.id} className="flex items-center gap-2 rounded-lg p-2"
+                                style={{ background: 'var(--surface-1)' }}>
+                                {r.photo?.url && <img src={r.photo.url} alt="" className="w-10 h-8 rounded object-cover shrink-0" />}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[11px] text-primary truncate">{r.photo?.event?.title ?? '-'}</p>
+                                  <p className="text-[10px] text-muted">{r.created_at?.slice(0,10)}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {userHistory.submissions.length > 0 && (
+                        <div>
+                          <p className="text-[11px] font-medium text-muted uppercase tracking-wide mb-2">Event ที่ส่ง</p>
+                          <div className="flex flex-col gap-1">
+                            {userHistory.submissions.map((s: any) => (
+                              <div key={s.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5"
+                                style={{ background: 'var(--surface-1)' }}>
+                                <span className="flex-1 text-[11px] text-primary truncate">{s.title}</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded"
+                                  style={{
+                                    background: s.status === 'approved' ? 'rgba(29,158,117,.1)' : s.status === 'rejected' ? 'rgba(226,75,74,.1)' : 'rgba(239,159,39,.1)',
+                                    color: s.status === 'approved' ? '#1D9E75' : s.status === 'rejected' ? '#E24B4A' : '#854F0B'
+                                  }}>
+                                  {s.status === 'approved' ? 'อนุมัติ' : s.status === 'rejected' ? 'ปฏิเสธ' : 'รออนุมัติ'}
+                                </span>
+                                <span className="text-[10px] text-muted shrink-0">{s.created_at?.slice(0,10)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               </div>
             )
           })}
