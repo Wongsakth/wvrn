@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { th } from 'date-fns/locale'
 import {
-  MapPin, Clock, Heart, Bookmark, CalendarPlus, Share2,
+  MapPin, Clock, Heart, Bookmark, CalendarPlus, Share2, Camera, X, Upload, AlertCircle as AlertIcon,
   ExternalLink, Ticket, ChevronLeft, Users, CalendarRange,
   Instagram, Facebook, Globe, Music, Loader2, AlertCircle,
 } from 'lucide-react'
@@ -111,7 +111,76 @@ export default function EventDetailPage() {
   const [interested, setInterested] = useState(0)
   const [going,      setGoing]      = useState(0)
   const { user } = useAuth()
+  const [photos,       setPhotos]       = useState<any[]>([])
+  const [showUpload,   setShowUpload]   = useState(false)
+  const [uploading,    setUploading]    = useState(false)
+  const [lightbox,     setLightbox]     = useState<string | null>(null)
   const sb = createClient()
+
+  async function loadPhotos(eventId: string) {
+    const { data } = await sb.from('event_photos')
+      .select('*, profile:profiles(display_name, avatar_url)')
+      .eq('event_id', eventId)
+      .eq('is_hidden', false)
+      .order('created_at', { ascending: false })
+    setPhotos(data || [])
+  }
+
+  async function resizeImage(file: File): Promise<Blob> {
+    return new Promise((res, rej) => {
+      const img = new Image()
+      img.onload = () => {
+        const MAX = 1200
+        let w = img.width, h = img.height
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+        else if (h > MAX) { w = Math.round(w * MAX / h); h = MAX }
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+        canvas.toBlob(b => b ? res(b) : rej(new Error('resize failed')), 'image/jpeg', 0.78)
+      }
+      img.onerror = rej
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  async function uploadPhotos(files: FileList) {
+    if (!user || !event) return
+    const today = new Date().toISOString().slice(0,10)
+    if (event.start_date > today) { toast.error('งานยังไม่เกิดขึ้น ยังไม่สามารถโพสต์รูปได้'); return }
+    const { data: existing } = await sb.from('event_photos').select('id').eq('event_id', event.id).eq('user_id', user.id)
+    if ((existing?.length ?? 0) + files.length > 3) { toast.error('โพสต์ได้สูงสุด 3 รูป/งาน'); return }
+    setUploading(true)
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) continue
+        const resized = await resizeImage(file)
+        const path = `${user.id}/${event.id}/${Date.now()}.jpg`
+        const { error: upErr } = await sb.storage.from('event-photos').upload(path, resized, { contentType: 'image/jpeg', upsert: false })
+        if (upErr) throw upErr
+        const { data: urlData } = sb.storage.from('event-photos').getPublicUrl(path)
+        await sb.from('event_photos').insert({ event_id: event.id, user_id: user.id, url: urlData.publicUrl, consent: true })
+      }
+      toast.success('อัพโหลดรูปสำเร็จ!')
+      setShowUpload(false)
+      loadPhotos(event.id)
+    } catch (e: any) { toast.error('อัพโหลดไม่ได้: ' + e.message) }
+    finally { setUploading(false) }
+  }
+
+  async function reportPhoto(photoId: string) {
+    await sb.from('event_photos').update({ report_count: 999 }).eq('id', photoId)
+    toast.success('รายงานแล้ว ทีมงานจะตรวจสอบโดยเร็ว')
+  }
+
+  async function deletePhoto(photoId: string, url: string) {
+    await sb.from('event_photos').delete().eq('id', photoId)
+    const path = url.split('/event-photos/')[1]
+    if (path) await sb.storage.from('event-photos').remove([decodeURIComponent(path)])
+    setPhotos(prev => prev.filter(p => p.id !== photoId))
+    toast.success('ลบรูปแล้ว')
+  }
+
 
   useEffect(() => {
     if (!id || id === 'undefined') { setLoading(false); return }
@@ -146,6 +215,7 @@ export default function EventDetailPage() {
         .map(ea => ({ ...ea.artist, artist_time: ea.start_time, is_headliner: ea.is_headliner }))
 
       setEvent({ ...data, artists: sortedArtists })
+      loadPhotos(data.id)
 
       // Load social proof counts
       const { data: counts } = await sb
@@ -569,6 +639,107 @@ export default function EventDetailPage() {
             {/* Venue map card — Style C */}
             {event.venue && (
               <VenueCard venue={event.venue} />
+            )}
+
+            {/* ── Photos section ── */}
+            {(() => {
+              const today = new Date().toISOString().slice(0,10)
+              const isPast = event.start_date <= today
+              if (!isPast && photos.length === 0) return null
+              return (
+                <div className="rounded-xl overflow-hidden"
+                  style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                  <div className="px-4 py-3 flex items-center justify-between"
+                    style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+                    <div className="flex items-center gap-2">
+                      <Camera size={14} style={{ color: 'var(--accent)' }} />
+                      <span className="text-[12px] font-medium text-primary">รูปจากคนที่ไปงาน</span>
+                      {photos.length > 0 && <span className="text-[11px] text-muted">{photos.length} รูป</span>}
+                    </div>
+                    {isPast && user && (
+                      <button onClick={() => setShowUpload(v => !v)}
+                        className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg font-medium"
+                        style={{ background: 'var(--accent)', color: 'white' }}>
+                        <Camera size={12} /> โพสต์รูป
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Upload form */}
+                  {showUpload && (
+                    <div className="p-4" style={{ borderBottom: '1px solid var(--border)', background: 'rgba(var(--accent-rgb),.03)' }}>
+                      {/* Terms */}
+                      <div className="rounded-lg p-3 mb-3 text-[11px] leading-relaxed"
+                        style={{ background: 'rgba(239,159,39,.08)', border: '1px solid rgba(239,159,39,.2)', color: '#854F0B' }}>
+                        <p className="font-medium mb-1">ข้อกำหนดการโพสต์รูป</p>
+                        <ul style={{ paddingLeft: '1rem', margin: 0 }}>
+                          <li>ต้องเป็นรูปจากงานนี้เท่านั้น</li>
+                          <li>ห้ามรูปโป้เปลือย ลามกอนาจาร หรือขัดต่อศีลธรรมอันดี</li>
+                          <li>ห้ามรูปที่มีเนื้อหาเกลียดชัง ความรุนแรง หรือผิดกฎหมาย</li>
+                          <li>คุณรับรองว่ามีสิทธิ์โพสต์รูปนี้ และผู้ที่ปรากฏในรูปยินยอม</li>
+                          <li>Admin มีสิทธิ์เด็ดขาดในการซ่อนหรือลบรูปที่ไม่เหมาะสม</li>
+                        </ul>
+                      </div>
+                      <label className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer py-6"
+                        style={{ border: '2px dashed var(--border)', background: 'var(--surface-2)' }}>
+                        {uploading
+                          ? <><Upload size={20} className="text-muted animate-bounce" /><span className="text-[12px] text-muted">กำลังอัพโหลด...</span></>
+                          : <><Camera size={20} className="text-muted" /><span className="text-[12px] text-muted">เลือกรูป (สูงสุด 3 รูป) · ระบบ resize อัตโนมัติ</span></>}
+                        <input type="file" accept="image/*" multiple className="hidden" disabled={uploading}
+                          onChange={e => e.target.files && uploadPhotos(e.target.files)} />
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Photo grid */}
+                  {photos.length > 0 ? (
+                    <div className="p-3 grid grid-cols-3 gap-2">
+                      {photos.map(p => (
+                        <div key={p.id} className="relative group rounded-lg overflow-hidden"
+                          style={{ aspectRatio: '1', background: 'var(--surface-2)' }}>
+                          <img src={p.url} alt="" className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => setLightbox(p.url)} />
+                          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {user?.id === p.user_id && (
+                              <button onClick={() => deletePhoto(p.id, p.url)}
+                                className="w-6 h-6 rounded flex items-center justify-center"
+                                style={{ background: 'rgba(226,75,74,.9)' }}>
+                                <X size={11} style={{ color: 'white' }} />
+                              </button>
+                            )}
+                            {user && user.id !== p.user_id && (
+                              <button onClick={() => reportPhoto(p.id)}
+                                className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-medium"
+                                style={{ background: 'rgba(0,0,0,.7)', color: 'white' }}>
+                                !
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : isPast ? (
+                    <div className="py-8 text-center text-muted">
+                      <Camera size={28} className="mx-auto mb-2 opacity-40" />
+                      <p className="text-[12px]">ยังไม่มีรูปจากงานนี้</p>
+                      {user && <p className="text-[11px] mt-1 opacity-70">เป็นคนแรกที่แชร์รูป!</p>}
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })()}
+
+            {/* Lightbox */}
+            {lightbox && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{ background: 'rgba(0,0,0,.9)' }}
+                onClick={() => setLightbox(null)}>
+                <img src={lightbox} alt="" className="max-w-full max-h-full rounded-xl object-contain" />
+                <button className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(255,255,255,.15)' }}>
+                  <X size={18} style={{ color: 'white' }} />
+                </button>
+              </div>
             )}
 
             {/* Disclaimer */}
