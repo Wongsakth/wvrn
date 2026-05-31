@@ -37,7 +37,7 @@ function VenueCard({ venue }: { venue: any }) {
 
       {/* Main row */}
       <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-2.5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
               <MapPin size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
