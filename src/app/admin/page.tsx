@@ -50,7 +50,7 @@ export default function PendingPage() {
         // ศิลปินที่ไม่มีงานใน 90 วัน
         sb.rpc('get_artists_without_recent_events', { cutoff: ninetyDaysAgo }),
         // Top Artists
-        sb.from('artists').select('id,name,name_en,image_url,is_featured,featured_order,event_artists(event:events(start_date,title))').eq('is_featured', true).is('deleted_at', null).order('featured_order').limit(10),
+        sb.from('artists').select('id,name,name_en,image_url,is_featured,featured_order,event_artists(created_at,event:events(id,title,start_date))').eq('is_featured', true).is('deleted_at', null).order('featured_order').limit(10),
       ])
 
       setDashStats({
@@ -59,9 +59,28 @@ export default function PendingPage() {
         staleArtists: (staleArtists.data || []).slice(0, 5),
         staleCount: (staleArtists.data || []).length,
         featuredArtists: (featuredArtists.data || []).map((a: any) => {
+          const today = new Date().toISOString().slice(0,10)
           const dates = (a.event_artists || []).map((ea: any) => ea.event?.start_date).filter(Boolean).sort().reverse()
-          const upcoming = (a.event_artists || []).filter((ea: any) => ea.event?.start_date >= new Date().toISOString().slice(0,10)).length
-          return { ...a, lastEventDate: dates[0] ?? null, upcomingCount: upcoming }
+          const upcoming = (a.event_artists || []).filter((ea: any) => ea.event?.start_date >= today)
+          // หา event ที่ถูก add ล่าสุด (created_at)
+          const sorted = [...(a.event_artists || [])].sort((x: any, y: any) =>
+            new Date(y.created_at).getTime() - new Date(x.created_at).getTime()
+          )
+          const lastAdded = sorted[0]
+          const lastUpdatedAt = lastAdded?.created_at ?? null
+          const lastEventTitle = lastAdded?.event?.title ?? null
+          const daysSince = lastUpdatedAt
+            ? Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 86400000)
+            : null
+          return {
+            ...a,
+            lastEventDate: dates[0] ?? null,
+            upcomingCount: upcoming.length,
+            upcomingEvents: upcoming.slice(0,2),
+            lastUpdatedAt,
+            lastEventTitle,
+            daysSince,
+          }
         }),
       })
     } catch (e) { console.error('dash error', e) }
@@ -271,9 +290,25 @@ export default function PendingPage() {
                       ? <span style={{ color: '#1D9E75' }}>{a.upcomingCount} งานที่กำลังมา</span>
                       : <span style={{ color: '#E24B4A' }}>ไม่มีงาน</span>}
                   </span>
-                  <span className="text-[11px] text-muted shrink-0 ml-2">
-                    {a.lastEventDate ? a.lastEventDate : 'ไม่มีข้อมูล'}
-                  </span>
+                  <div className="text-right shrink-0 ml-2">
+                    {a.daysSince !== null ? (
+                      <p className="text-[11px]" style={{ color: a.daysSince <= 7 ? '#1D9E75' : a.daysSince <= 30 ? '#EF9F27' : 'var(--text-muted)' }}>
+                        {a.daysSince === 0 ? 'วันนี้'
+                          : a.daysSince === 1 ? 'เมื่อวาน'
+                          : a.daysSince <= 7 ? `${a.daysSince} วันที่แล้ว`
+                          : a.daysSince <= 14 ? 'อาทิตย์ที่แล้ว'
+                          : a.daysSince <= 60 ? `${Math.floor(a.daysSince/7)} อาทิตย์ที่แล้ว`
+                          : `${Math.floor(a.daysSince/30)} เดือนที่แล้ว`}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-muted">ไม่มีข้อมูล</p>
+                    )}
+                    {a.lastEventTitle && (
+                      <p className="text-[10px] text-muted truncate max-w-[140px]" title={a.lastEventTitle}>
+                        จาก {a.lastEventTitle}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
