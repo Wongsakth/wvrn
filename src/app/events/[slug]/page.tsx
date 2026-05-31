@@ -148,8 +148,12 @@ export default function EventDetailPage() {
     if (!user || !event) return
     const today = new Date().toISOString().slice(0,10)
     if (event.start_date > today) { toast.error('งานยังไม่เกิดขึ้น ยังไม่สามารถโพสต์รูปได้'); return }
-    const { data: existing } = await sb.from('event_photos').select('id').eq('event_id', event.id).eq('user_id', user.id)
-    if ((existing?.length ?? 0) + files.length > 3) { toast.error('โพสต์ได้สูงสุด 3 รูป/งาน'); return }
+    const [{ data: existing }, { count: totalCount }] = await Promise.all([
+  sb.from('event_photos').select('id').eq('event_id', event.id).eq('user_id', user.id),
+  sb.from('event_photos').select('id', { count: 'exact', head: true }).eq('event_id', event.id),
+])
+if ((totalCount ?? 0) >= 3) { toast.error('งานนี้มีรูปครบ 100 รูปแล้ว'); return }
+if ((existing?.length ?? 0) + files.length > 3) { toast.error('โพสต์ได้สูงสุด 3 รูป/งาน'); return }
     setUploading(true)
     try {
       for (const file of Array.from(files)) {
