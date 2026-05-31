@@ -50,7 +50,7 @@ export default function PendingPage() {
         // ศิลปินที่ไม่มีงานใน 90 วัน
         sb.rpc('get_artists_without_recent_events', { cutoff: ninetyDaysAgo }),
         // Top Artists
-        sb.from('artists').select('id,name,name_en,image_url,is_featured,featured_order,event_artists(created_at,event:events(id,title,start_date))').eq('is_featured', true).is('deleted_at', null).order('featured_order').limit(10),
+        sb.from('artists').select('id,name,name_en,image_url,is_featured,featured_order,event_artists(event:events(id,title,start_date,created_at))').eq('is_featured', true).is('deleted_at', null).order('featured_order').limit(10),
       ])
 
       setDashStats({
@@ -62,12 +62,12 @@ export default function PendingPage() {
           const today = new Date().toISOString().slice(0,10)
           const dates = (a.event_artists || []).map((ea: any) => ea.event?.start_date).filter(Boolean).sort().reverse()
           const upcoming = (a.event_artists || []).filter((ea: any) => ea.event?.start_date >= today)
-          // หา event ที่ถูก add ล่าสุด (created_at)
+          // หา event ที่ถูก add ล่าสุด (event.created_at)
           const sorted = [...(a.event_artists || [])].sort((x: any, y: any) =>
-            new Date(y.created_at).getTime() - new Date(x.created_at).getTime()
+            new Date(y.event?.created_at ?? 0).getTime() - new Date(x.event?.created_at ?? 0).getTime()
           )
           const lastAdded = sorted[0]
-          const lastUpdatedAt = lastAdded?.created_at ?? null
+          const lastUpdatedAt = lastAdded?.event?.created_at ?? null
           const lastEventTitle = lastAdded?.event?.title ?? null
           const daysSince = lastUpdatedAt
             ? Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 86400000)
