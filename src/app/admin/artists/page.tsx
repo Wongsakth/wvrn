@@ -27,6 +27,7 @@ const EMPTY_FORM = {
   website_url:   '',
   label_url:     '',
   label_id:      '' as string | null,
+  nationality:   'TH' as string,
 }
 
 export default function ArtistsAdminPage() {
@@ -66,7 +67,7 @@ export default function ArtistsAdminPage() {
     setLoading(true)
     try {
       const { data, error } = await sb
-        .from('artists').select('*, last_event:event_artists(event:events(start_date))').is('deleted_at', null).order('is_featured', { ascending: false }).order('featured_order').order('name')
+        .from('artists').select('*, nationality, last_event:event_artists(event:events(start_date))').is('deleted_at', null).order('is_featured', { ascending: false }).order('featured_order').order('name')
       if (error) throw error
       setArtists(data || [])
     } catch (e: any) {
@@ -107,6 +108,7 @@ export default function ArtistsAdminPage() {
       website_url:   (artist as any).website_url  ?? '',
       label_url:     (artist as any).label_url    ?? '',
       label_id:      (artist as any).label_id     ?? null,
+      nationality:   (artist as any).nationality  ?? 'TH',
     })
     setImagePreview(artist.image_url ?? '')
     setShowForm(true)
@@ -142,6 +144,7 @@ export default function ArtistsAdminPage() {
         website_url:   form.website_url.trim()    || null,
         label_url:     form.label_url.trim()      || null,
         label_id:      form.label_id                || null,
+        nationality:   form.nationality             || 'TH',
       }
 
       if (editTarget) {
@@ -301,6 +304,12 @@ export default function ArtistsAdminPage() {
                     <span className="text-[14px] font-medium text-primary">{artist.name}</span>
                     {artist.name_en && (
                       <span className="text-[11px] text-muted">{artist.name_en}</span>
+                    )}
+                    {(artist as any).nationality && (artist as any).nationality !== 'TH' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{ background: 'rgba(55,138,221,.1)', color: '#1a6fb5' }}>
+                        {(artist as any).nationality}
+                      </span>
                     )}
                     {artist.is_featured && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
@@ -604,7 +613,19 @@ export default function ArtistsAdminPage() {
                   </div>
 
                   {/* Label / ค่ายเพลง - dropdown */}
-                  <FormField label="ค่ายเพลง">
+                  <FormField label="สัญชาติ / ต้นกำเนิด">
+                <select value={form.nationality}
+                  onChange={e => setForm(f => ({ ...f, nationality: e.target.value }))}
+                  className="input-theme text-[13px]">
+                  <option value="TH">🇹🇭 ไทย (TH)</option>
+                  <option value="KR">🇰🇷 เกาหลี (KR)</option>
+                  <option value="JP">🇯🇵 ญี่ปุ่น (JP)</option>
+                  <option value="US">🇺🇸 อเมริกา (US)</option>
+                  <option value="UK">🇬🇧 อังกฤษ (UK)</option>
+                  <option value="INT">🌏 ต่างประเทศอื่นๆ (INT)</option>
+                </select>
+              </FormField>
+              <FormField label="ค่ายเพลง">
                     <select
                       value={form.label_id ?? ''}
                       onChange={e => {

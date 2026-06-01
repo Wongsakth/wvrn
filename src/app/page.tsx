@@ -479,6 +479,8 @@ export default function HomePage() {
         if (filters.regionProvinces?.length && !filters.regionProvinces.includes(ev.province)) return false
         else if (!filters.regionProvinces && filters.province && ev.province !== filters.province) return false
 
+if (filters.country === 'international' && ev.country === 'TH') return false
+
         // ── Free ──
         if (filters.isFree && !ev.is_free) return false
 

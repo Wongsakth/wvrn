@@ -124,6 +124,9 @@ pos => {
           {chip('Today',     filters.datePreset === 'today', () => setDatePreset('today'))}
           {chip('This Week', filters.datePreset === 'week',  () => setDatePreset('week'))}
           {chip('ฟรีเข้าชม', !!filters.isFree, () => onChange({ ...filters, isFree: filters.isFree ? undefined : true }))}
+          {chip('🌏 ต่างประเทศ', filters.country === 'international', () =>
+            onChange({ ...filters, country: filters.country === 'international' ? undefined : 'international' })
+          )}
           {categories.slice(0, 3).map(c =>
             chip(c.name, filters.categoryId === c.id, () =>
               onChange({ ...filters, categoryId: filters.categoryId === c.id ? undefined : c.id })

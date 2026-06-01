@@ -43,7 +43,7 @@ const EMPTY_FORM = {
   status: 'confirmed' as EventStatus, start_date: '', end_date: '',
   start_time: '', end_time: '', venue_id: '', genres: [] as Genre[],
   ticket_price_min: '', ticket_price_max: '', ticket_url: '',
-  poster_url: '', is_free: false, province: 'กรุงเทพมหานคร',
+  poster_url: '', is_free: false, province: 'กรุงเทพมหานคร', country: 'TH',
   category_id:          '' as string,
   artist_ids: [] as string[],
   artist_orders: {} as Record<string, number>,
@@ -144,6 +144,7 @@ export default function EventsAdminPage() {
       poster_url:      ev.poster_url     ?? '',
       is_free:         ev.is_free,
       province:        ev.province,
+      country:         (ev as any).country ?? 'TH',
       artist_ids:      sortedArtistIds,
       artist_orders:   orders,
       artist_times:    times,
@@ -177,6 +178,7 @@ export default function EventsAdminPage() {
         poster_url:       form.poster_url.trim()   || null,
         is_free:          form.is_free,
         province:         form.province,
+        country:          form.country || 'TH',
         ticket_sale_start:    form.ticket_sale_start    || null,
         ticket_sale_end:      form.ticket_sale_end      || null,
         featured_type:        form.featured_type        || null,
@@ -401,6 +403,12 @@ export default function EventsAdminPage() {
                     {ev.venue && (
                       <span className="flex items-center gap-1 text-[10px] text-muted">
                         <MapPin size={9} />{ev.venue.name}
+                      </span>
+                    )}
+                    {(ev as any).country && (ev as any).country !== 'TH' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{ background: 'rgba(55,138,221,.1)', color: '#1a6fb5' }}>
+                        🌏 {(ev as any).country}
                       </span>
                     )}
                     {ev.start_time && (
@@ -669,6 +677,18 @@ export default function EventsAdminPage() {
                   <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
                     className="input-theme text-[13px]">
                     {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </Field>
+                {/* Country */}
+                <Field label="ประเทศ / Origin">
+                  <select value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
+                    className="input-theme text-[13px]">
+                    <option value="TH">🇹🇭 ไทย (TH)</option>
+                    <option value="KR">🇰🇷 เกาหลี (KR)</option>
+                    <option value="JP">🇯🇵 ญี่ปุ่น (JP)</option>
+                    <option value="US">🇺🇸 อเมริกา (US)</option>
+                    <option value="UK">🇬🇧 อังกฤษ (UK)</option>
+                    <option value="INT">🌏 ต่างประเทศอื่นๆ (INT)</option>
                   </select>
                 </Field>
               </Section>
