@@ -1,0 +1,135 @@
+
+
+name: Auto Fetch Events Pipeline
+
+on:
+  schedule:
+    # Ticketmelon + Eventpop ทุก 12 ชม.
+    - cron: '0 1,13 * * *'
+  workflow_dispatch:
+    # กด run manual ได้ พร้อมเลือก source + artist
+    inputs:
+      source:
+        description: 'Source to fetch'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ticketmelon
+          - eventpop
+          - google_news
+      artist:
+        description: 'Artist name filter (optional)'
+        required: false
+        default: ''
+
+jobs:
+  fetch-ticket-sites:
+    name: Fetch Ticket Sites
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event.inputs.source == 'all' ||
+      github.event.inputs.source == 'ticketmelon' ||
+      github.event.inputs.source == 'eventpop'
+
+    steps:
+      - name: Call fetch API
+        run: |
+          SOURCE="${{ github.event.inputs.source || 'all' }}"
+          ARTIST="${{ github.event.inputs.artist || '' }}"
+
+          # ถ้า manual และเลือก google_news อย่างเดียว ข้ามได้
+          if [ "$SOURCE" = "google_news" ]; then
+            echo "Skipping ticket sites for google_news only run"
+            exit 0
+          fi
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/cron/fetch-events" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -d "{\"source\": \"$SOURCE\", \"artist\": \"$ARTIST\"}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "Response: $BODY"
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Failed with status $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Success"
+
+  fetch-google-news:
+    name: Fetch Google News RSS
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event.inputs.source == 'all' ||
+      github.event.inputs.source == 'google_news'
+
+    steps:
+      - name: Call fetch API (Google News)
+        run: |
+          ARTIST="${{ github.event.inputs.artist || '' }}"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/cron/fetch-events" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -d "{\"source\": \"google_news\", \"artist\": \"$ARTIST\"}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "Response: $BODY"
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Failed with status $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Success"
+
+  fetch-per-artist:
+    name: Fetch Per Artist (Every 5 days)
+    runs-on: ubuntu-latest
+    # รันทุก 5 วัน — วันที่ 1, 6, 11, 16, 21, 26, 31
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' &&
+       contains('1,6,11,16,21,26,31', format('{0}', github.run_number)))
+
+    steps:
+      - name: Fetch events for all active artists
+        run: |
+          # ดึงรายชื่อศิลปินจาก Supabase แล้ว loop
+          ARTISTS_JSON=$(curl -s \
+            "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/artists?select=name&is_active=eq.true&order=name" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}")
+
+          echo "Artists: $ARTISTS_JSON"
+
+          # Parse และ loop (ใช้ jq)
+          echo "$ARTISTS_JSON" | jq -r '.[].name' | head -20 | while read ARTIST; do
+            echo "🎵 Fetching events for: $ARTIST"
+
+            curl -s -X POST \
+              "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/cron/fetch-events" \
+              -H "Content-Type: application/json" \
+              -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+              -d "{\"source\": \"google_news\", \"artist\": \"$ARTIST\"}" \
+              > /dev/null
+
+            # delay ระหว่าง artist
+            sleep 3
+          done
+
+          echo "✅ Per-artist fetch complete"
