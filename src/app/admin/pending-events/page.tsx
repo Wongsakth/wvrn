@@ -1,5 +1,3 @@
-// src/app/admin/pending-events/page.tsx  ← ไฟล์ใหม่
-
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -77,7 +75,6 @@ export default function PendingEventsPage() {
     const { data } = await query.limit(50)
     setEvents(data || [])
 
-    // นับแต่ละ status
     const { data: allData } = await supabase
       .from('events_pending')
       .select('status')
@@ -90,7 +87,6 @@ export default function PendingEventsPage() {
   async function handleApprove(event: PendingEvent) {
     setProcessing(event.id)
     try {
-      // 1. Insert เข้า events จริง
       const { data: newEvent, error: insertError } = await supabase
         .from('events')
         .insert({
@@ -106,7 +102,6 @@ export default function PendingEventsPage() {
 
       if (insertError) throw insertError
 
-      // 2. Link artist ถ้ามี artist_id
       if (newEvent && event.artist_id) {
         await supabase.from('event_artists').insert({
           event_id: newEvent.id,
@@ -114,7 +109,6 @@ export default function PendingEventsPage() {
         })
       }
 
-      // 3. อัพเดท pending → approved
       await supabase
         .from('events_pending')
         .update({
@@ -157,6 +151,7 @@ export default function PendingEventsPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -188,9 +183,7 @@ export default function PendingEventsPage() {
             }`}
           >
             {s === 'pending' ? '⏳' : s === 'approved' ? '✅' : '❌'} {s}
-            <span className="ml-1.5 text-xs opacity-70">
-              {counts[s]}
-            </span>
+            <span className="ml-1.5 text-xs opacity-70">{counts[s]}</span>
           </button>
         ))}
       </div>
@@ -216,9 +209,7 @@ export default function PendingEventsPage() {
       {loading ? (
         <div className="text-center py-16 text-gray-400">กำลังโหลด...</div>
       ) : events.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          ไม่มี {filter} events
-        </div>
+        <div className="text-center py-16 text-gray-400">ไม่มี {filter} events</div>
       ) : (
         <div className="border border-gray-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -271,3 +262,173 @@ export default function PendingEventsPage() {
                       <div className="flex gap-1.5" onClick={ev => ev.stopPropagation()}>
                         <button
                           onClick={() => handleApprove(e)}
+                          disabled={processing === e.id}
+                          className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs hover:bg-green-100"
+                        >
+                          {processing === e.id ? '...' : '✅'}
+                        </button>
+                        <button
+                          onClick={() => handleReject(e)}
+                          disabled={processing === e.id}
+                          className="px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs hover:bg-red-100"
+                        >
+                          ❌
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Detail Drawer */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/30" onClick={() => setSelected(null)} />
+          <div className="w-[480px] bg-white h-full overflow-y-auto shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-semibold text-lg">รายละเอียด</h2>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              {[
+                { label: 'ชื่องาน', value: selected.title },
+                { label: 'ศิลปิน', value: selected.artist_name },
+                { label: 'สถานที่', value: selected.venue_name },
+                { label: 'วันที่ (raw)', value: selected.event_date },
+                { label: 'วันที่ (parsed)', value: selected.event_date_parsed },
+                { label: 'ราคา', value: selected.price_min && selected.price_max
+                    ? `${selected.price_min.toLocaleString()} – ${selected.price_max.toLocaleString()} ฿`
+                    : null },
+                { label: 'ประเทศ', value: selected.country },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex gap-3">
+                  <span className="text-xs text-gray-400 w-24 flex-shrink-0 pt-0.5">{label}</span>
+                  <span className="text-sm text-gray-800">{value || '—'}</span>
+                </div>
+              ))}
+
+              {selected.ticket_url && (
+                <div className="flex gap-3">
+                  <span className="text-xs text-gray-400 w-24 flex-shrink-0 pt-0.5">ลิงก์บัตร</span>
+                  <a
+                    href={selected.ticket_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline break-all"
+                  >
+                    {selected.ticket_url}
+                  </a>
+                </div>
+              )}
+
+              {selected.source_url && (
+                <div className="flex gap-3">
+                  <span className="text-xs text-gray-400 w-24 flex-shrink-0 pt-0.5">Source</span>
+                  <a
+                    href={selected.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline break-all"
+                  >
+                    {selected.source_url}
+                  </a>
+                </div>
+              )}
+
+              <div className="flex gap-3 items-center">
+                <span className="text-xs text-gray-400 w-24 flex-shrink-0">Confidence</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-gray-100 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          selected.confidence >= 0.85 ? 'bg-green-500' :
+                          selected.confidence >= 0.65 ? 'bg-yellow-500' : 'bg-red-400'
+                        }`}
+                        style={{ width: `${selected.confidence * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-sm font-semibold ${CONF_COLOR(selected.confidence)}`}>
+                      {Math.round(selected.confidence * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {selected.missing_fields && selected.missing_fields.length > 0 && (
+                <div className="flex gap-3">
+                  <span className="text-xs text-gray-400 w-24 flex-shrink-0 pt-0.5">ขาด</span>
+                  <div className="flex gap-1 flex-wrap">
+                    {selected.missing_fields.map(f => (
+                      <span key={f} className="px-2 py-0.5 bg-red-50 text-red-600 text-xs rounded-full">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {selected.description && (
+              <div className="mb-5">
+                <p className="text-xs text-gray-400 mb-1">รายละเอียด</p>
+                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 line-clamp-4">
+                  {selected.description}
+                </p>
+              </div>
+            )}
+
+            {filter === 'pending' && (
+              <div className="mb-5">
+                <p className="text-xs text-gray-400 mb-1">หมายเหตุ (optional)</p>
+                <textarea
+                  value={reviewNote}
+                  onChange={e => setReviewNote(e.target.value)}
+                  placeholder="เหตุผล approve/reject..."
+                  rows={2}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-gray-400"
+                />
+              </div>
+            )}
+
+            {filter === 'pending' && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleApprove(selected)}
+                  disabled={processing === selected.id}
+                  className="flex-1 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                >
+                  {processing === selected.id ? 'กำลังบันทึก...' : '✅ Approve'}
+                </button>
+                <button
+                  onClick={() => handleReject(selected)}
+                  disabled={processing === selected.id}
+                  className="flex-1 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 disabled:opacity-50"
+                >
+                  ❌ Reject
+                </button>
+              </div>
+            )}
+
+            {filter !== 'pending' && selected.review_note && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                หมายเหตุ: {selected.review_note}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
