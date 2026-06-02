@@ -78,7 +78,7 @@ export default function DisclaimerPage() {
               หากพบข้อมูลที่คลาดเคลื่อนประการใด ทีมงานจะดำเนินการตรวจสอบและปรับปรุงข้อมูลให้ถูกต้องโดยเร็วที่สุด
             </p>
             <Link
-              href="/submit"
+              href="/report"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-80"
               style={{ background: '#EF9F27', color: '#fff' }}
             >
@@ -102,7 +102,7 @@ export default function DisclaimerPage() {
               Please verify all details directly with the official artist management or event organizer
               before making any purchase decision.
               To report incorrect information, please visit our{' '}
-              <Link href="/submit" className="underline hover:opacity-70">report page</Link>.
+              <Link href="/report" className="underline hover:opacity-70">report page</Link>.
             </p>
           </div>
 
