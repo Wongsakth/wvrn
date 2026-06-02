@@ -75,6 +75,8 @@ export async function fetchGoogleNews(
         await new Promise(r => setTimeout(r, 800))
 
         const extracted = await extractFromText(item, artistFilter)
+console.log('item:', item.slice(0, 100))
+console.log('extracted:', JSON.stringify(extracted))
         if (!extracted || extracted.confidence < 0.6) { result.skipped++; continue }
 
         const status = await insertPending(extracted, {
