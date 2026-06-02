@@ -43,7 +43,7 @@ async function fetchRSS(url: string): Promise<string[]> {
   } catch (e) {
     console.error(`fetchRSS error ${url}:`, e)
   }
-  return items.slice(0, 15)
+  return items.slice(0, 3)
 }
 
 export async function fetchGoogleNews(
