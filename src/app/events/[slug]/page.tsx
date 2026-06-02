@@ -751,14 +751,24 @@ async function reportPhoto(photoId: string) {
             )}
 
             {/* Disclaimer */}
-            <div className="rounded-xl p-3 flex items-start gap-2"
-              style={{ background: 'rgba(186,117,23,.06)', border: '1px solid rgba(186,117,23,.15)' }}>
-              <AlertCircle size={13} style={{ color: '#EF9F27', flexShrink: 0, marginTop: 1 }} />
-              <p className="text-[11px] leading-relaxed" style={{ color: '#EF9F27', opacity: .9 }}>
-                ข้อมูลบนแพลตฟอร์มนี้เพื่อประชาสัมพันธ์เท่านั้น กรุณาตรวจสอบรายละเอียดและราคาบัตรจากผู้จัดงานโดยตรง{' '}
-                <a href="/disclaimer" className="underline">อ่านเพิ่มเติม</a>
-              </p>
-            </div>
+{/* Disclaimer */}
+<div className="rounded-xl p-3 flex items-start gap-2"
+  style={{ background: 'rgba(186,117,23,.06)', border: '1px solid rgba(186,117,23,.15)' }}>
+  <AlertCircle size={13} style={{ color: '#EF9F27', flexShrink: 0, marginTop: 1 }} />
+  <div className="flex-1">
+    <p className="text-[11px] leading-relaxed" style={{ color: '#EF9F27', opacity: .9 }}>
+      ข้อมูลบนแพลตฟอร์มนี้เพื่อประชาสัมพันธ์เท่านั้น กรุณาตรวจสอบรายละเอียดและราคาบัตรจากผู้จัดงานโดยตรง{' '}
+      <a href="/disclaimer" className="underline">อ่านเพิ่มเติม</a>
+    </p>
+    
+      href={`/report?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}&category=event_info`}
+      className="inline-flex items-center gap-1 mt-1.5 text-[10px] underline"
+      style={{ color: '#EF9F27', opacity: .7 }}
+    >
+      <AlertCircle size={10} /> แจ้งข้อมูลผิดพลาด
+    </a>
+  </div>
+</div>
 
             {(event.contact_phone || event.contact_line) && (
               <div className="rounded-xl p-4"

@@ -25,6 +25,15 @@ const CATEGORIES = [
 
 export default function ReportPage() {
   const { user } = useAuth()
+
+// เพิ่มหลัง const { user } = useAuth()
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search)
+  const urlParam = params.get('url')
+  const catParam = params.get('category')
+  if (urlParam) setForm(f => ({ ...f, page_url: urlParam }))
+  if (catParam) setCategory(catParam)
+}, [])
   const sb = createClient()
   const [category, setCategory] = useState('')
   const [form, setForm] = useState({
