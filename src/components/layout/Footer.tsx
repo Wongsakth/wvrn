@@ -30,6 +30,7 @@ export default function Footer() {
               <Link href="/" className="text-secondary hover:text-primary transition-colors">ปฏิทิน</Link>
               <Link href="/artists" className="text-secondary hover:text-primary transition-colors">ศิลปิน</Link>
               <Link href="/submit" className="text-secondary hover:text-primary transition-colors">แจ้งงาน</Link>
+              <Link href="/report" className="text-secondary hover:text-primary transition-colors">แจ้งปัญหา</Link>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-muted font-medium uppercase tracking-wide text-[10px]">Legal</span>
@@ -48,7 +49,8 @@ export default function Footer() {
           <p className="text-[11px] leading-relaxed" style={{ color: '#EF9F27' }}>
             ข้อมูลศิลปิน รายละเอียด Event ราคาบัตร และทุกข้อมูลบนแพลตฟอร์มนี้ จัดทำเพื่อการประชาสัมพันธ์เท่านั้น
             กรุณาตรวจสอบข้อมูลที่ถูกต้องจากต้นสังกัดศิลปินหรือผู้จัดงานโดยตรงก่อนตัดสินใจซื้อบัตร
-            WVRN ไม่รับผิดชอบต่อความเสียหายใดๆ อันเกิดจากข้อมูลที่คลาดเคลื่อนบนแพลตฟอร์มนี้
+            WVRN ไม่รับผิดชอบต่อความเสียหายใดๆ อันเกิดจากข้อมูลที่คลาดเคลื่อนบนแพลตฟอร์มนี้{' '}
+            <Link href="/report" className="underline hover:opacity-70">แจ้งข้อมูลผิดพลาด</Link>
           </p>
         </div>
 
