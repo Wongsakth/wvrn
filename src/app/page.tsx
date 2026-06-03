@@ -60,6 +60,7 @@ export default function HomePage() {
   const isLoggedIn = !authLoading && !!user
 
   const [events, setEvents] = useState<any[]>([])
+const [totalCount, setTotalCount] = useState(0)  // ← เพิ่ม
   const [loading, setLoading] = useState(true)
 
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
@@ -123,29 +124,16 @@ export default function HomePage() {
       setLoading(true)
 
       try {
-        const { data, error } = await sb
-          .from('events')
-          .select(`
-            *,
-            venue:venues(
-              id,
-              name,
-              province,
-              address,
-              maps_url
-            ),
-            event_artists(
-              artist:artists(
-                id,
-                name,
-                name_en,
-                genres,
-                image_url
-              )
-            )
-          `)
-          .is('deleted_at', null)
-          .order('start_date', { ascending: true })
+        const { data, error, count } = await sb
+  .from('events')
+  .select(`
+    *,
+    venue:venues(id,name,province,address,maps_url),
+    event_artists(artist:artists(id,name,name_en,genres,image_url))
+  `, { count: 'exact' })
+  .is('deleted_at', null)
+  .order('start_date', { ascending: true })
+  .limit(5000)
 
         if (error) throw error
 
@@ -159,6 +147,7 @@ export default function HomePage() {
           }))
 
         setEvents(normalized)
+setTotalCount(count ?? normalized.length)
       } catch (err) {
         console.error('loadEvents error', err)
       } finally {
@@ -746,7 +735,7 @@ if (filters.country === 'international' && ev.country === 'TH') return false
               filters={filters}
 onChange={(f) => { console.log('filters:', f); setFilters(f) }}
 
-              totalCount={filtered.length}
+              totalCount={totalCount}
   userProvince={province}  // ← เพิ่มบรรทัดนี้
             />
           </>
