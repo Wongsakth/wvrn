@@ -118,6 +118,15 @@ export default function PendingEventsPage() {
         })
         .eq('id', event.id)
 
+      // LINE notify — fire and forget ไม่ block UI
+      if (newEvent?.id) {
+        fetch('/api/admin/notify-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId: newEvent.id }),
+        }).catch(() => {})
+      }
+
       setSelected(null)
       setReviewNote('')
       fetchEvents()

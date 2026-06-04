@@ -219,6 +219,7 @@ export default function EventsAdminPage() {
       }
 
       let eventId = editTarget?.id
+      let isNewEvent = false
       if (editTarget) {
         const { error } = await sb.from('events').update(payload).eq('id', editTarget.id)
         if (error) throw error
@@ -226,6 +227,7 @@ export default function EventsAdminPage() {
         const { data, error } = await sb.from('events').insert(payload).select('id').single()
         if (error) throw error
         eventId = data.id
+        isNewEvent = true
       }
 
       // Sync artists with sort_order + time
@@ -242,6 +244,15 @@ export default function EventsAdminPage() {
             }))
           )
         }
+      }
+
+      // LINE notify เฉพาะ insert ใหม่เท่านั้น — fire and forget
+      if (isNewEvent && eventId) {
+        fetch('/api/admin/notify-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId }),
+        }).catch(() => {})
       }
 
       toast.success(editTarget ? 'แก้ไข Event สำเร็จ' : 'เพิ่ม Event สำเร็จ')
