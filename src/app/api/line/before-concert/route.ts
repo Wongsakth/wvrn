@@ -1,5 +1,4 @@
 // src/app/api/line/before-concert/route.ts
-// แจ้งเตือนก่อนวันงาน 3 วัน — ดึงจาก event_attendance (going)
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -32,19 +31,19 @@ export async function POST(req: NextRequest) {
 
   const eventIds = events.map(e => e.id)
 
-  // หา users ที่กด "จะไป" event เหล่านี้
-  const { data: attendance } = await sb
-    .from('event_attendance')
+  // หา users ที่กด "going" ใน event_interactions
+  const { data: interactions } = await sb
+    .from('event_interactions')
     .select('user_id, event_id')
     .in('event_id', eventIds)
-    .eq('status', 'going')
+    .eq('type', 'going')
 
-  if (!attendance || attendance.length === 0) {
+  if (!interactions || interactions.length === 0) {
     return NextResponse.json({ sent: 0, total: 0 })
   }
 
   // ดึง profiles — เช็ค line_user_id + notif_before_concert
-  const userIds = [...new Set(attendance.map(a => a.user_id))]
+  const userIds = [...new Set(interactions.map(i => i.user_id))]
   const { data: profiles } = await sb
     .from('profiles')
     .select('id, line_user_id, notif_before_concert')
@@ -61,14 +60,14 @@ export async function POST(req: NextRequest) {
 
   // Group by user
   const userEvMap = new Map<string, { lineId: string; events: any[] }>()
-  for (const a of attendance) {
-    const profile = profileMap.get(a.user_id)
+  for (const i of interactions) {
+    const profile = profileMap.get(i.user_id)
     if (!profile?.line_user_id) continue
-    if (!userEvMap.has(a.user_id)) {
-      userEvMap.set(a.user_id, { lineId: profile.line_user_id, events: [] })
+    if (!userEvMap.has(i.user_id)) {
+      userEvMap.set(i.user_id, { lineId: profile.line_user_id, events: [] })
     }
-    const ev = eventMap.get(a.event_id)
-    if (ev) userEvMap.get(a.user_id)!.events.push(ev)
+    const ev = eventMap.get(i.event_id)
+    if (ev) userEvMap.get(i.user_id)!.events.push(ev)
   }
 
   let sent = 0
@@ -86,7 +85,7 @@ export async function POST(req: NextRequest) {
         artistNames ? `👤 ${artistNames}` : '',
         `📅 ${ev.start_date}${ev.start_time ? ` เวลา ${ev.start_time.slice(0, 5)} น.` : ''}`,
         ev.venue?.name ? `📍 ${ev.venue.name}${ev.venue.province ? ` · ${ev.venue.province}` : ''}` : '',
-        ev.ticket_url ? `\n🎟️ บัตรของคุณ → ${ev.ticket_url}` : '',
+        ev.ticket_url ? `\n🎟️ ดูบัตร → ${ev.ticket_url}` : '',
         `\nดูรายละเอียด → https://wvrn.app/events/${ev.slug || ev.id}`,
       ].filter(Boolean).join('\n')
 

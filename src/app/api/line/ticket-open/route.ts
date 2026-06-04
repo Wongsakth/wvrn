@@ -1,5 +1,4 @@
 // src/app/api/line/ticket-open/route.ts
-// แจ้งเตือนเมื่อพรุ่งนี้เปิดขายบัตร — ดึงจาก bookmarks
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -32,18 +31,19 @@ export async function POST(req: NextRequest) {
 
   const eventIds = events.map(e => e.id)
 
-  // หา users ที่ bookmark event เหล่านี้
-  const { data: bookmarks } = await sb
-    .from('bookmarks')
+  // หา users ที่กด "interested" ใน event_interactions
+  const { data: interactions } = await sb
+    .from('event_interactions')
     .select('user_id, event_id')
     .in('event_id', eventIds)
+    .eq('type', 'interested')
 
-  if (!bookmarks || bookmarks.length === 0) {
+  if (!interactions || interactions.length === 0) {
     return NextResponse.json({ sent: 0, total: 0 })
   }
 
   // ดึง profiles — เช็ค line_user_id + notif_ticket_open
-  const userIds = [...new Set(bookmarks.map(b => b.user_id))]
+  const userIds = [...new Set(interactions.map(i => i.user_id))]
   const { data: profiles } = await sb
     .from('profiles')
     .select('id, line_user_id, notif_ticket_open')
@@ -56,19 +56,17 @@ export async function POST(req: NextRequest) {
   }
 
   const profileMap = new Map(profiles.map(p => [p.id, p]))
+  const eventMap   = new Map(events.map(e => [e.id, e]))
 
-  // Group bookmark by user → map events
-  const eventMap = new Map(events.map(e => [e.id, e]))
   const userEvMap = new Map<string, { lineId: string; events: any[] }>()
-
-  for (const b of bookmarks) {
-    const profile = profileMap.get(b.user_id)
+  for (const i of interactions) {
+    const profile = profileMap.get(i.user_id)
     if (!profile?.line_user_id) continue
-    if (!userEvMap.has(b.user_id)) {
-      userEvMap.set(b.user_id, { lineId: profile.line_user_id, events: [] })
+    if (!userEvMap.has(i.user_id)) {
+      userEvMap.set(i.user_id, { lineId: profile.line_user_id, events: [] })
     }
-    const ev = eventMap.get(b.event_id)
-    if (ev) userEvMap.get(b.user_id)!.events.push(ev)
+    const ev = eventMap.get(i.event_id)
+    if (ev) userEvMap.get(i.user_id)!.events.push(ev)
   }
 
   let sent = 0
