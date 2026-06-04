@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [showPw,    setShowPw]    = useState(false)
   const [showCf,    setShowCf]    = useState(false)
   const [loading,   setLoading]   = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const sb = createClient()
 
   const pwMatch   = confirm === password
@@ -26,6 +27,7 @@ export default function LoginPage() {
     if (mode === 'register') {
       if (password.length < 8) { toast.error('Password ต้องมีอย่างน้อย 8 ตัวอักษร'); return }
       if (password !== confirm) { toast.error('Password ไม่ตรงกัน'); return }
+      if (!acceptedTerms) { toast.error('กรุณายอมรับข้อกำหนดก่อนสมัครสมาชิก'); return }
     }
     setLoading(true)
     try {
@@ -65,6 +67,7 @@ export default function LoginPage() {
   }
 
   async function handleGoogle() {
+    if (isRegister && !acceptedTerms) { toast.error('กรุณายอมรับข้อกำหนดก่อนสมัครสมาชิก'); return }
     setLoading(true)
     try {
       const { error } = await sb.auth.signInWithOAuth({
@@ -109,7 +112,7 @@ export default function LoginPage() {
           {/* Google */}
           {!isForgot && (
             <>
-              <button onClick={handleGoogle} disabled={loading}
+              <button onClick={handleGoogle} disabled={loading || (isRegister && !acceptedTerms)}
                 className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl text-[14px] font-medium transition-all mb-4"
                 style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -208,8 +211,42 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {/* Disclaimer Checkbox — register only */}
+              {isRegister && (
+                <label className="flex items-start gap-2.5 cursor-pointer mt-1">
+                  <div className="relative mt-0.5 shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={e => setAcceptedTerms(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div
+                      className="w-4 h-4 rounded flex items-center justify-center transition-all"
+                      style={{
+                        background: acceptedTerms ? 'var(--accent)' : 'var(--surface-2)',
+                        border: `1.5px solid ${acceptedTerms ? 'var(--accent)' : 'var(--border)'}`,
+                      }}
+                    >
+                      {acceptedTerms && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-[12px] text-secondary leading-relaxed">
+                    ฉันได้อ่านและยอมรับ{' '}
+                    <a href="/disclaimer" target="_blank" style={{ color: 'var(--accent)' }} className="underline">ข้อจำกัดความรับผิดชอบ</a>
+                    {' '}และ{' '}
+                    <a href="/terms" target="_blank" style={{ color: 'var(--accent)' }} className="underline">เงื่อนไขการใช้งาน</a>
+                    {' '}ของ WVRN แล้ว
+                  </span>
+                </label>
+              )}
+
               {/* Submit */}
-              <button type="submit" disabled={loading || (isRegister && (!pwMatch || !pwStrong))}
+              <button type="submit" disabled={loading || (isRegister && (!pwMatch || !pwStrong || !acceptedTerms))}
                 className="btn-accent w-full py-2.5 flex items-center justify-center gap-2 mt-1 disabled:opacity-50">
                 {loading
                   ? <><Loader2 size={15} className="animate-spin" /> กำลังดำเนินการ...</>
