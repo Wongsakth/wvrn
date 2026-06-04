@@ -33,13 +33,24 @@ export async function POST(req: NextRequest) {
   const artistIds = event.event_artists?.map((ea: any) => ea.artist?.id).filter(Boolean) || []
   if (artistIds.length === 0) return NextResponse.json({ sent: 0 })
 
-  // หา users ที่ follow ศิลปินเหล่านี้ และเปิด notif_new_event
+  // หา users ที่ follow ศิลปินเหล่านี้
   const { data: follows } = await sb
     .from('follows')
-    .select('user_id, profiles!inner(line_user_id, notif_new_event)')
+    .select('user_id, artist_id')
     .in('artist_id', artistIds)
-    .not('profiles.line_user_id', 'is', null)
-    .eq('profiles.notif_new_event', true)
+
+  if (!follows || follows.length === 0) return NextResponse.json({ sent: 0, total: 0 })
+
+  // ดึง profiles แยก
+  const userIds = [...new Set(follows.map(f => f.user_id))]
+  const { data: profiles } = await sb
+    .from('profiles')
+    .select('id, line_user_id, notif_new_event')
+    .in('id', userIds)
+    .eq('notif_new_event', true)
+    .not('line_user_id', 'is', null)
+
+  const profileMap = new Map((profiles || []).map(p => [p.id, p]))
 
   const artistNames = event.event_artists
     ?.map((ea: any) => ea.artist?.name)
@@ -58,7 +69,8 @@ export async function POST(req: NextRequest) {
   // dedup user (คน follow หลายศิลปินในงานเดียวกัน)
   const uniqueUsers = new Map<string, string>()
   for (const f of follows || []) {
-    const lineId = (f as any).profiles?.line_user_id
+    const profile = profileMap.get(f.user_id)
+    const lineId = profile?.line_user_id
     if (lineId) uniqueUsers.set(f.user_id, lineId)
   }
 
