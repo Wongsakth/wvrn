@@ -90,12 +90,16 @@ export default function PendingEventsPage() {
       const { data: newEvent, error: insertError } = await supabase
         .from('events')
         .insert({
-          title: event.title,
-          description: event.description,
-          event_date: event.event_date_parsed,
-          ticket_url: event.ticket_url,
-          country: event.country || 'TH',
-          status: 'published',
+          title:            event.title,
+          description:      event.description,
+          start_date:       event.event_date_parsed,
+          ticket_url:       event.ticket_url,
+          ticket_price_min: event.price_min    || null,
+          ticket_price_max: event.price_max    || null,
+          country:          event.country      || 'TH',
+          province:         event.venue_name   ? null : null,
+          status:           'confirmed',
+          is_free:          false,
         })
         .select()
         .single()
