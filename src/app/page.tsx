@@ -45,6 +45,8 @@ import {
 
 import { th } from 'date-fns/locale'
 
+import ConcertMap from '@/components/map/ConcertMap'
+
 import type {
   EventFilters,
   ViewMode,
@@ -90,6 +92,7 @@ const [totalCount, setTotalCount] = useState(0)  // ← เพิ่ม
 
   const [aiEvents, setAiEvents] = useState<any[]>([])
   const [aiLoading, setAiLoading] = useState(false)
+const [showMap, setShowMap] = useState(false)
 
   const today = useMemo(() => {
     const d = new Date()
@@ -855,6 +858,21 @@ onChange={(f) => { console.log('filters:', f); setFilters(f) }}
               }}>
               <Calendar size={13} /> ปฏิทิน
             </button>
+<button
+  onClick={() => setShowMap(true)}
+  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] border transition-all"
+  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+>
+  <MapPin size={12} /> แผนที่
+</button>
+
+{showMap && (
+  <ConcertMap
+    events={events}
+    followedIds={followedIds}
+    onClose={() => setShowMap(false)}
+  />
+)}
           </div>
         )}
 
