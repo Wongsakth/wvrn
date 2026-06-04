@@ -67,6 +67,7 @@ export default function ArtistProfilePage() {
           .eq('event_artists.artist_id', artistData.id)
           .gte('start_date', today)
           .order('start_date', { ascending: true })
+	.is('deleted_at', null)
 
         setEvents((evData || []).map((ev: any) => ({ ...ev, artists: [] })))
 
