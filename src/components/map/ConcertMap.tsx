@@ -267,6 +267,34 @@ export default function ConcertMap({ events, followedIds, onClose }: Props) {
         </div>
       </div>
 
+      {/* Legend bar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 16,
+        padding: '6px 16px',
+        background: 'var(--surface-0)',
+        borderBottom: '0.5px solid var(--border)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#EF9F27', border: '2px solid white', boxShadow: '0 2px 6px rgba(239,159,39,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'white', fontWeight: 500 }}>3</div>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>งานทั่วไป</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#6366F1', border: '2px solid white', boxShadow: '0 0 0 2px rgba(99,102,241,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'white', fontWeight: 500 }}>2</div>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>ศิลปินที่ติดตาม</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ position: 'relative', width: 20, height: 20 }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#EF9F27', border: '2px solid white', boxShadow: '0 0 0 2px rgba(99,102,241,.3)' }} />
+            <div style={{ position: 'absolute', top: -3, right: -3, width: 10, height: 10, borderRadius: '50%', background: '#6366F1', border: '1.5px solid white', fontSize: 7, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>♥</div>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>มีทั้งคู่</span>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>ขนาดหมุด = จำนวนงาน · กดหมุดเพื่อดูรายละเอียด</span>
+        </div>
+      </div>
+
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
