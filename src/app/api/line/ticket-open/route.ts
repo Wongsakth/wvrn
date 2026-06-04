@@ -1,5 +1,5 @@
-// src/app/api/line/before-concert/route.ts
-// แจ้งเตือนก่อนวันงาน 3 วัน — ดึงจาก event_attendance (going)
+// src/app/api/line/ticket-open/route.ts
+// แจ้งเตือนเมื่อพรุ่งนี้เปิดขายบัตร — ดึงจาก bookmarks
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -17,39 +17,38 @@ export async function POST(req: NextRequest) {
   }
 
   const sb = getSupabase()
-  const target = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
 
-  // หา events อีก 3 วัน
+  // หา events ที่จะเปิดขายพรุ่งนี้
   const { data: events } = await sb
     .from('events')
-    .select('id, title, slug, start_date, start_time, ticket_url, venue:venues(name, province), event_artists(artist:artists(id,name))')
-    .eq('start_date', target)
+    .select('id, title, slug, start_date, start_time, ticket_sale_start, ticket_url, venue:venues(name, province)')
+    .eq('ticket_sale_start', tomorrow)
     .is('deleted_at', null)
 
   if (!events || events.length === 0) {
-    return NextResponse.json({ sent: 0, message: 'No events in 3 days' })
+    return NextResponse.json({ sent: 0, message: 'No ticket sales opening tomorrow' })
   }
 
   const eventIds = events.map(e => e.id)
 
-  // หา users ที่กด "จะไป" event เหล่านี้
-  const { data: attendance } = await sb
-    .from('event_attendance')
+  // หา users ที่ bookmark event เหล่านี้
+  const { data: bookmarks } = await sb
+    .from('bookmarks')
     .select('user_id, event_id')
     .in('event_id', eventIds)
-    .eq('status', 'going')
 
-  if (!attendance || attendance.length === 0) {
+  if (!bookmarks || bookmarks.length === 0) {
     return NextResponse.json({ sent: 0, total: 0 })
   }
 
-  // ดึง profiles — เช็ค line_user_id + notif_before_concert
-  const userIds = [...new Set(attendance.map(a => a.user_id))]
+  // ดึง profiles — เช็ค line_user_id + notif_ticket_open
+  const userIds = [...new Set(bookmarks.map(b => b.user_id))]
   const { data: profiles } = await sb
     .from('profiles')
-    .select('id, line_user_id, notif_before_concert')
+    .select('id, line_user_id, notif_ticket_open')
     .in('id', userIds)
-    .eq('notif_before_concert', true)
+    .eq('notif_ticket_open', true)
     .not('line_user_id', 'is', null)
 
   if (!profiles || profiles.length === 0) {
@@ -57,36 +56,30 @@ export async function POST(req: NextRequest) {
   }
 
   const profileMap = new Map(profiles.map(p => [p.id, p]))
-  const eventMap   = new Map(events.map(e => [e.id, e]))
 
-  // Group by user
+  // Group bookmark by user → map events
+  const eventMap = new Map(events.map(e => [e.id, e]))
   const userEvMap = new Map<string, { lineId: string; events: any[] }>()
-  for (const a of attendance) {
-    const profile = profileMap.get(a.user_id)
+
+  for (const b of bookmarks) {
+    const profile = profileMap.get(b.user_id)
     if (!profile?.line_user_id) continue
-    if (!userEvMap.has(a.user_id)) {
-      userEvMap.set(a.user_id, { lineId: profile.line_user_id, events: [] })
+    if (!userEvMap.has(b.user_id)) {
+      userEvMap.set(b.user_id, { lineId: profile.line_user_id, events: [] })
     }
-    const ev = eventMap.get(a.event_id)
-    if (ev) userEvMap.get(a.user_id)!.events.push(ev)
+    const ev = eventMap.get(b.event_id)
+    if (ev) userEvMap.get(b.user_id)!.events.push(ev)
   }
 
   let sent = 0
   for (const { lineId, events: userEvs } of userEvMap.values()) {
     for (const ev of userEvs) {
-      const artistNames = ev.event_artists
-        ?.map((ea: any) => ea.artist?.name)
-        .filter(Boolean)
-        .join(', ') || ''
-
       const msg = [
-        `⏰ อีก 3 วันแล้ว! เตรียมตัวได้เลย 🎉`,
-        ``,
+        `🎟️ พรุ่งนี้เปิดขายบัตรแล้ว!`,
         `🎵 ${ev.title}`,
-        artistNames ? `👤 ${artistNames}` : '',
-        `📅 ${ev.start_date}${ev.start_time ? ` เวลา ${ev.start_time.slice(0, 5)} น.` : ''}`,
-        ev.venue?.name ? `📍 ${ev.venue.name}${ev.venue.province ? ` · ${ev.venue.province}` : ''}` : '',
-        ev.ticket_url ? `\n🎟️ บัตรของคุณ → ${ev.ticket_url}` : '',
+        `📅 วันงาน: ${ev.start_date}${ev.start_time ? ` เวลา ${ev.start_time.slice(0, 5)}` : ''}`,
+        ev.venue?.name ? `📍 ${ev.venue.name}` : '',
+        ev.ticket_url ? `\n🛒 ซื้อบัตร → ${ev.ticket_url}` : '',
         `\nดูรายละเอียด → https://wvrn.app/events/${ev.slug || ev.id}`,
       ].filter(Boolean).join('\n')
 
