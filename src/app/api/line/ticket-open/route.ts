@@ -19,11 +19,12 @@ export async function POST(req: NextRequest) {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
 
   // หา events ที่จะเปิดขายพรุ่งนี้
-  const { data: events } = await sb
-    .from('events')
-    .select('id, title, slug, start_date, start_time, ticket_sale_start, ticket_url, venue:venues(name, province)')
-    .eq('ticket_sale_start', tomorrow)
-    .is('deleted_at', null)
+const { data: events } = await sb
+  .from('events')
+  .select('id, title, slug, start_date, start_time, ticket_sale_start, ticket_url, venue:venues(name, province)')
+  .gte('ticket_sale_start', `${tomorrow}T00:00:00+00:00`)
+  .lt('ticket_sale_start',  `${tomorrow}T23:59:59+00:00`)
+  .is('deleted_at', null)
 
   if (!events || events.length === 0) {
     return NextResponse.json({ sent: 0, message: 'No ticket sales opening tomorrow' })
