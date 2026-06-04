@@ -46,18 +46,32 @@ export async function POST(req: NextRequest) {
   const artistIds = Array.from(artistEventMap.keys())
   if (artistIds.length === 0) return NextResponse.json({ sent: 0 })
 
-  // หา users ที่ follow ศิลปินเหล่านี้ + เปิด notif_morning
+  // หา users ที่ follow ศิลปินเหล่านี้
   const { data: follows } = await sb
     .from('follows')
-    .select('user_id, artist_id, profiles!inner(line_user_id, notif_morning)')
+    .select('user_id, artist_id')
     .in('artist_id', artistIds)
-    .not('profiles.line_user_id', 'is', null)
-    .eq('profiles.notif_morning', true)
+
+  if (!follows || follows.length === 0) return NextResponse.json({ sent: 0, total: 0 })
+
+  // ดึง profiles แยก — เช็ค line_user_id + notif_morning
+  const userIds = [...new Set(follows.map(f => f.user_id))]
+  const { data: profiles } = await sb
+    .from('profiles')
+    .select('id, line_user_id, notif_morning')
+    .in('id', userIds)
+    .eq('notif_morning', true)
+    .not('line_user_id', 'is', null)
+
+  const profileMap = new Map(
+    (profiles || []).map(p => [p.id, p])
+  )
 
   // Group by user → รวม events ทั้งหมดของ user นั้น
   const userEventsMap = new Map<string, { lineId: string; events: any[] }>()
   for (const f of follows || []) {
-    const lineId = (f as any).profiles?.line_user_id
+    const profile = profileMap.get(f.user_id)
+    const lineId = profile?.line_user_id
     if (!lineId) continue
     if (!userEventsMap.has(f.user_id)) {
       userEventsMap.set(f.user_id, { lineId, events: [] })
