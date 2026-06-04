@@ -1,0 +1,51 @@
+# .github/workflows/line-morning.yml
+name: LINE Morning Notification
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 08:00 ICT (UTC+7) ทุกวัน
+  workflow_dispatch:      # กด run manual ได้
+
+jobs:
+  morning-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send morning concert notification
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/line/morning" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          echo "Response: $BODY"
+          echo "HTTP: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Failed with $HTTP_CODE"
+            exit 1
+          fi
+          echo "Morning notification sent"
+
+  before-concert-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send before-concert notification (3 days ahead)
+        run: |
+          curl -s -X POST \
+            "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/line/before-concert" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
+          echo "Before-concert notification sent"
+
+  ticket-open-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send ticket opening notification
+        run: |
+          curl -s -X POST \
+            "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/line/ticket-open" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
+          echo "Ticket open notification sent"

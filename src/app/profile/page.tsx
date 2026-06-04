@@ -7,13 +7,13 @@ import { createClient } from '@/lib/supabase'
 import {
   User, Heart, MapPin, Calendar, LogOut, Shield,
   ChevronRight, Music, Palette, Lock, Eye, EyeOff,
-  CheckCircle2, AlertCircle, Loader2, Edit3, X,
+  CheckCircle2, AlertCircle, Loader2, Edit3, X, Bell,
 } from 'lucide-react'
 import { useTheme, THEMES } from '@/lib/theme'
 import toast from 'react-hot-toast'
 import ScoreCard from '@/components/ScoreCard'
 
-type Section = 'main' | 'theme' | 'password'
+type Section = 'main' | 'theme' | 'password' | 'notifications'
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   admin:  { label: 'Admin',  color: '#E8003A',        bg: 'rgba(232,0,58,.1)',   icon: 'A' },
@@ -37,6 +37,15 @@ export default function ProfilePage() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameInput,   setNameInput]   = useState('')
+  const [lineUserId,  setLineUserId]  = useState('')
+  const [savingLine,  setSavingLine]  = useState(false)
+  const [notifSettings, setNotifSettings] = useState({
+    notif_new_event:      true,
+    notif_ticket_open:    true,
+    notif_before_concert: true,
+    notif_morning:        false,
+  })
+  const [savingNotif, setSavingNotif] = useState(false)
 
   const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? ''
 
@@ -60,7 +69,7 @@ export default function ProfilePage() {
       sb.from('follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('venue_follows').select('id', { count: 'exact' }).eq('user_id', user.id),
       sb.from('event_attendance').select('id,status').eq('user_id', user.id),
-      sb.from('profiles').select('score,score_rank,province').eq('id', user.id).single(),
+      sb.from('profiles').select('score,score_rank,province,line_user_id,notif_new_event,notif_ticket_open,notif_before_concert,notif_morning').eq('id', user.id).single(),
       sb.from('event_submissions').select('id,status').eq('submitted_by', user.id),
     ]).then(([ar, vr, at, prof, subs]) => {
       const att   = (at as any).data || []
@@ -73,6 +82,13 @@ export default function ProfilePage() {
       })
       const p = (prof as any).data
       if (p?.province) setUserProvince(p.province)
+      if (p?.line_user_id) setLineUserId(p.line_user_id)
+      setNotifSettings({
+        notif_new_event:      p?.notif_new_event      ?? true,
+        notif_ticket_open:    p?.notif_ticket_open    ?? true,
+        notif_before_concert: p?.notif_before_concert ?? true,
+        notif_morning:        p?.notif_morning        ?? false,
+      })
       setScoreData({
         score:     p?.score      ?? 0,
         rank:      p?.score_rank ?? 'listener',
@@ -107,6 +123,25 @@ export default function ProfilePage() {
       setSection('main')
     } catch (e: any) { toast.error(e.message || 'เกิดข้อผิดพลาด') }
     finally { setPwLoading(false) }
+  }
+
+  async function saveLineUserId() {
+    setSavingLine(true)
+    try {
+      await sb.from('profiles').update({ line_user_id: lineUserId || null }).eq('id', user!.id)
+      toast.success('บันทึก LINE User ID แล้ว')
+    } catch (e: any) { toast.error(e.message) }
+    finally { setSavingLine(false) }
+  }
+
+  async function saveNotifSettings(key: string, value: boolean) {
+    const updated = { ...notifSettings, [key]: value }
+    setNotifSettings(updated)
+    setSavingNotif(true)
+    try {
+      await sb.from('profiles').update({ [key]: value }).eq('id', user!.id)
+    } catch (e: any) { toast.error(e.message) }
+    finally { setSavingNotif(false) }
   }
 
   async function saveProvince(province: string) {
@@ -270,6 +305,23 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {/* LINE Notification */}
+              <button onClick={() => setSection('notifications')}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-2)] transition-colors"
+                style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(34,197,94,.1)' }}>
+                  <Bell size={15} style={{ color: '#22C55E' }} />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-[14px] text-primary">การแจ้งเตือน LINE</p>
+                  <p className="text-[11px] text-muted">
+                    {lineUserId ? '🟢 เชื่อมต่อแล้ว' : '⚪ ยังไม่เชื่อมต่อ'}
+                  </p>
+                </div>
+                <ChevronRight size={14} className="text-muted" />
+              </button>
+
               {/* Password — email users only */}
               {isEmailUser && (
                 <button onClick={() => setSection('password')}
@@ -350,6 +402,92 @@ export default function ProfilePage() {
               ลบบัญชีของฉัน (PDPA)
             </button>
           </>
+        )}
+
+        {/* ── NOTIFICATIONS ── */}
+        {section === 'notifications' && (
+          <div>
+            <h2 className="text-[18px] font-medium text-primary mb-5 flex items-center gap-2">
+              <Bell size={18} style={{ color: '#22C55E' }} /> การแจ้งเตือน LINE
+            </h2>
+
+            {/* LINE User ID */}
+            <div className="rounded-2xl p-5 mb-4"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <p className="text-[13px] font-medium text-primary mb-1">LINE User ID</p>
+              <p className="text-[11px] text-muted mb-3">
+                เพิ่มเพื่อน @WVRN แล้วพิมพ์ <span className="font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded">id</span> เพื่อรับ User ID ของคุณ
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={lineUserId}
+                  onChange={e => setLineUserId(e.target.value)}
+                  placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  className="input-theme text-[12px] flex-1 font-mono"
+                />
+                <button
+                  onClick={saveLineUserId}
+                  disabled={savingLine}
+                  className="px-4 py-2 rounded-xl text-[13px] font-medium transition-colors"
+                  style={{ background: '#22C55E', color: 'white', opacity: savingLine ? 0.6 : 1 }}>
+                  {savingLine ? '...' : 'บันทึก'}
+                </button>
+              </div>
+              {lineUserId && (
+                <p className="text-[11px] mt-2" style={{ color: '#22C55E' }}>✅ เชื่อมต่อ LINE แล้ว</p>
+              )}
+            </div>
+
+            {/* Notification toggles */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+                <p className="text-[11px] font-medium text-muted uppercase tracking-wide">ประเภทการแจ้งเตือน</p>
+              </div>
+
+              {[
+                { key: 'notif_new_event',      emoji: '🎵', label: 'ศิลปินที่ติดตามมีงานใหม่',    desc: 'แจ้งทันทีเมื่อมีงานเพิ่มในระบบ' },
+                { key: 'notif_ticket_open',    emoji: '🎟️', label: 'ใกล้วันจองตั๋ว',             desc: 'แจ้งก่อนเปิดขาย 1 วัน' },
+                { key: 'notif_before_concert', emoji: '📅', label: 'ใกล้วันคอนเสิร์ต',           desc: 'แจ้งก่อนงาน 3 วัน' },
+                { key: 'notif_morning',        emoji: '☀️', label: 'แจ้งเตือนตอนเช้า',           desc: 'งานวันนี้และพรุ่งนี้ เวลา 08:00' },
+              ].map((item, i, arr) => (
+                <div key={item.key}
+                  className="flex items-center gap-3 px-4 py-3.5"
+                  style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <span className="text-[20px]">{item.emoji}</span>
+                  <div className="flex-1">
+                    <p className="text-[13px] text-primary">{item.label}</p>
+                    <p className="text-[11px] text-muted">{item.desc}</p>
+                  </div>
+                  {/* Toggle */}
+                  <button
+                    onClick={() => saveNotifSettings(item.key, !notifSettings[item.key as keyof typeof notifSettings])}
+                    disabled={!lineUserId || savingNotif}
+                    style={{
+                      width: 44, height: 24, borderRadius: 99,
+                      background: notifSettings[item.key as keyof typeof notifSettings] && lineUserId ? '#22C55E' : 'var(--surface-3)',
+                      border: 'none', cursor: lineUserId ? 'pointer' : 'not-allowed',
+                      position: 'relative', transition: 'background 0.2s',
+                      opacity: !lineUserId ? 0.5 : 1,
+                    }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: '50%', background: 'white',
+                      position: 'absolute', top: 3,
+                      left: notifSettings[item.key as keyof typeof notifSettings] && lineUserId ? 23 : 3,
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                    }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {!lineUserId && (
+              <p className="text-[11px] text-muted text-center mt-3">
+                ⚠️ กรุณาใส่ LINE User ID ก่อนเปิดการแจ้งเตือน
+              </p>
+            )}
+          </div>
         )}
 
         {/* ── THEME ── */}
