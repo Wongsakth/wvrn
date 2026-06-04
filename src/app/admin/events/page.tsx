@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
-  Plus, Search, X, Edit2, Trash2, Check,
+  Plus, Search, X, Edit2, Trash2, Check, RotateCcw,
   CalendarDays, Clock, MapPin, Ticket, Loader2, ChevronUp, ChevronDown,
 } from 'lucide-react'
 import { cn, PROVINCES, formatThaiDate, statusLabel, genreTagClass } from '@/lib/utils'
@@ -55,6 +55,8 @@ const EMPTY_FORM = {
 
 export default function EventsAdminPage() {
   const [events,     setEvents]     = useState<any[]>([])
+  const [deletedEvents, setDeletedEvents] = useState<any[]>([])
+  const [activeTab,  setActiveTab]  = useState<'active' | 'trash'>('active')
   const [artists,    setArtists]    = useState<Artist[]>([])
   const [venues,      setVenues]      = useState<Venue[]>([])
   const [categories,  setCategories]  = useState<{id:string,name:string,name_th:string}[]>([])
@@ -102,7 +104,35 @@ export default function EventsAdminPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  async function loadDeleted() {
+    const { data } = await sb
+      .from('events')
+      .select('*, venue:venues(name,province), event_artists(artist:artists(id,name))')
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false })
+    setDeletedEvents((data || []).map((ev: any) => ({
+      ...ev,
+      artists: (ev.event_artists ?? []).filter((ea: any) => ea.artist).map((ea: any) => ea.artist),
+    })))
+  }
+
+  async function handleRestore(id: string) {
+    const { error } = await sb.from('events').update({ deleted_at: null }).eq('id', id)
+    if (error) { toast.error('Restore ไม่สำเร็จ'); return }
+    toast.success('Restore สำเร็จ')
+    loadDeleted()
+    load()
+  }
+
+  async function handleHardDelete(id: string) {
+    if (!confirm('ลบถาวร? ไม่สามารถกู้คืนได้')) return
+    const { error } = await sb.from('events').delete().eq('id', id)
+    if (error) { toast.error('ลบไม่สำเร็จ'); return }
+    toast.success('ลบถาวรแล้ว')
+    loadDeleted()
+  }
+
+  useEffect(() => { load(); loadDeleted() }, [])
 
   function openAdd() {
     setEditTarget(null)
@@ -339,6 +369,80 @@ export default function EventsAdminPage() {
         </button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setActiveTab('active')}
+          className={`px-4 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${activeTab === 'active' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
+        >
+          📋 Event ทั้งหมด ({events.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('trash')}
+          className={`px-4 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${activeTab === 'trash' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
+        >
+          🗑️ ถังขยะ ({deletedEvents.length})
+        </button>
+      </div>
+
+      {/* Trash View */}
+      {activeTab === 'trash' && (
+        <div>
+          {deletedEvents.length === 0 ? (
+            <div className="rounded-xl p-12 text-center" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <Trash2 size={32} className="mx-auto mb-3 text-muted" />
+              <p className="text-[14px] font-medium text-primary">ถังขยะว่างเปล่า</p>
+            </div>
+          ) : (
+            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+              {deletedEvents.map((ev, i) => (
+                <div key={ev.id}
+                  className="flex items-center gap-3 px-4 py-3"
+                  style={{
+                    background: 'var(--surface-1)',
+                    borderBottom: i < deletedEvents.length - 1 ? '1px solid var(--border)' : 'none',
+                    opacity: 0.7,
+                  }}>
+                  <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0"
+                    style={{ background: 'rgba(239,68,68,.1)' }}>
+                    <span className="text-[16px] font-medium leading-none text-red-500">
+                      {new Date(ev.start_date).getDate()}
+                    </span>
+                    <span className="text-[9px] uppercase text-red-400">
+                      {new Date(ev.start_date).toLocaleDateString('th', { month: 'short' })}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-primary line-through">{ev.title}</p>
+                    <p className="text-[11px] text-muted mt-0.5">
+                      ลบเมื่อ {new Date(ev.deleted_at).toLocaleDateString('th')}
+                      {ev.venue && ` · ${ev.venue.name}`}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleRestore(ev.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                      style={{ background: 'rgba(16,185,129,.1)', color: '#059669', border: '1px solid rgba(16,185,129,.2)' }}
+                    >
+                      <RotateCcw size={12} /> Restore
+                    </button>
+                    <button
+                      onClick={() => handleHardDelete(ev.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                      style={{ background: 'rgba(239,68,68,.1)', color: '#dc2626', border: '1px solid rgba(239,68,68,.2)' }}
+                    >
+                      <Trash2 size={12} /> ลบถาวร
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'active' && <>
       {/* Search */}
       <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 mb-5"
         style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
@@ -438,6 +542,8 @@ export default function EventsAdminPage() {
           })}
         </div>
       )}
+
+      </>}
 
       {/* ── Form Modal ── */}
       {showForm && (
