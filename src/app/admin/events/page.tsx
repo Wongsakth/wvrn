@@ -247,6 +247,7 @@ export default function EventsAdminPage() {
       }
 
       // LINE notify เฉพาะ insert ใหม่เท่านั้น — fire and forget
+console.log('notify check:', { isNewEvent, eventId })
       if (isNewEvent && eventId) {
         fetch('/api/admin/notify-event', {
           method: 'POST',
