@@ -436,6 +436,43 @@ export default function ProfilePage() {
               {lineUserId && (
                 <p className="text-[11px] mt-2" style={{ color: '#22C55E' }}>✅ เชื่อมต่อ LINE แล้ว</p>
               )}
+
+              {/* วิธีหา LINE User ID */}
+              {!lineUserId && (
+                <div className="mt-3 rounded-xl p-4"
+                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                  <p className="text-[12px] font-medium text-primary mb-2">วิธีรับ LINE User ID</p>
+                  <div className="flex gap-3 items-start">
+                    {/* Steps */}
+                    <div className="flex-1">
+                      {[
+                        'กดปุ่ม "เพิ่มเพื่อน @WVRN" ด้านล่าง',
+                        'พิมพ์ "id" ส่งในแชท',
+                        'Copy ID ที่ได้รับมาวางด้านบน',
+                      ].map((step, i) => (
+                        <div key={i} className="flex items-start gap-2 mb-1.5">
+                          <span className="text-[11px] font-medium shrink-0 w-4 h-4 rounded-full flex items-center justify-center mt-0.5"
+                            style={{ background: 'var(--accent)', color: 'white', fontSize: 9 }}>
+                            {i + 1}
+                          </span>
+                          <p className="text-[11px] text-secondary">{step}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <a
+                    href="https://line.me/R/ti/p/@975lnlzf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium transition-opacity hover:opacity-80"
+                    style={{ background: '#06C755', color: 'white', display: 'flex' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                      <path d="M12 2C6.48 2 2 6.06 2 11.07c0 4.5 3.44 8.26 8.11 8.93.32.06.75.19.86.44.1.22.07.57.03.8l-.14.82c-.04.23-.19.9.79.49 1-.42 5.35-3.15 7.3-5.39C20.37 15.26 22 13.28 22 11.07 22 6.06 17.52 2 12 2z"/>
+                    </svg>
+                    เพิ่มเพื่อน @WVRN
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Notification toggles */}
