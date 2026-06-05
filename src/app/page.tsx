@@ -151,6 +151,8 @@ const [showMap, setShowMap] = useState(false)
 
         setEvents(normalized)
 setTotalCount(count ?? normalized.length)
+const intl = normalized.filter((e: any) => e.country && e.country !== 'TH')
+console.log('international events loaded:', intl.length, intl.map((e: any) => ({ title: e.title, country: e.country })))
       } catch (err) {
         console.error('loadEvents error', err)
       } finally {
