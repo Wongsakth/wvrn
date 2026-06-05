@@ -473,6 +473,7 @@ if (filters.categoryId && ev.category_id !== filters.categoryId) return false
 if (filters.country === 'international') {
   // แสดงเฉพาะงานที่ไม่ใช่ TH
   if (!ev.country || ev.country === 'TH') return false
+console.log('PASS international:', ev.title, ev.country)
 } else {
   // filter province ปกติ (งานในไทย)
   if (filters.regionProvinces?.length && !filters.regionProvinces.includes(ev.province)) return false
