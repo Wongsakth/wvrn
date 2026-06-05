@@ -66,8 +66,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(0)
   const PAGE_SIZE = 30
+  const pageRef = useRef(0)
+  const hasMoreRef = useRef(true)
+  const isLoadingRef = useRef(false)
   const loaderRef = useRef<HTMLDivElement>(null)
 
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
@@ -171,11 +173,14 @@ const [showMap, setShowMap] = useState(false)
   }
 
   async function loadEvents(reset = true) {
+    if (isLoadingRef.current) return
+    isLoadingRef.current = true
+
     if (reset) setLoading(true)
     else setLoadingMore(true)
 
     try {
-      const currentPage = reset ? 0 : page
+      const currentPage = reset ? 0 : pageRef.current
       const { data, error, count } = await buildQuery(filters, search, currentPage)
 
       if (error) throw error
@@ -187,19 +192,22 @@ const [showMap, setShowMap] = useState(false)
 
       if (reset) {
         setEvents(normalized)
-        setPage(1)
+        pageRef.current = 1
       } else {
         setEvents(prev => [...prev, ...normalized])
-        setPage(prev => prev + 1)
+        pageRef.current = currentPage + 1
       }
 
+      const more = normalized.length === PAGE_SIZE
       setTotalCount(count ?? 0)
-      setHasMore(normalized.length === PAGE_SIZE)
+      setHasMore(more)
+      hasMoreRef.current = more
     } catch (err) {
       console.error('loadEvents error', err)
     } finally {
       setLoading(false)
       setLoadingMore(false)
+      isLoadingRef.current = false
     }
   }
 
@@ -213,18 +221,18 @@ const [showMap, setShowMap] = useState(false)
     loadEvents(true)
   }, [filters, search])
 
-  // Infinite scroll — observer
+  // Infinite scroll — observer (mount once)
   useEffect(() => {
     const el = loaderRef.current
     if (!el) return
     const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+      if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
         loadEvents(false)
       }
     }, { threshold: 0.1 })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [hasMore, loadingMore, loading, page])
+  }, [])
 
   // =========================================================
   // LOAD FOLLOWS
