@@ -1143,11 +1143,10 @@ function EventRow({
   const featured = event.featured_type
   const poster   = event.poster_url
 
-  // Social proof counts + interaction state
+  // Social proof counts + interaction state (Logic A: เลือกได้แค่อย่างเดียว)
   const [goingCount,      setGoingCount]      = useState<number>(0)
   const [interestedCount, setInterestedCount] = useState<number>(0)
-  const [myInterested,    setMyInterested]    = useState(false)
-  const [myGoing,         setMyGoing]         = useState(false)
+  const [myType,          setMyType]          = useState<'interested'|'going'|null>(null)
   const sb2 = createClient()
 
   useEffect(() => {
@@ -1163,8 +1162,8 @@ function EventRow({
           const sb3 = createClient()
           sb3.auth.getUser().then(({ data: { user } }) => {
             if (!user) return
-            setMyInterested(data.some((r: any) => r.type === 'interested' && r.user_id === user.id))
-            setMyGoing(data.some((r: any) => r.type === 'going' && r.user_id === user.id))
+            const mine = data.find((r: any) => r.user_id === user.id)
+            setMyType(mine?.type ?? null)
           })
         }
       })
@@ -1175,19 +1174,34 @@ function EventRow({
     const sb3 = createClient()
     const { data: { user } } = await sb3.auth.getUser()
     if (!user) return
-    const isActive = type === 'interested' ? myInterested : myGoing
-    if (isActive) {
-      await sb3.from('event_interactions').delete()
-        .eq('event_id', event.id).eq('user_id', user.id).eq('type', type)
-      if (type === 'interested') { setMyInterested(false); setInterestedCount(n => Math.max(0, n-1)) }
-      else { setMyGoing(false); setGoingCount(n => Math.max(0, n-1)) }
-    } else {
-      await sb3.from('event_interactions').upsert(
-        { event_id: event.id, user_id: user.id, type },
-        { onConflict: 'event_id,user_id,type' }
-      )
-      if (type === 'interested') { setMyInterested(true); setInterestedCount(n => n+1) }
-      else { setMyGoing(true); setGoingCount(n => n+1) }
+
+    const prev = myType
+    const isSame = prev === type
+
+    // optimistic update
+    if (prev === 'interested') setInterestedCount(n => Math.max(0, n-1))
+    if (prev === 'going')      setGoingCount(n => Math.max(0, n-1))
+    if (!isSame && type === 'interested') setInterestedCount(n => n+1)
+    if (!isSame && type === 'going')      setGoingCount(n => n+1)
+    setMyType(isSame ? null : type)
+
+    try {
+      if (isSame) {
+        await sb3.from('event_interactions').delete()
+          .eq('event_id', event.id).eq('user_id', user.id)
+      } else {
+        await sb3.from('event_interactions').upsert(
+          { event_id: event.id, user_id: user.id, type },
+          { onConflict: 'event_id,user_id' }
+        )
+      }
+    } catch {
+      // rollback
+      setMyType(prev)
+      if (prev === 'interested') setInterestedCount(n => n+1)
+      if (prev === 'going')      setGoingCount(n => n+1)
+      if (!isSame && type === 'interested') setInterestedCount(n => Math.max(0, n-1))
+      if (!isSame && type === 'going')      setGoingCount(n => Math.max(0, n-1))
     }
   }
 
@@ -1342,20 +1356,20 @@ function EventRow({
                 onClick={e => { e.stopPropagation(); toggleInteraction('interested') }}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] transition-all"
                 style={{
-                  border: `0.5px solid ${myInterested ? '#EC4899' : 'var(--border)'}`,
-                  background: myInterested ? 'rgba(236,72,153,.1)' : 'var(--surface-2)',
-                  color: myInterested ? '#EC4899' : 'var(--text-secondary)',
+                  border: `0.5px solid ${myType === 'interested' ? '#EC4899' : 'var(--border)'}`,
+                  background: myType === 'interested' ? 'rgba(236,72,153,.1)' : 'var(--surface-2)',
+                  color: myType === 'interested' ? '#EC4899' : 'var(--text-secondary)',
                 }}>
-                <Heart size={11} fill={myInterested ? '#EC4899' : 'none'} />
+                <Heart size={11} fill={myType === 'interested' ? '#EC4899' : 'none'} />
                 สนใจ{interestedCount > 0 && <span className="opacity-70 ml-0.5">· {interestedCount}</span>}
               </button>
               <button
                 onClick={e => { e.stopPropagation(); toggleInteraction('going') }}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] transition-all"
                 style={{
-                  border: `0.5px solid ${myGoing ? '#10B981' : 'var(--border)'}`,
-                  background: myGoing ? 'rgba(16,185,129,.1)' : 'var(--surface-2)',
-                  color: myGoing ? '#10B981' : 'var(--text-secondary)',
+                  border: `0.5px solid ${myType === 'going' ? '#10B981' : 'var(--border)'}`,
+                  background: myType === 'going' ? 'rgba(16,185,129,.1)' : 'var(--surface-2)',
+                  color: myType === 'going' ? '#10B981' : 'var(--text-secondary)',
                 }}>
                 <Users size={11} />
                 จะไป{goingCount > 0 && <span className="opacity-70 ml-0.5">· {goingCount}</span>}
