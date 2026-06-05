@@ -724,6 +724,19 @@ onChange={(f) => { setFilters(f); setDisplayCount(30) }}
           />
         )}
 
+        {/* FOLLOWING TAB */}
+        {!loading && tab === 'following' && (
+          <FollowingTab
+            events={events}
+            followedIds={followedIds}
+            likedIds={likedIds}
+            toggleLike={toggleLike}
+            attendance={attendance}
+            toggleAttendance={toggleAttendance}
+            isLoggedIn={isLoggedIn}
+          />
+        )}
+
         {/* VENUES TAB */}
         {!loading && tab === 'venues' && (
           <VenuesTab
@@ -1424,6 +1437,82 @@ function EventRow({
 
       </div>
       )}
+    </div>
+  )
+}
+
+// ── FollowingTab ─────────────────────────────────────────────
+function FollowingTab({ events, followedIds, likedIds, toggleLike, attendance, toggleAttendance, isLoggedIn }: {
+  events: any[]
+  followedIds: Set<string>
+  likedIds: Set<string>
+  toggleLike: (id: string, name: string) => void
+  attendance: Record<string, string>
+  toggleAttendance: (id: string) => void
+  isLoggedIn: boolean
+}) {
+  const today = new Date().toISOString().slice(0, 10)
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7)
+  const monthEnd = new Date(); monthEnd.setDate(monthEnd.getDate() + 30)
+
+  const followingEvents = events
+    .filter(ev => ev.artists?.some((a: any) => followedIds.has(a.id)))
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+
+  if (followedIds.size === 0) {
+    return (
+      <div className="rounded-xl p-10 text-center" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+        <p className="text-[32px] mb-3">🎵</p>
+        <p className="text-[15px] font-medium text-primary mb-1">ยังไม่ได้ติดตามศิลปินคนไหน</p>
+        <p className="text-[13px] text-muted">ไปติดตามศิลปินที่ชอบ แล้วงานของพวกเขาจะมาแสดงที่นี่</p>
+      </div>
+    )
+  }
+
+  if (followingEvents.length === 0) {
+    return (
+      <div className="rounded-xl p-10 text-center" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+        <p className="text-[32px] mb-3">📅</p>
+        <p className="text-[15px] font-medium text-primary mb-1">ยังไม่มีงานที่กำลังจะมา</p>
+        <p className="text-[13px] text-muted">ศิลปินที่คุณติดตามยังไม่มีงานในระบบ</p>
+      </div>
+    )
+  }
+
+  // แบ่งกลุ่มตามช่วงเวลา
+  const todayEvs    = followingEvents.filter(ev => ev.start_date === today)
+  const weekEvs     = followingEvents.filter(ev => ev.start_date > today && ev.start_date <= weekEnd.toISOString().slice(0,10))
+  const monthEvs    = followingEvents.filter(ev => ev.start_date > weekEnd.toISOString().slice(0,10) && ev.start_date <= monthEnd.toISOString().slice(0,10))
+  const laterEvs    = followingEvents.filter(ev => ev.start_date > monthEnd.toISOString().slice(0,10))
+
+  const sections = [
+    { label: '📅 วันนี้',      evs: todayEvs },
+    { label: '📅 สัปดาห์นี้',  evs: weekEvs  },
+    { label: '📅 เดือนนี้',    evs: monthEvs },
+    { label: '📅 หลังจากนั้น', evs: laterEvs },
+  ].filter(s => s.evs.length > 0)
+
+  return (
+    <div className="flex flex-col gap-6">
+      {sections.map(section => (
+        <div key={section.label}>
+          <h3 className="text-[13px] font-medium text-muted mb-2">{section.label}</h3>
+          <div className="flex flex-col gap-2">
+            {section.evs.map(ev => (
+              <EventRow
+                key={ev.id}
+                event={ev}
+                likedIds={likedIds}
+                toggleLike={toggleLike}
+                attendance={attendance}
+                toggleAttendance={toggleAttendance}
+                followedIds={followedIds}
+                isLoggedIn={isLoggedIn}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
