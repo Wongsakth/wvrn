@@ -37,7 +37,7 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
     return (
       <button key={label} onClick={onClick}
         className={cn(
-          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] transition-all shrink-0 border',
+          'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] transition-all shrink-0 border',
           active
             ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)] font-medium'
             : 'border-[var(--border)] text-secondary hover:border-[var(--border-md)]'
@@ -48,8 +48,6 @@ export default function FilterBar({ filters, onChange, totalCount, userProvince 
   }
 
   async function handleNearMe() {
-  console.log('userProvince:', userProvince)  // เพิ่มบรรทัดนี้
-  console.log('regionProvinces:', getRegionProvinces(userProvince))
     if (filters.nearMe) {
       onChange({ ...filters, nearMe: undefined, province: undefined, regionProvinces: undefined, userLat: undefined, userLng: undefined })
       return
@@ -101,13 +99,13 @@ pos => {
   const hasFilters = !!(filters.province || filters.genre || filters.categoryId || filters.isFree || filters.nearMe || filters.datePreset || filters.country)
 
   return (
-    <div className="rounded-xl mb-4 p-3"
+    <div className="rounded-lg mb-4 p-3"
       style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
 
       <div className="flex items-center gap-2 flex-wrap">
         <button onClick={() => setExpanded(v => !v)}
           className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] border transition-all shrink-0',
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] border transition-all shrink-0',
             expanded || hasFilters
               ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]'
               : 'border-[var(--border)] text-secondary'
@@ -184,7 +182,7 @@ pos => {
             <div className="flex gap-1.5 mb-2">
               {(['today','week','month'] as const).map(p => (
                 <button key={p} onClick={() => setDatePreset(p)}
-                  className={cn('flex-1 py-1.5 rounded-lg text-[11px] border transition-all',
+                  className={cn('flex-1 py-1.5 rounded-md text-[11px] border transition-all',
                     filters.datePreset === p
                       ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]'
                       : 'border-[var(--border)] text-muted')}>

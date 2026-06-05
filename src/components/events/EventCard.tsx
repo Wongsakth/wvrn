@@ -57,9 +57,9 @@ export default function EventCard({
 
   return (
     <div
-      className={cn('card-hover flex overflow-hidden', compact && 'text-sm')}
+      className={cn('card-hover flex overflow-hidden rounded-lg', compact && 'text-sm')}
       onClick={goDetail}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', border: '0.5px solid var(--border)' }}
     >
 
       {/* Date strip */}
@@ -152,7 +152,7 @@ export default function EventCard({
             {onInterested && (
               <button
                 onClick={e => { e.stopPropagation(); onInterested() }}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] transition-all"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] transition-all"
                 style={{
                   border:     `1px solid ${interested ? '#EC4899' : 'var(--border)'}`,
                   background: interested ? 'rgba(236,72,153,.1)' : 'var(--surface-2)',
@@ -166,7 +166,7 @@ export default function EventCard({
             {onGoing && (
               <button
                 onClick={e => { e.stopPropagation(); onGoing() }}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] transition-all"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] transition-all"
                 style={{
                   border:     `1px solid ${going ? '#10B981' : 'var(--border)'}`,
                   background: going ? 'rgba(16,185,129,.1)' : 'var(--surface-2)',
@@ -231,7 +231,7 @@ function Btn({ icon, active, onClick, title }: {
 }) {
   return (
     <button onClick={onClick} title={title}
-      className="w-[26px] h-[26px] rounded-md flex items-center justify-center transition-all"
+      className="w-[26px] h-[26px] rounded-lg flex items-center justify-center transition-all"
       style={{
         border:     '1px solid var(--border)',
         background: active ? 'var(--accent-muted)' : 'var(--surface-2)',
