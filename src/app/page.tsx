@@ -64,13 +64,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<any[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const PAGE_SIZE = 30
-  const pageRef = useRef(0)
-  const hasMoreRef = useRef(true)
-  const isLoadingRef = useRef(false)
-  const loaderRef = useRef<HTMLDivElement>(null)
+  const [displayCount, setDisplayCount] = useState(30)
 
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
   const [followedVenueIds,  setFollowedVenueIds]  = useState<Set<string>>(new Set())
@@ -129,109 +123,37 @@ const [showMap, setShowMap] = useState(false)
   // LOAD EVENTS
   // =========================================================
 
-  // ── Build Supabase query with server-side filters ──
-  function buildQuery(f: EventFilters, s: string, pageNum: number) {
-    const today = new Date().toISOString().slice(0, 10)
-    let q = sb
-      .from('events')
-      .select(`
-        id, title, slug, start_date, end_date, start_time, end_time,
-        status, genres, is_free, ticket_price_min, ticket_price_max,
-        ticket_url, poster_url, province, country, featured_type,
-        category_id, event_type, is_multi_day, lineup_count,
-        venue:venues(id,name,province,address,maps_url),
-        event_artists(artist:artists(id,name,name_en,genres,image_url))
-      `, { count: 'exact' })
-      .is('deleted_at', null)
-      .gte('start_date', today)
+  useEffect(() => {
+    async function loadEvents() {
+      setLoading(true)
+      try {
+        const { data, error, count } = await sb
+          .from('events')
+          .select(`
+            *,
+            venue:venues(id,name,province,address,maps_url),
+            event_artists(artist:artists(id,name,name_en,genres,image_url))
+          `, { count: 'exact' })
+          .is('deleted_at', null)
+          .order('start_date', { ascending: true })
+          .limit(5000)
 
-    // Server-side filters
-    if (f.country === 'international') {
-      q = q.neq('country', 'TH').not('country', 'is', null)
-    } else {
-      if (f.regionProvinces?.length) {
-        q = q.in('province', f.regionProvinces)
-      } else if (f.province) {
-        q = q.eq('province', f.province)
-      }
-    }
-    if (f.categoryId) q = q.eq('category_id', f.categoryId)
-    if (f.isFree)     q = q.eq('is_free', true)
-    if (f.dateFrom)   q = q.gte('start_date', f.dateFrom)
-    if (f.dateTo)     q = q.lte('start_date', f.dateTo)
-    if (f.genre) {
-      q = q.contains('genres', [f.genre])
-    }
-    if (s) {
-      q = q.or(`title.ilike.%${s}%,province.ilike.%${s}%`)
-    }
+        if (error) throw error
 
-    return q
-      .order('featured_type', { ascending: false, nullsFirst: false })
-      .order('start_date', { ascending: true })
-      .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
-  }
+        const normalized = (data || []).map((ev: any) => ({
+          ...ev,
+          artists: ev.event_artists?.map((ea: any) => ea.artist).filter(Boolean) || [],
+        }))
 
-  async function loadEvents(reset = true) {
-    if (isLoadingRef.current) return
-    isLoadingRef.current = true
-
-    if (reset) setLoading(true)
-    else setLoadingMore(true)
-
-    try {
-      const currentPage = reset ? 0 : pageRef.current
-      const { data, error, count } = await buildQuery(filters, search, currentPage)
-
-      if (error) throw error
-
-      const normalized = (data || []).map((ev: any) => ({
-        ...ev,
-        artists: ev.event_artists?.map((ea: any) => ea.artist).filter(Boolean) || [],
-      }))
-
-      if (reset) {
         setEvents(normalized)
-        pageRef.current = 1
-      } else {
-        setEvents(prev => [...prev, ...normalized])
-        pageRef.current = currentPage + 1
+        setTotalCount(count ?? normalized.length)
+      } catch (err) {
+        console.error('loadEvents error', err)
+      } finally {
+        setLoading(false)
       }
-
-      const more = normalized.length === PAGE_SIZE
-      setTotalCount(count ?? 0)
-      setHasMore(more)
-      hasMoreRef.current = more
-    } catch (err) {
-      console.error('loadEvents error', err)
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-      isLoadingRef.current = false
     }
-  }
-
-  // โหลดครั้งแรก
-  useEffect(() => {
-    loadEvents(true)
-  }, [])
-
-  // โหลดใหม่เมื่อ filter หรือ search เปลี่ยน
-  useEffect(() => {
-    loadEvents(true)
-  }, [filters, search])
-
-  // Infinite scroll — observer (mount once)
-  useEffect(() => {
-    const el = loaderRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
-        loadEvents(false)
-      }
-    }, { threshold: 0.1 })
-    observer.observe(el)
-    return () => observer.disconnect()
+    loadEvents()
   }, [])
 
   // =========================================================
@@ -512,7 +434,42 @@ const [showMap, setShowMap] = useState(false)
   // FILTERED EVENTS
   // =========================================================
 
-  const filtered = events  // server-side filtered
+  const filtered = useMemo(() => {
+    let base = events
+
+    if (tab === 'following') {
+      base = base.filter(ev => ev.artists?.some((a: any) => followedIds.has(a.id)))
+    }
+
+    return base.filter(ev => {
+      if (filters.dateFrom && ev.start_date < filters.dateFrom) return false
+      if (filters.dateTo   && ev.start_date > filters.dateTo)   return false
+      if (filters.genre && !ev.genres?.includes(filters.genre)) return false
+      if (filters.categoryId && ev.category_id !== filters.categoryId) return false
+      if (filters.country === 'international') {
+        if (!ev.country || ev.country === 'TH') return false
+      } else {
+        if (filters.regionProvinces?.length && !filters.regionProvinces.includes(ev.province)) return false
+        else if (!filters.regionProvinces && filters.province && ev.province !== filters.province) return false
+      }
+      if (filters.isFree && !ev.is_free) return false
+      if (search) {
+        const q = search.toLowerCase()
+        const matched =
+          ev.title?.toLowerCase().includes(q) ||
+          ev.artists?.some((a: any) => a.name?.toLowerCase().includes(q)) ||
+          ev.venue?.name?.toLowerCase().includes(q)
+        if (!matched) return false
+      }
+      return true
+    }).sort((a, b) => {
+      const score = (ev: any) =>
+        ev.featured_type === 'partner' ? 2 : ev.featured_type === 'wvrn_picks' ? 1 : 0
+      const diff = score(b) - score(a)
+      if (diff !== 0) return diff
+      return new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    })
+  }, [events, filters, search, tab, followedIds])
 
   const pastEvents = filtered.filter(ev =>
     isPastEvent(ev, today)
@@ -540,7 +497,7 @@ const [showMap, setShowMap] = useState(false)
       )
     : []
 
-  const eventsToShow = isLoggedIn ? upcomingEvents : guestVisible
+  const eventsToShow = (isLoggedIn ? upcomingEvents : guestVisible).slice(0, displayCount)
 
   return (
     <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}>
@@ -737,7 +694,7 @@ const [showMap, setShowMap] = useState(false)
             />
             <FilterBar
               filters={filters}
-onChange={(f) => setFilters(f)}
+onChange={(f) => { setFilters(f); setDisplayCount(30) }}
 
               totalCount={totalCount}
   userProvince={province}  // ← เพิ่มบรรทัดนี้
@@ -903,6 +860,17 @@ onChange={(f) => setFilters(f)}
                   isLoggedIn={isLoggedIn}
                 />
               ))}
+
+              {/* Load More button */}
+              {isLoggedIn && displayCount < upcomingEvents.length && (
+                <button
+                  onClick={() => setDisplayCount(n => n + 30)}
+                  className="w-full py-3 rounded-xl text-[13px] font-medium transition-all mt-1"
+                  style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', color: 'var(--accent)' }}
+                >
+                  โหลดเพิ่มเติม ({upcomingEvents.length - displayCount} งาน)
+                </button>
+              )}
 
               {/* Guest blur CTA */}
               {!isLoggedIn && guestHidden.length > 0 && (
