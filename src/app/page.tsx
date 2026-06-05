@@ -472,6 +472,7 @@ if (filters.categoryId && ev.category_id !== filters.categoryId) return false
 // ── Country / Province ──
 if (filters.country === 'international') {
   // แสดงเฉพาะงานที่ไม่ใช่ TH
+ console.log('checking:', ev.title, 'country:', ev.country)
   if (!ev.country || ev.country === 'TH') return false
 console.log('PASS international:', ev.title, ev.country)
 } else {
