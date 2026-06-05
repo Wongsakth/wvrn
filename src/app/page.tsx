@@ -543,7 +543,7 @@ const [showMap, setShowMap] = useState(false)
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="ค้นหางาน..."
+              placeholder={tab === 'artists' ? 'ค้นหาศิลปิน...' : tab === 'venues' ? 'ค้นหาสถานที่...' : 'ค้นหางาน...'}
               className="bg-transparent outline-none text-sm w-40"
             />
           </div>
@@ -714,10 +714,14 @@ onChange={(f) => { setFilters(f); setDisplayCount(30) }}
 
         {/* ARTISTS TAB */}
         {!loading && tab === 'artists' && (
-          <ArtistsTab followedIds={followedIds} onFollowToggle={(id, name) => {
-            if (!isLoggedIn) { window.location.href = '/login'; return }
-            toggleFollow(id, name)
-          }} />
+          <ArtistsTab
+            followedIds={followedIds}
+            searchQuery={search}
+            onFollowToggle={(id, name) => {
+              if (!isLoggedIn) { window.location.href = '/login'; return }
+              toggleFollow(id, name)
+            }}
+          />
         )}
 
         {/* VENUES TAB */}
@@ -1368,10 +1372,10 @@ function EventRow({
 }
 
 // ── ArtistsTab ──────────────────────────────────────────────
-function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>; onFollowToggle: (id: string, name: string) => void }) {
+function ArtistsTab({ followedIds, onFollowToggle, searchQuery = '' }: { followedIds: Set<string>; onFollowToggle: (id: string, name: string) => void; searchQuery?: string }) {
   const [artists, setArtists] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [search,  setSearch]  = useState('')
+  const search = searchQuery
   const sb = createClient()
 
   useEffect(() => {
@@ -1387,12 +1391,6 @@ function ArtistsTab({ followedIds, onFollowToggle }: { followedIds: Set<string>;
 
   return (
     <div>
-      <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl px-3 py-2 mb-4">
-        <Search size={14} className="text-muted shrink-0" />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="ค้นหาศิลปิน..." className="bg-transparent outline-none text-sm flex-1 text-secondary" />
-      </div>
-
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
