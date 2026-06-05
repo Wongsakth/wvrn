@@ -98,7 +98,7 @@ pos => {
     ? (filters.userLat ? '📍 GPS' : `📍 ${filters.province || userProvince || 'ใกล้ฉัน'}`)
     : '📍 ใกล้ฉัน'
 
-  const hasFilters = !!(filters.province || filters.genre || filters.categoryId || filters.isFree || filters.nearMe || filters.datePreset)
+  const hasFilters = !!(filters.province || filters.genre || filters.categoryId || filters.isFree || filters.nearMe || filters.datePreset || filters.country)
 
   return (
     <div className="rounded-xl mb-4 p-3"
