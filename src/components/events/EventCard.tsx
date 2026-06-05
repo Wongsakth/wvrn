@@ -5,22 +5,34 @@ import { th } from 'date-fns/locale'
 import {
   MapPin, Clock, Heart, Bookmark,
   CalendarPlus, Share2, ExternalLink, Ticket,
-  Users, CalendarRange, ChevronRight,
+  Users, CalendarRange, ChevronRight, UserCheck,
 } from 'lucide-react'
 import { cn, formatPrice, statusLabel, genreTagClass, googleCalendarUrl } from '@/lib/utils'
 import type { Event } from '@/types'
 import toast from 'react-hot-toast'
 
 interface Props {
-  event:       Event & { is_multi_day?: boolean; lineup_count?: number }
-  liked?:      boolean
-  bookmarked?: boolean
-  onLike?:     () => void
-  onBookmark?: () => void
-  compact?:    boolean
+  event:       Event & {
+    is_multi_day?:     boolean
+    lineup_count?:     number
+    interested_count?: number
+    going_count?:      number
+  }
+  liked?:        boolean
+  bookmarked?:   boolean
+  interested?:   boolean
+  going?:        boolean
+  onLike?:       () => void
+  onBookmark?:   () => void
+  onInterested?: () => void
+  onGoing?:      () => void
+  compact?:      boolean
 }
 
-export default function EventCard({ event, liked, bookmarked, onLike, onBookmark, compact }: Props) {
+export default function EventCard({
+  event, liked, bookmarked, interested, going,
+  onLike, onBookmark, onInterested, onGoing, compact,
+}: Props) {
   const router    = useRouter()
   const startDate = parseISO(event.start_date)
   const endDate   = event.end_date ? parseISO(event.end_date) : null
@@ -28,6 +40,9 @@ export default function EventCard({ event, liked, bookmarked, onLike, onBookmark
   const dayCount  = isMulti ? differenceInDays(endDate!, startDate) + 1 : 1
   const price     = formatPrice(event)
   const status    = statusLabel(event.status)
+
+  const interestedCount = event.interested_count ?? 0
+  const goingCount      = event.going_count ?? 0
 
   function goDetail() {
     window.location.href = `/events/${event.slug || event.id}`
@@ -130,6 +145,40 @@ export default function EventCard({ event, liked, bookmarked, onLike, onBookmark
             </span>
           )}
         </div>
+
+        {/* ── สนใจ / จะไป + count ── */}
+        {!compact && (onInterested || onGoing) && (
+          <div className="flex gap-1.5 mt-2" onClick={e => e.stopPropagation()}>
+            {onInterested && (
+              <button
+                onClick={e => { e.stopPropagation(); onInterested() }}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] transition-all"
+                style={{
+                  border:     `1px solid ${interested ? '#EC4899' : 'var(--border)'}`,
+                  background: interested ? 'rgba(236,72,153,.1)' : 'var(--surface-2)',
+                  color:      interested ? '#EC4899' : 'var(--text-secondary)',
+                }}
+              >
+                <Heart size={11} fill={interested ? '#EC4899' : 'none'} />
+                สนใจ{interestedCount > 0 && <span className="opacity-70">· {interestedCount}</span>}
+              </button>
+            )}
+            {onGoing && (
+              <button
+                onClick={e => { e.stopPropagation(); onGoing() }}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] transition-all"
+                style={{
+                  border:     `1px solid ${going ? '#10B981' : 'var(--border)'}`,
+                  background: going ? 'rgba(16,185,129,.1)' : 'var(--surface-2)',
+                  color:      going ? '#10B981' : 'var(--text-secondary)',
+                }}
+              >
+                <UserCheck size={11} />
+                จะไป{goingCount > 0 && <span className="opacity-70">· {goingCount}</span>}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right */}
