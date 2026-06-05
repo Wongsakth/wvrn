@@ -466,12 +466,18 @@ setTotalCount(count ?? normalized.length)
         // ── Genre ──
         if (filters.genre && !ev.genres?.includes(filters.genre)) return false
 
-        // ── Event type ──
-        if (filters.categoryId && ev.category_id !== filters.categoryId) return false
-        if (filters.regionProvinces?.length && !filters.regionProvinces.includes(ev.province)) return false
-        else if (!filters.regionProvinces && filters.province && ev.province !== filters.province) return false
+// ── Event type ──
+if (filters.categoryId && ev.category_id !== filters.categoryId) return false
 
-if (filters.country === 'international' && ev.country === 'TH') return false
+// ── Country / Province ──
+if (filters.country === 'international') {
+  // แสดงเฉพาะงานที่ไม่ใช่ TH
+  if (!ev.country || ev.country === 'TH') return false
+} else {
+  // filter province ปกติ (งานในไทย)
+  if (filters.regionProvinces?.length && !filters.regionProvinces.includes(ev.province)) return false
+  else if (!filters.regionProvinces && filters.province && ev.province !== filters.province) return false
+}
 
         // ── Free ──
         if (filters.isFree && !ev.is_free) return false
