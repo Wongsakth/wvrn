@@ -64,7 +64,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<any[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [displayCount, setDisplayCount] = useState(30)
+  const [displayCount, setDisplayCount] = useState(100)
 
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
   const [followedVenueIds,  setFollowedVenueIds]  = useState<Set<string>>(new Set())
