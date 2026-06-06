@@ -1,7 +1,7 @@
 'use client'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Link2, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 
 export default function DisclaimerPage() {
@@ -22,7 +22,6 @@ export default function DisclaimerPage() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex flex-col gap-6">
 
           <Section title="1. วัตถุประสงค์ของแพลตฟอร์ม">
@@ -65,13 +64,56 @@ export default function DisclaimerPage() {
             การซื้อขายบัตรและข้อพิพาทใดๆ อยู่ภายใต้เงื่อนไขและความรับผิดชอบของผู้จำหน่ายบัตรนั้นๆ โดยตรง
           </Section>
 
-          {/* แจ้งปัญหา — highlight box */}
+          {/* Affiliate Links */}
+          <div className="rounded-xl p-5" style={{
+            background: 'rgba(99,102,241,.05)',
+            border: '1px solid rgba(99,102,241,.2)'
+          }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Link2 size={16} style={{ color: '#6366F1' }} />
+              <h2 className="text-[14px] font-medium" style={{ color: '#6366F1' }}>
+                5. ลิงก์พาร์ทเนอร์ (Affiliate Links)
+              </h2>
+            </div>
+            <p className="text-[13px] text-secondary leading-relaxed">
+              บางลิงก์ซื้อบัตรหรือลิงก์ภายนอกบน WVRN อาจเป็น <strong className="text-primary">affiliate link</strong>{' '}
+              ซึ่งหมายความว่า WVRN อาจได้รับค่าคอมมิชชั่นเล็กน้อยเมื่อคุณซื้อสินค้าหรือบริการผ่านลิงก์เหล่านั้น
+              โดย<strong className="text-primary">ไม่มีค่าใช้จ่ายเพิ่มเติมสำหรับคุณ</strong> และราคาที่คุณจ่ายเป็นราคาเดียวกับการซื้อโดยตรง
+              <br /><br />
+              รายได้จาก affiliate ช่วยสนับสนุนการพัฒนาและดูแล WVRN
+              ให้เป็นบริการฟรีสำหรับทุกคนต่อไป ลิงก์ที่เป็น affiliate จะมีการระบุไว้อย่างชัดเจน
+            </p>
+          </div>
+
+          {/* WVRN Commercial */}
+          <div className="rounded-xl p-5" style={{
+            background: 'rgba(16,185,129,.05)',
+            border: '1px solid rgba(16,185,129,.2)'
+          }}>
+            <div className="flex items-center gap-2 mb-3">
+              <ShoppingBag size={16} style={{ color: '#10B981' }} />
+              <h2 className="text-[14px] font-medium" style={{ color: '#10B981' }}>
+                6. สินค้าและบริการจาก WVRN
+              </h2>
+            </div>
+            <p className="text-[13px] text-secondary leading-relaxed">
+              WVRN อาจนำเสนอสินค้าหรือบริการของตนเองในอนาคต เช่น Merchandise, Premium Membership
+              หรือบริการอื่นๆ ที่เกี่ยวข้องกับ Concert และดนตรี
+              <br /><br />
+              สินค้าและบริการจาก WVRN โดยตรงจะระบุไว้อย่างชัดเจนว่าเป็น{' '}
+              <strong className="text-primary">"WVRN Official"</strong>{' '}
+              และอยู่ภายใต้เงื่อนไขการซื้อขายที่แยกต่างหาก
+              WVRN รับผิดชอบเฉพาะสินค้าและบริการที่ระบุว่าเป็น Official เท่านั้น
+            </p>
+          </div>
+
+          {/* แจ้งปัญหา */}
           <div className="rounded-xl p-5" style={{
             background: 'rgba(186,117,23,.06)',
             border: '1px solid rgba(186,117,23,.25)'
           }}>
             <h2 className="text-[14px] font-medium mb-2" style={{ color: '#EF9F27' }}>
-              5. พบข้อมูลผิดพลาด? แจ้งเราได้เลย
+              7. พบข้อมูลผิดพลาด? แจ้งเราได้เลย
             </h2>
             <p className="text-[13px] text-secondary leading-relaxed mb-4">
               WVRN เปิดรับการแจ้งข้อมูลที่ไม่ถูกต้องหรือข้อมูลใหม่จากผู้ใช้งานทุกท่าน
@@ -86,21 +128,19 @@ export default function DisclaimerPage() {
             </Link>
           </div>
 
-          {/* English version */}
+          {/* English Summary */}
           <div className="mt-2 p-4 rounded-xl" style={{
             background: 'var(--surface-2)',
             border: '1px solid var(--border)'
           }}>
             <p className="text-[11px] font-medium text-muted uppercase tracking-wide mb-3">English Summary</p>
             <p className="text-[12px] text-secondary leading-relaxed">
-              All content on WVRN — including artist information, ticket prices, event dates, venues,
-              and any other details — is provided for informational and promotional purposes only.
-              WVRN assumes no responsibility, directly or indirectly, for any damages, losses,
-              or expenses arising from inaccurate, incomplete, or outdated information displayed on this platform,
-              including but not limited to incorrect ticket prices, event cancellations or postponements,
-              or any financial loss resulting from reliance on this information.
-              Please verify all details directly with the official artist management or event organizer
-              before making any purchase decision.
+              All content on WVRN is provided for informational and promotional purposes only.
+              WVRN assumes no responsibility for any damages arising from inaccurate or outdated information.
+              Some links on WVRN may be affiliate links — WVRN may earn a small commission when you purchase
+              through these links at no additional cost to you. WVRN may also offer its own official products
+              and services, which will be clearly labeled as "WVRN Official."
+              Please verify all event details directly with official sources before making any purchase decision.
               To report incorrect information, please visit our{' '}
               <Link href="/report" className="underline hover:opacity-70">report page</Link>.
             </p>
