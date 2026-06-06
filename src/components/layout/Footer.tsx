@@ -34,6 +34,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-muted font-medium uppercase tracking-wide text-[10px]">Legal</span>
+              <Link href="/privacy" className="text-secondary hover:text-primary transition-colors">นโยบายความเป็นส่วนตัว</Link>
               <Link href="/disclaimer" className="text-secondary hover:text-primary transition-colors">ข้อจำกัดความรับผิดชอบ</Link>
               <Link href="/terms" className="text-secondary hover:text-primary transition-colors">เงื่อนไขการใช้งาน</Link>
             </div>
