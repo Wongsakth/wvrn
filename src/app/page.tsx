@@ -506,8 +506,9 @@ const [showMap, setShowMap] = useState(false)
       <main className="max-w-screen-xl mx-auto px-4 py-4">
 
         {/* TOOLBAR - Tabs + Search */}
-        <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
-          <div className="flex bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-1">
+        <div className="flex flex-col gap-2 mb-4">
+          {/* Row 1: Tabs */}
+          <div className="flex bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-1 self-start">
             {[
               { id: 'all',       label: 'Shows',     icon: Music       },
               { id: 'artists',   label: 'Artists',   icon: Heart       },
@@ -538,14 +539,30 @@ const [showMap, setShowMap] = useState(false)
               )
             })}
           </div>
-          <div className="flex items-center gap-2 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl px-3 py-2">
-            <Search size={14} className="text-muted" />
+
+          {/* Row 2: Search — full width */}
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3"
+            style={{
+              background: 'var(--surface-1)',
+              border: '1.5px solid var(--border)',
+              transition: 'border-color 0.15s',
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+          >
+            <Search size={16} className="text-muted shrink-0" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={tab === 'artists' ? 'ค้นหาศิลปิน...' : tab === 'venues' ? 'ค้นหาสถานที่...' : 'ค้นหางาน...'}
-              className="bg-transparent outline-none text-sm w-40"
+              placeholder={tab === 'artists' ? 'ค้นหาศิลปิน...' : tab === 'venues' ? 'ค้นหาสถานที่...' : 'ค้นหางาน ศิลปิน หรือสถานที่...'}
+              className="bg-transparent outline-none text-[14px] flex-1 text-primary placeholder:text-muted"
             />
+            {search && (
+              <button onClick={() => setSearch('')}
+                className="shrink-0 text-muted hover:text-primary transition-colors">
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
 
