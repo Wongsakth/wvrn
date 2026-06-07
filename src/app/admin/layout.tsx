@@ -9,15 +9,16 @@ import { createClient } from '@/lib/supabase'
 import {
   Shield, Music, MapPin, CalendarDays,
   ClipboardList, ChevronRight, Menu, X,
-  LayoutDashboard, Tag, FileUp, LayoutList, Building2, Users, Image as ImageIcon, Flag,
+  LayoutDashboard, Tag, FileUp, LayoutList, Building2, Users, Image as ImageIcon, Flag, BarChart2,
 } from 'lucide-react'
 
 const MENU = [
   {
     group: 'ภาพรวม',
     items: [
-      { href: '/admin',         label: 'Dashboard',      icon: LayoutDashboard, badge: null },
-      { href: '/admin/pending', label: 'รออนุมัติ', icon: ClipboardList, badge: null },
+      { href: '/admin',            label: 'Dashboard',      icon: LayoutDashboard, badge: null },
+      { href: '/admin/pending',    label: 'รออนุมัติ',     icon: ClipboardList,   badge: null },
+      { href: '/admin/analytics',  label: 'Analytics',      icon: BarChart2,       badge: null },
     ],
   },
   {
