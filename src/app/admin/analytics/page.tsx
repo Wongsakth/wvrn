@@ -22,7 +22,9 @@ export default function AnalyticsDashboard() {
   const [topVenues,    setTopVenues]    = useState<any[]>([])
   const [topSearches,  setTopSearches]  = useState<any[]>([])
   const [topFilters,   setTopFilters]   = useState<any[]>([])
-  const [ticketClicks, setTicketClicks] = useState<any[]>([])
+  const [ticketClicks,  setTicketClicks]  = useState<any[]>([])
+  const [topProvinces,  setTopProvinces]  = useState<any[]>([])
+  const [uniqueUsers,   setUniqueUsers]   = useState(0)
   const sb = createClient()
 
   useEffect(() => { load() }, [range])
@@ -31,9 +33,9 @@ export default function AnalyticsDashboard() {
     setLoading(true)
     const since = new Date(Date.now() - range * 86400000).toISOString()
 
-    const [all, events, artists, venues, searches, filters, tickets] = await Promise.all([
+    const [all, events, artists, venues, searches, filters, tickets, provinces] = await Promise.all([
       // Summary counts by type
-      sb.from('analytics_events').select('event_type').gte('created_at', since),
+      sb.from('analytics_events').select('event_type, user_id').gte('created_at', since),
       // Top events clicked
       sb.from('analytics_events').select('entity_id, entity_name')
         .eq('event_type', 'event_click').gte('created_at', since),
@@ -52,6 +54,9 @@ export default function AnalyticsDashboard() {
       // Ticket clicks
       sb.from('analytics_events').select('entity_id, entity_name, value')
         .eq('event_type', 'ticket_click').gte('created_at', since),
+      // Provinces
+      sb.from('analytics_events').select('province, user_id')
+        .gte('created_at', since).not('province', 'is', null),
     ])
 
     // Summary
@@ -85,6 +90,13 @@ export default function AnalyticsDashboard() {
     setTopFilters(Object.entries(filterCounts)
       .map(([k, v]) => ({ name: k, count: v }))
       .sort((a, b) => b.count - a.count).slice(0, 8))
+
+    // Top provinces
+    setTopProvinces(countBy(provinces.data || [], r => r.province))
+
+    // Unique users
+    const uids = new Set((all.data || []).filter(r => r.user_id).map(r => r.user_id))
+    setUniqueUsers(uids.size)
 
     setLoading(false)
   }
@@ -139,7 +151,7 @@ export default function AnalyticsDashboard() {
         <div className="flex flex-col gap-5">
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             {[
               { label: 'ทั้งหมด',       value: totalEvents,                 icon: <TrendingUp size={14} />, color: 'var(--accent)' },
               { label: 'Event Click',   value: summary.event_click   || 0,  icon: <Calendar  size={14} />, color: '#6366F1' },
@@ -147,6 +159,7 @@ export default function AnalyticsDashboard() {
               { label: 'Venue Click',   value: summary.venue_click   || 0,  icon: <MapPin    size={14} />, color: '#F59E0B' },
               { label: 'ซื้อบัตร',      value: summary.ticket_click  || 0,  icon: <Ticket    size={14} />, color: '#10B981' },
               { label: 'Search',        value: summary.search        || 0,  icon: <Search    size={14} />, color: '#3B82F6' },
+              { label: 'Unique Users',  value: uniqueUsers,                      icon: <Users     size={14} />, color: '#8B5CF6' },
             ].map(card => (
               <div key={card.label} className="rounded-xl p-4"
                 style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
@@ -176,6 +189,9 @@ export default function AnalyticsDashboard() {
 
             {/* Top Venues */}
             <Table title="📍 สถานที่ยอดนิยม" data={topVenues} color="#F59E0B" />
+
+            {/* Top Provinces */}
+            <Table title="🗺️ จังหวัดที่ใช้งานมากสุด" data={topProvinces} color="#06B6D4" />
 
             {/* Filters Used */}
             <div className="rounded-xl p-4"

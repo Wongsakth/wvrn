@@ -1,6 +1,4 @@
 // src/lib/analytics.ts
-// Track user behavior events to analytics_events table
-
 import { createClient } from '@/lib/supabase'
 
 type EventType =
@@ -19,7 +17,6 @@ interface TrackParams {
   page?:        string
 }
 
-// Session ID สำหรับ guest tracking
 function getSessionId(): string {
   if (typeof window === 'undefined') return ''
   let sid = sessionStorage.getItem('wvrn_sid')
@@ -35,7 +32,16 @@ export async function track(params: TrackParams) {
     const sb = createClient()
     const { data: { user } } = await sb.auth.getUser()
 
-    // fire and forget — ไม่ block UI
+    let province: string | null = null
+    if (user?.id) {
+      const { data: profile } = await sb
+        .from('profiles')
+        .select('province')
+        .eq('id', user.id)
+        .single()
+      province = profile?.province || null
+    }
+
     sb.from('analytics_events').insert({
       event_type:  params.event_type,
       entity_id:   params.entity_id   || null,
@@ -43,20 +49,19 @@ export async function track(params: TrackParams) {
       value:       params.value        || null,
       page:        params.page         || (typeof window !== 'undefined' ? window.location.pathname : null),
       user_id:     user?.id            || null,
-province:  profile?.province || null, 
+      province,
       session_id:  getSessionId(),
-    }).then(() => {}) // ignore result
+    }).then(() => {})
   } catch {
-    // silent fail — analytics ไม่ควร affect UX
+    // silent fail
   }
 }
 
-// Debounced search tracker — ไม่ track ทุก keystroke
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 export function trackSearch(keyword: string) {
   if (!keyword || keyword.length < 2) return
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     track({ event_type: 'search', value: keyword })
-  }, 1000) // รอ 1 วิหลังหยุดพิมพ์
+  }, 1000)
 }
