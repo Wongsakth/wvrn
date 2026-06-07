@@ -104,7 +104,12 @@ export default function ConcertMap({ events, followedIds, onClose }: Props) {
     const map = new Map<string, any[]>()
     const today = new Date().toISOString().slice(0, 10)
 
-    let evs = events.filter(e => !e.deleted_at)
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+    const monthStr = startOfMonth.toISOString().slice(0, 10)
+
+    let evs = events.filter(e => !e.deleted_at && e.start_date >= monthStr)
 
     if (filter === 'followed') {
       evs = evs.filter(e =>
