@@ -18,6 +18,7 @@ import {
   CalendarCheck,
   Ticket,
   Users,
+X,
   CalendarPlus,
 } from 'lucide-react'
 
