@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/auth'
 import { cn, formatPrice, statusLabel, genreTagClass, googleCalendarUrl } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import BackButton from '@/components/ui/BackButton'
+import { track } from '@/lib/analytics'
 
 
 function VenueCard({ venue }: { venue: any }) {
@@ -629,6 +630,7 @@ async function reportPhoto(photoId: string) {
                 href={event.ticket_url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => track({ event_type: 'ticket_click', entity_id: event.id, entity_name: event.title, value: event.ticket_url || '' })}
                 className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-[15px] font-medium transition-all"
                 style={{ background: 'var(--accent)', color: 'white' }}>
                 <Ticket size={18} />
