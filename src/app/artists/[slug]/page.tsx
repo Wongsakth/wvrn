@@ -36,6 +36,7 @@ export default function ArtistProfilePage() {
   const [followed, setFollowed] = useState(false)
   const [loading,  setLoading]  = useState(true)
   const [news,     setNews]     = useState<any[]>([])
+  const [lightbox, setLightbox] = useState(false)
 
   // Load artist + events
   useEffect(() => {
@@ -172,7 +173,8 @@ export default function ArtistProfilePage() {
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
                   {artist.image_url ? (
                     <img src={artist.image_url} alt={artist.name}
-                      className="w-20 h-20 rounded-2xl object-cover border-4"
+                      onClick={() => setLightbox(true)}
+                      className="w-20 h-20 rounded-2xl object-cover border-4 cursor-zoom-in transition-transform hover:scale-105"
                       style={{ borderColor: 'var(--surface-1)' }} />
                   ) : (
                     <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-[24px] font-medium border-4"
@@ -182,6 +184,37 @@ export default function ArtistProfilePage() {
                   )}
                 </div>
               </div>
+
+              {/* Lightbox */}
+              {lightbox && artist.image_url && (
+                <div
+                  onClick={() => setLightbox(false)}
+                  className="fixed inset-0 z-[9999] flex items-center justify-center"
+                  style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}
+                >
+                  <div className="relative max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+                    <img
+                      src={artist.image_url}
+                      alt={artist.name}
+                      className="w-full rounded-3xl shadow-2xl object-cover"
+                      style={{ maxHeight: '80vh' }}
+                    />
+                    <div className="mt-4 text-center">
+                      <p className="text-white text-[17px] font-medium">{artist.name}</p>
+                      {artist.name_en && artist.name_en !== artist.name && (
+                        <p className="text-white/60 text-[13px] mt-0.5">{artist.name_en}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setLightbox(false)}
+                      className="absolute -top-3 -right-3 w-8 h-8 rounded-full flex items-center justify-center text-white text-[16px] font-medium"
+                      style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-12 pb-4 px-4 text-center">
                 <h1 className="text-[20px] font-medium text-primary mb-0.5">{artist.name}</h1>
