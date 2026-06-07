@@ -43,6 +43,7 @@ export async function track(params: TrackParams) {
       value:       params.value        || null,
       page:        params.page         || (typeof window !== 'undefined' ? window.location.pathname : null),
       user_id:     user?.id            || null,
+province:  profile?.province || null, 
       session_id:  getSessionId(),
     }).then(() => {}) // ignore result
   } catch {
