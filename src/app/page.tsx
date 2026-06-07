@@ -25,6 +25,7 @@ X,
 import Navbar from '@/components/layout/Navbar'
 import CalendarView from '@/components/calendar/CalendarView'
 import FilterBar from '@/components/events/FilterBar'
+import { track, trackSearch } from '@/lib/analytics'
 import LiveTicker from '@/components/LiveTicker'
 
 import {
@@ -554,7 +555,7 @@ const [showMap, setShowMap] = useState(false)
             <Search size={16} className="text-muted shrink-0" />
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); trackSearch(e.target.value) }}
               placeholder={tab === 'artists' ? 'ค้นหาศิลปิน...' : tab === 'venues' ? 'ค้นหาสถานที่...' : 'ค้นหางาน ศิลปิน หรือสถานที่...'}
               className="bg-transparent outline-none text-[14px] flex-1 text-primary placeholder:text-muted"
             />
@@ -599,7 +600,7 @@ const [showMap, setShowMap] = useState(false)
                 return (
                   <div key={artistId} className="bg-[var(--surface-1)] p-3">
                     <div className="flex items-center gap-3 mb-2 cursor-pointer"
-                      onClick={() => window.location.href = `/artists/${artistId}`}>
+                      onClick={() => { track({ event_type: 'artist_click', entity_id: artistId, entity_name: artist?.name || '' }); window.location.href = `/artists/${artistId}` }}>
                       {artist?.image_url
                         ? <img src={artist.image_url} alt={artist.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
                         : <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-medium bg-[var(--surface-2)] text-pink-400">
@@ -712,7 +713,7 @@ const [showMap, setShowMap] = useState(false)
             />
             <FilterBar
               filters={filters}
-onChange={(f) => { setFilters(f); setDisplayCount(30) }}
+onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length > 0) track({ event_type: 'filter_used', value: JSON.stringify(f) }) }}
 
               totalCount={totalCount}
   userProvince={province}  // ← เพิ่มบรรทัดนี้
@@ -1046,7 +1047,7 @@ onChange={(f) => { setFilters(f); setDisplayCount(30) }}
                   const daysLeft = nextEvent ? differenceInDays(parseISO(nextEvent.start_date), new Date()) : null
                   return (
                     <div key={artistId}
-                      onClick={() => window.location.href = `/artists/${artist?.slug || artistId}`}
+                      onClick={() => { track({ event_type: 'artist_click', entity_id: artistId, entity_name: artist?.name || '' }); window.location.href = `/artists/${artist?.slug || artistId}` }}
                       className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-[var(--surface-2)] transition-colors">
                       {artist?.image_url
                         ? <img src={artist.image_url} alt={artist.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
@@ -1094,7 +1095,7 @@ onChange={(f) => { setFilters(f); setDisplayCount(30) }}
                   const venueSlug = venueInfo?.slug || venueId
                   return (
                     <div key={venueId}
-                      onClick={() => window.location.href = `/venues/${venueSlug}`}
+                      onClick={() => { track({ event_type: 'venue_click', entity_id: venue?.id || '', entity_name: venue?.name || '' }); window.location.href = `/venues/${venueSlug}` }}
                       className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-[var(--surface-2)] transition-colors">
                       <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
                         style={{ background: 'var(--surface-2)' }}>
@@ -1173,6 +1174,16 @@ function EventRow({
   const isFollowed = event.artists?.some((a: any) => followedIds.has(a.id))
   const featured = event.featured_type
   const poster   = event.poster_url
+
+  function goDetail() {
+    track({
+      event_type: 'event_click',
+      entity_id: event.id,
+      entity_name: event.title,
+      page: '/',
+    })
+    window.location.href = `/events/${event.slug || event.id}`
+  }
 
   // Social proof counts + interaction state (Logic A: เลือกได้แค่อย่างเดียว)
   const [goingCount,      setGoingCount]      = useState<number>(0)
@@ -1296,7 +1307,7 @@ function EventRow({
             <div style={{ display: 'flex', gap: 6 }}>
               {event.ticket_url && (
                 <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); track({ event_type: 'ticket_click', entity_id: event.id, entity_name: event.title, value: event.ticket_url || '' }) }}
                   style={{ background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Ticket size={13} /> ซื้อบัตร
                 </a>
@@ -1581,7 +1592,7 @@ function ArtistsTab({ followedIds, onFollowToggle, searchQuery = '' }: { followe
                       {(artist.name_en || artist.name).slice(0,2)}
                     </div>
                 }
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => window.location.href = `/artists/${artist.slug || artist.id}`}>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { track({ event_type: 'artist_click', entity_id: artist.id, entity_name: artist.name }); window.location.href = `/artists/${artist.slug || artist.id}` }}>
                   <p className="text-[13px] font-medium text-primary truncate">{artist.name_en || artist.name}</p>
                   {artist.name_en && artist.name !== artist.name_en && (
                     <p className="text-[10px] text-muted truncate">{artist.name}</p>
@@ -1635,7 +1646,7 @@ function VenuesTab({ followedVenueIds, onFollowToggle, searchQuery = '' }: { fol
               <MapPin size={16} style={{ color: 'var(--accent)' }} />
             </div>
         }
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => window.location.href = `/venues/${venue.slug || venue.id}`}>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { track({ event_type: 'venue_click', entity_id: venue.id, entity_name: venue.name }); window.location.href = `/venues/${venue.slug || venue.id}` }}>
           <p className="text-[13px] font-medium text-primary truncate">{venue.name}</p>
           {venue.province && <p className="text-[11px] text-muted truncate">{venue.province}</p>}
         </div>
