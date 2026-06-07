@@ -1249,7 +1249,7 @@ function EventRow({
 
   return (
     <div
-      onClick={() => { if (!isPast) window.location.href = `/events/${event.slug || event.id}` }}
+      onClick={() => { if (!isPast) goDetail() }}
       className={cn('rounded-2xl overflow-hidden flex flex-col', isPast ? 'opacity-40 cursor-pointer' : 'cursor-pointer transition-all hover:scale-[1.01]')}
       style={{
         border: featured === 'partner'   ? '1.5px solid #EF9F27'
