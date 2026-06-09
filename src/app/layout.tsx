@@ -9,11 +9,11 @@ import '@/styles/globals.css'
 export const metadata: Metadata = {
   metadataBase: new URL('https://wvrn.vercel.app'),
   title: {
-    default:  'WVRN — Never Miss a Show',
+    default:  'WVRN — คอนเสิร์ตใกล้ฉัน Never Miss a Show',
     template: '%s | WVRN',
   },
-  description: 'ปฏิทินคอนเสิร์ตและงานดนตรีสด ค้นหา Concert, Live Show และงาน Festival ติดตามศิลปินที่คุณรัก รู้ก่อนใครเมื่อมีงานใหม่ ไม่พลาดทุก Show',
-  keywords:    'concert, คอนเสิร์ต, ตารางคอนเสิร์ต, งานดนตรี, เทศกาลดนตรี, WVRN',
+  description: 'คอนเสิร์ตใกล้ฉัน รวมตารางคอนเสิร์ตและงานดนตรีสดทั่วไทย ค้นหา Concert, Live Show และงาน Festival ติดตามศิลปินที่ชอบ รับแจ้งเตือนก่อนใคร ไม่พลาดทุก Show',
+  keywords:    'คอนเสิร์ตใกล้ฉัน, concert, คอนเสิร์ต, ตารางคอนเสิร์ต, งานดนตรี, เทศกาลดนตรี, คอนเสิร์ตไทย, WVRN, Never Miss a Show',
   authors:     [{ name: 'WVRN', url: 'https://wvrn.vercel.app' }],
   creator:     'WVRN',
   robots: {
@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     apple: '/logo.png',
   },
   openGraph: {
-    title:       'WVRN — Never Miss a Show',
-    description: 'ปฏิทินคอนเสิร์ตและงานดนตรีสด ค้นหา Concert, Live Show และงาน Festival ติดตามศิลปินที่คุณรัก รู้ก่อนใครเมื่อมีงานใหม่ ไม่พลาดทุก Show',
+    title:       'WVRN — คอนเสิร์ตใกล้ฉัน Never Miss a Show',
+    description: 'คอนเสิร์ตใกล้ฉัน รวมตารางคอนเสิร์ตและงานดนตรีสดทั่วไทย ติดตามศิลปินที่ชอบ รับแจ้งเตือนก่อนใคร',
     siteName:    'WVRN',
     locale:      'th_TH',
     type:        'website',
@@ -36,8 +36,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card:        'summary_large_image',
-    title:       'WVRN — Never Miss a Show',
-    description: 'ติดตามทุก concert ทุกศิลปินที่คุณรัก ไม่มีวันพลาดอีก',
+    title:       'WVRN — คอนเสิร์ตใกล้ฉัน Never Miss a Show',
+    description: 'คอนเสิร์ตใกล้ฉัน ติดตามศิลปินที่ชอบ รับแจ้งเตือนก่อนใคร ไม่มีวันพลาดอีก',
     images:      ['/logo.png'],
   },
   alternates: {

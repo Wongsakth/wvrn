@@ -711,6 +711,12 @@ const [showMap, setShowMap] = useState(false)
               followedVenueIds={Array.from(followedVenueIds)}
               userProvince={userProvince}
             />
+            {/* SEO tagline */}
+            <p className="text-[11px] text-muted mb-2 px-0.5">
+              🎵 <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>คอนเสิร์ตใกล้ฉัน</span>
+              {' '}— {totalCount.toLocaleString()} งานทั่วไทย อัปเดตทุกวัน
+            </p>
+
             <FilterBar
               filters={filters}
 onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length > 0) track({ event_type: 'filter_used', value: JSON.stringify(f) }) }}
