@@ -38,10 +38,10 @@ export default function LiveTicker({ followedArtistIds = [], followedVenueIds = 
 
   useEffect(() => {
     async function load() {
-      const today = new Date().toISOString().slice(0, 10)
+      const today = format(new Date(), 'yyyy-MM-dd')
       const future = new Date()
       future.setDate(future.getDate() + 30)
-      const futureStr = future.toISOString().slice(0, 10)
+      const futureStr = format(future, 'yyyy-MM-dd')
 
       const { data: events } = await sb
         .from('events')
@@ -58,7 +58,8 @@ export default function LiveTicker({ followedArtistIds = [], followedVenueIds = 
 
       events.forEach((ev: any) => {
         const artistIds = (ev.event_artists || []).map((ea: any) => ea.artist_id)
-        const daysAway  = differenceInDays(parseISO(ev.start_date), new Date())
+        const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0)
+        const daysAway  = differenceInDays(parseISO(ev.start_date), todayMidnight)
         const artists   = (ev.event_artists || []).map((ea: any) => ea.artist?.name).filter(Boolean).join(' · ')
         const dateStr   = format(parseISO(ev.start_date), 'd MMM', { locale: th })
         const venueName = ev.venue?.name ?? ''
