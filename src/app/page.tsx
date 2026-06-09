@@ -721,7 +721,7 @@ const [showMap, setShowMap] = useState(false)
               filters={filters}
 onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length > 0) track({ event_type: 'filter_used', value: JSON.stringify(f) }) }}
 
-              totalCount={totalCount}
+              totalCount={filtered.length}
   userProvince={province}  // ← เพิ่มบรรทัดนี้
             />
           </>
