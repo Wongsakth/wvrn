@@ -595,7 +595,7 @@ const [showMap, setShowMap] = useState(false)
                 const nextEvent = events
                   .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => a.id === artistId))
                   .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
-                const daysLeft = nextEvent ? differenceInDays(new Date(nextEvent.start_date), new Date()) : null
+                const daysLeft = nextEvent ? differenceInDays(parseISO(nextEvent.start_date), today) : null
                 const isToday  = daysLeft === 0
                 return (
                   <div key={artistId} className="bg-[var(--surface-1)] p-3">
@@ -664,7 +664,8 @@ const [showMap, setShowMap] = useState(false)
                 .slice(0, 6)
                 .map(ev => {
                   const start = parseISO(ev.start_date)
-                  const days  = differenceInDays(start, new Date())
+                  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0)
+                  const days  = differenceInDays(start, todayMidnight)
                   return (
                     <div key={ev.id}
                       onClick={() => window.location.href = `/events/${ev.slug || ev.id}`}
@@ -1010,7 +1011,7 @@ onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length
               .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => followedIds.has(a.id)))
               .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
             if (!nextEv) return null
-            const daysLeft = differenceInDays(parseISO(nextEv.start_date), new Date())
+            const daysLeft = differenceInDays(parseISO(nextEv.start_date), today)
             return (
               <div className="rounded-xl p-4 cursor-pointer"
                 onClick={() => window.location.href = `/events/${nextEv.slug || nextEv.id}`}
@@ -1050,7 +1051,7 @@ onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length
                   const nextEvent = events
                     .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => a.id === artistId))
                     .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
-                  const daysLeft = nextEvent ? differenceInDays(parseISO(nextEvent.start_date), new Date()) : null
+                  const daysLeft = nextEvent ? differenceInDays(parseISO(nextEvent.start_date), today) : null
                   return (
                     <div key={artistId}
                       onClick={() => { track({ event_type: 'artist_click', entity_id: artistId, entity_name: artist?.name || '' }); window.location.href = `/artists/${artist?.slug || artistId}` }}
@@ -1486,9 +1487,9 @@ function FollowingTab({ events, followedIds, likedIds, toggleLike, attendance, t
   toggleAttendance: (id: string) => void
   isLoggedIn: boolean
 }) {
-  const today = new Date().toISOString().slice(0, 10)
-  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7)
-  const monthEnd = new Date(); monthEnd.setDate(monthEnd.getDate() + 30)
+  const todayLocal = format(new Date(), 'yyyy-MM-dd')
+  const weekEnd = new Date(); weekEnd.setHours(0,0,0,0); weekEnd.setDate(weekEnd.getDate() + 7)
+  const monthEnd = new Date(); monthEnd.setHours(0,0,0,0); monthEnd.setDate(monthEnd.getDate() + 30)
 
   const followingEvents = events
     .filter(ev => ev.artists?.some((a: any) => followedIds.has(a.id)))
@@ -1515,10 +1516,10 @@ function FollowingTab({ events, followedIds, likedIds, toggleLike, attendance, t
   }
 
   // แบ่งกลุ่มตามช่วงเวลา
-  const todayEvs    = followingEvents.filter(ev => ev.start_date === today)
-  const weekEvs     = followingEvents.filter(ev => ev.start_date > today && ev.start_date <= weekEnd.toISOString().slice(0,10))
-  const monthEvs    = followingEvents.filter(ev => ev.start_date > weekEnd.toISOString().slice(0,10) && ev.start_date <= monthEnd.toISOString().slice(0,10))
-  const laterEvs    = followingEvents.filter(ev => ev.start_date > monthEnd.toISOString().slice(0,10))
+  const todayEvs    = followingEvents.filter(ev => ev.start_date === todayLocal)
+  const weekEvs     = followingEvents.filter(ev => ev.start_date > todayLocal && ev.start_date <= format(weekEnd, 'yyyy-MM-dd'))
+  const monthEvs    = followingEvents.filter(ev => ev.start_date > format(weekEnd, 'yyyy-MM-dd') && ev.start_date <= format(monthEnd, 'yyyy-MM-dd'))
+  const laterEvs    = followingEvents.filter(ev => ev.start_date > format(monthEnd, 'yyyy-MM-dd'))
 
   const sections = [
     { label: '📅 วันนี้',      evs: todayEvs },
