@@ -2,7 +2,7 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase'
 
-const BASE = 'https://wvrn.vercel.app'
+const BASE = 'https://www.wvrn.app'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sb = createClient()

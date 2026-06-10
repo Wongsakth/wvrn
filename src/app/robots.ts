@@ -16,6 +16,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
-    sitemap: 'https://wvrn.vercel.app/sitemap.xml',
+    sitemap: 'https://www.wvrn.app/sitemap.xml',
   }
 }
