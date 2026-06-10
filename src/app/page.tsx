@@ -777,15 +777,17 @@ onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length
           <VenuesTab
             followedVenueIds={followedVenueIds}
             searchQuery={search}
-            onFollowToggle={(id) => {
+            onFollowToggle={async (id) => {
               if (!isLoggedIn) { window.location.href = '/login'; return }
-              const sb = createClient()
-              const prev = followedVenueIds.has(id)
-              setFollowedVenueIds(s => { const n = new Set(s); prev ? n.delete(id) : n.add(id); return n })
-              if (prev) {
-                sb.from('venue_follows').delete().eq('user_id', user!.id).eq('venue_id', id)
+              const sb2 = createClient()
+              const isFollowed = followedVenueIds.has(id)
+              if (isFollowed) {
+                await sb2.from('venue_follows').delete().eq('user_id', user!.id).eq('venue_id', id)
+                setFollowedVenueIds(s => { const n = new Set(s); n.delete(id); return n })
+                setFollowedVenueInfo(prev => { const m = new Map(prev); m.delete(id); return m })
               } else {
-                sb.from('venue_follows').insert({ user_id: user!.id, venue_id: id })
+                await sb2.from('venue_follows').insert({ user_id: user!.id, venue_id: id })
+                setFollowedVenueIds(s => new Set([...s, id]))
               }
             }}
           />
@@ -1689,10 +1691,10 @@ function VenuesTab({ followedVenueIds, onFollowToggle, searchQuery = '' }: { fol
           <p className="text-[13px] font-medium text-primary truncate">{venue.name}</p>
           {venue.province && <p className="text-[11px] text-muted truncate">{venue.province}</p>}
         </div>
-        <button onClick={() => onFollowToggle(venue.id)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all"
-          style={{ background: isFollowed ? '#E8003A' : 'rgba(255,255,255,.06)', border: isFollowed ? 'none' : '1px solid rgba(255,255,255,.1)' }}>
-          <Heart size={14} style={{ color: 'white', fill: isFollowed ? 'white' : 'none' }} />
+        <button onClick={e => { e.stopPropagation(); onFollowToggle(venue.id) }}
+          className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0 transition-all"
+          style={{ background: isFollowed ? '#E8003A' : 'var(--surface-2)', border: isFollowed ? 'none' : '1px solid var(--border)' }}>
+          <Heart size={16} style={{ color: isFollowed ? 'white' : 'var(--accent)', fill: isFollowed ? 'white' : 'none' }} />
         </button>
       </div>
     )
