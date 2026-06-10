@@ -28,19 +28,41 @@ export default function FollowingPage() {
   async function load() {
     setLoading(true)
     try {
-      const today = new Date().toISOString().slice(0, 10)
-      const [arRes, vRes, goRes] = await Promise.all([
+      const todayD = new Date(); todayD.setHours(0,0,0,0)
+      const today = format(todayD, 'yyyy-MM-dd')
+      const [arRes, vRes, goRes, intRes] = await Promise.all([
         sb.from('follows').select('artist:artists(id,name,name_en,image_url,genres)').eq('user_id', user!.id),
         sb.from('venue_follows').select('venue:venues(id,name,province)').eq('user_id', user!.id),
         sb.from('event_attendance')
-          .select('status, event:events(id,title,start_date,start_time,venue:venues(name))')
+          .select('status, event:events(id,title,slug,start_date,start_time,end_date,venue:venues(name))')
           .eq('user_id', user!.id),
+        sb.from('event_interactions')
+          .select('event:events(id,title,slug,start_date,start_time,end_date,venue:venues(name))')
+          .eq('user_id', user!.id)
+          .eq('type', 'going'),
       ])
       setArtists((arRes.data || []).map((f: any) => f.artist).filter(Boolean))
       setVenues(((vRes as any).data || []).map((f: any) => f.venue).filter(Boolean))
-      setGoing(((goRes as any).data || []).filter((f: any) => f.event && f.event.start_date >= today)
-        .map((f: any) => ({ ...f.event, attend_status: f.status }))
-        .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()))
+
+      // รวม going จากทั้งสองแหล่ง — dedup ด้วย id
+      const seenIds = new Set<string>()
+      const allGoing: any[] = []
+      // จาก event_interactions (ปุ่ม "จะไป" ในหน้า event)
+      for (const f of ((intRes as any).data || [])) {
+        if (f.event && f.event.start_date >= today && !seenIds.has(f.event.id)) {
+          seenIds.add(f.event.id)
+          allGoing.push({ ...f.event, attend_status: 'going' })
+        }
+      }
+      // จาก event_attendance (legacy)
+      for (const f of ((goRes as any).data || [])) {
+        if (f.event && f.event.start_date >= today && !seenIds.has(f.event.id)) {
+          seenIds.add(f.event.id)
+          allGoing.push({ ...f.event, attend_status: f.status })
+        }
+      }
+      allGoing.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+      setGoing(allGoing)
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
@@ -169,7 +191,8 @@ export default function FollowingPage() {
               : <div className="flex flex-col gap-2">
                   {going.map((ev: any) => {
                     const start = parseISO(ev.start_date)
-                    const days  = differenceInDays(start, new Date())
+                    const todayMid = new Date(); todayMid.setHours(0,0,0,0)
+                    const days  = differenceInDays(start, todayMid)
                     const done  = ev.attend_status === 'attended'
                     return (
                       <div key={ev.id}
