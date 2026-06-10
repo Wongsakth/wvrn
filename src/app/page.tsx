@@ -1630,10 +1630,11 @@ function ArtistsTab({ followedIds, onFollowToggle, searchQuery = '' }: { followe
                     <p className="text-[10px] text-muted">{artist.follower_count} followers</p>
                   )}
                 </div>
-                <button onClick={() => onFollowToggle(artist.id, artist.name)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all"
-                  style={{ background: followed ? '#E8003A' : 'rgba(255,255,255,.06)', border: followed ? 'none' : '1px solid rgba(255,255,255,.1)' }}>
-                  <Heart size={14} style={{ color: 'white', fill: followed ? 'white' : 'none' }} />
+                <button
+                  onClick={e => { e.stopPropagation(); onFollowToggle(artist.id, artist.name) }}
+                  className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0 transition-all"
+                  style={{ background: followed ? '#E8003A' : 'var(--surface-2)', border: followed ? 'none' : '1px solid var(--border)' }}>
+                  <Heart size={16} style={{ color: followed ? 'white' : 'var(--accent)', fill: followed ? 'white' : 'none' }} />
                 </button>
               </div>
             )
