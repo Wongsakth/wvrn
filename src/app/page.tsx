@@ -743,9 +743,18 @@ onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length
           <ArtistsTab
             followedIds={followedIds}
             searchQuery={search}
-            onFollowToggle={(id, name) => {
+            onFollowToggle={async (id, name) => {
               if (!isLoggedIn) { window.location.href = '/login'; return }
-              toggleFollow(id, name)
+              const sb2 = createClient()
+              if (followedIds.has(id)) {
+                await sb2.from('follows').delete().eq('user_id', user!.id).eq('artist_id', id)
+                setFollowedIds(prev => { const s = new Set(prev); s.delete(id); return s })
+                setFollowedArtistInfo(prev => { const m = new Map(prev); m.delete(id); return m })
+              } else {
+                await sb2.from('follows').insert({ user_id: user!.id, artist_id: id })
+                setFollowedIds(prev => new Set([...prev, id]))
+                setFollowedArtistInfo(prev => new Map([...prev, [id, { id, name }]]))
+              }
             }}
           />
         )}
