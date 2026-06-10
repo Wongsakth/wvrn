@@ -7,15 +7,18 @@ import { Toaster } from 'react-hot-toast'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://wvrn.vercel.app'),
+  metadataBase: new URL('https://www.wvrn.app'),
   title: {
     default:  'WVRN — คอนเสิร์ตใกล้ฉัน Never Miss a Show',
     template: '%s | WVRN',
   },
   description: 'คอนเสิร์ตใกล้ฉัน รวมตารางคอนเสิร์ตและงานดนตรีสดทั่วไทย ค้นหา Concert, Live Show และงาน Festival ติดตามศิลปินที่ชอบ รับแจ้งเตือนก่อนใคร ไม่พลาดทุก Show',
   keywords:    'คอนเสิร์ตใกล้ฉัน, concert, คอนเสิร์ต, ตารางคอนเสิร์ต, งานดนตรี, เทศกาลดนตรี, คอนเสิร์ตไทย, WVRN, Never Miss a Show',
-  authors:     [{ name: 'WVRN', url: 'https://wvrn.vercel.app' }],
+  authors:     [{ name: 'WVRN', url: 'https://www.wvrn.app' }],
   creator:     'WVRN',
+  verification: {
+    google: 'Kjt7GiONvrXbz5A5Huhs0PBTonfmx9QWfKhV340k-PI',
+  },
   robots: {
     index:  true,
     follow: true,
@@ -31,7 +34,7 @@ export const metadata: Metadata = {
     siteName:    'WVRN',
     locale:      'th_TH',
     type:        'website',
-    url:         'https://wvrn.vercel.app',
+    url:         'https://www.wvrn.app',
     images: [{ url: '/logo.png', width: 1200, height: 630, alt: 'WVRN — Never Miss a Show' }],
   },
   twitter: {
@@ -41,13 +44,13 @@ export const metadata: Metadata = {
     images:      ['/logo.png'],
   },
   alternates: {
-    canonical: 'https://wvrn.vercel.app',
+    canonical: 'https://www.wvrn.app',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th" suppressHydrationWarning>
+    <html lang="th" data-theme="festival" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('wvrn-theme');var v=['festival','dark','pastel','vivid','earth','rock'];if(t&&v.indexOf(t)!==-1){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();` }} />
       </head>
