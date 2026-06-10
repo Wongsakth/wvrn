@@ -1135,7 +1135,7 @@ onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length
                   const venueSlug = venueInfo?.slug || venueId
                   return (
                     <div key={venueId}
-                      onClick={() => { track({ event_type: 'venue_click', entity_id: venue?.id || '', entity_name: venue?.name || '' }); window.location.href = `/venues/${venueSlug}` }}
+                      onClick={() => { track({ event_type: 'venue_click', entity_id: venueId, entity_name: venueName }); window.location.href = `/venues/${venueSlug}` }}
                       className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-[var(--surface-2)] transition-colors">
                       <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
                         style={{ background: 'var(--surface-2)' }}>
