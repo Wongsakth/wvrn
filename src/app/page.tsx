@@ -1007,29 +1007,51 @@ onChange={(f) => { setFilters(f); setDisplayCount(30); if (Object.keys(f).length
 
           {/* Countdown - Next show from followed artists */}
           {isLoggedIn && (() => {
+            const todayStr = format(today, 'yyyy-MM-dd')
             const nextEv = events
-              .filter(ev => !isPastEvent(ev, today) && ev.artists?.some((a: any) => followedIds.has(a.id)))
+              .filter(ev => {
+                if (!ev.artists?.some((a: any) => followedIds.has(a.id))) return false
+                const endStr = ev.end_date ?? ev.start_date
+                return endStr >= todayStr
+              })
               .sort((a,b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0]
             if (!nextEv) return null
-            const daysLeft = differenceInDays(parseISO(nextEv.start_date), today)
+            const isOngoing = nextEv.start_date <= todayStr && (nextEv.end_date ?? nextEv.start_date) >= todayStr
+            const daysLeft  = isOngoing ? 0 : differenceInDays(parseISO(nextEv.start_date), today)
+            const now       = new Date()
+            const hrsLeft   = 23 - now.getHours()
+            const minLeft   = 59 - now.getMinutes()
             return (
               <div className="rounded-xl p-4 cursor-pointer"
                 onClick={() => window.location.href = `/events/${nextEv.slug || nextEv.id}`}
                 style={{ background: 'var(--accent)', border: '1px solid var(--accent)' }}>
-                <p className="text-[9px] font-medium tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>NEXT FOR YOU</p>
+                <p className="text-[9px] font-medium tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  {isOngoing ? 'HAPPENING NOW' : 'NEXT FOR YOU'}
+                </p>
                 <p className="text-[13px] font-medium text-white mb-2 line-clamp-2">{nextEv.title}</p>
-                <div className="flex gap-3">
-                  {[
-                    { val: daysLeft, label: 'days' },
-                    { val: new Date().getHours() > 0 ? 23 - new Date().getHours() : 0, label: 'hrs' },
-                    { val: 59 - new Date().getMinutes(), label: 'min' },
-                  ].map(u => (
-                    <div key={u.label} className="text-center">
-                      <div className="text-[22px] font-medium text-white leading-none">{String(u.val).padStart(2,'0')}</div>
-                      <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{u.label}</div>
-                    </div>
-                  ))}
-                </div>
+                {isOngoing ? (
+                  <p className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    🎵 กำลังจัดอยู่
+                    {nextEv.end_date && nextEv.end_date !== nextEv.start_date && (
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+                        {' '}· ถึง {format(parseISO(nextEv.end_date), 'd MMM', { locale: th })}
+                      </span>
+                    )}
+                  </p>
+                ) : (
+                  <div className="flex gap-3">
+                    {[
+                      { val: daysLeft, label: 'days' },
+                      { val: hrsLeft,  label: 'hrs'  },
+                      { val: minLeft,  label: 'min'  },
+                    ].map(u => (
+                      <div key={u.label} className="text-center">
+                        <div className="text-[22px] font-medium text-white leading-none">{String(u.val).padStart(2,'0')}</div>
+                        <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{u.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })()}
