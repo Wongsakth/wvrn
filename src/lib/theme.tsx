@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import type { Theme, ThemeConfig } from '@/types'
 import { createClient } from '@/lib/supabase'
 
@@ -21,6 +22,7 @@ const Ctx = createContext<ThemeCtx>({
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const [theme, setThemeState] = useState<Theme>(() => {
     // อ่าน localStorage ทันทีตอน init — ไม่มี flash
     if (typeof window !== 'undefined') {
@@ -65,9 +67,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const config = THEMES.find(t => t.id === theme) ?? THEMES[0]
 
+  // Re-apply เมื่อ theme เปลี่ยน หรือ navigate (pathname เปลี่ยน)
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
+  }, [theme, pathname])
 
   return <Ctx.Provider value={{ theme, setTheme, config }}>{children}</Ctx.Provider>
 }
