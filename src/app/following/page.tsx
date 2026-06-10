@@ -106,7 +106,7 @@ export default function FollowingPage() {
           {([
             { id: 'artists', label: `ศิลปิน (${artists.length})`,  icon: Music    },
             { id: 'venues',  label: `สถานที่ (${venues.length})`,   icon: MapPin   },
-            { id: 'going',   label: `จะไป (${going.length})`,       icon: Calendar },
+            { id: 'going',   label: `ติดตาม/จะไป (${going.length})`, icon: Calendar },
           ] as const).map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setTab(id)}
               className="flex items-center gap-1.5 flex-1 justify-center py-2 rounded-lg text-[12px] font-medium transition-all"
