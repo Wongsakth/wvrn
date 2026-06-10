@@ -21,32 +21,35 @@ const Ctx = createContext<ThemeCtx>({
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('festival')
+  const [theme, setThemeState] = useState<Theme>(() => {
+    // อ่าน localStorage ทันทีตอน init — ไม่มี flash
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('wvrn-theme') as Theme
+      if (local && THEMES.find(t => t.id === local)) return local
+    }
+    return 'festival'
+  })
   const sb = createClient()
 
-  // Load theme: Supabase ก่อน → fallback localStorage
+  // Sync จาก Supabase หลัง mount (ถ้า login)
   useEffect(() => {
-    async function loadTheme() {
-      // 1. Load จาก localStorage ก่อน (ไวกว่า ไม่มี flash)
-      const local = localStorage.getItem('wvrn-theme') as Theme
-      if (local && THEMES.find(t => t.id === local)) {
-        setThemeState(local)
-      }
-
-      // 2. ถ้า login อยู่ ดึงจาก Supabase ทับ
+    async function syncFromSupabase() {
       const { data: { user } } = await sb.auth.getUser()
-      if (user) {
-        const { data } = await sb.from('profiles')
-          .select('theme')
-          .eq('id', user.id)
-          .single()
-        if (data?.theme && THEMES.find(t => t.id === data.theme)) {
-          setThemeState(data.theme as Theme)
-          localStorage.setItem('wvrn-theme', data.theme)
+      if (!user) return
+      const { data } = await sb.from('profiles')
+        .select('theme')
+        .eq('id', user.id)
+        .single()
+      if (data?.theme && THEMES.find(t => t.id === data.theme)) {
+        const saved = data.theme as Theme
+        // อัปเดตเฉพาะเมื่อต่างจาก localStorage (กัน loop)
+        if (saved !== localStorage.getItem('wvrn-theme')) {
+          setThemeState(saved)
+          localStorage.setItem('wvrn-theme', saved)
         }
       }
     }
-    loadTheme()
+    syncFromSupabase()
   }, [])
 
   async function setTheme(t: Theme) {

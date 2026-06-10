@@ -48,6 +48,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('wvrn-theme');var v=['festival','dark','pastel','vivid','earth','rock'];if(t&&v.indexOf(t)!==-1){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();` }} />
+      </head>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
         suppressHydrationWarning
