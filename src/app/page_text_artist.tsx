@@ -1417,30 +1417,9 @@ function EventRow({
           </h3>
 
           {event.artists?.length > 0 && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className="flex items-center">
-                {event.artists.slice(0, 4).map((a: any, i: number) => (
-                  <div key={a.id} style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 4 - i, position: 'relative' }}>
-                    {a.image_url
-                      ? <img src={a.image_url} alt={a.name}
-                          style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--surface-1)', display: 'block' }} />
-                      : <div style={{ width: 22, height: 22, borderRadius: '50%', border: '1.5px solid var(--surface-1)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 500, color: 'var(--accent)' }}>
-                          {(a.name_en || a.name).slice(0, 2)}
-                        </div>
-                    }
-                  </div>
-                ))}
-                {event.artists.length > 4 && (
-                  <div style={{ marginLeft: -7, zIndex: 0, position: 'relative', width: 22, height: 22, borderRadius: '50%', border: '1.5px solid var(--surface-1)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 500, color: 'var(--text-secondary)' }}>
-                    +{event.artists.length - 4}
-                  </div>
-                )}
-              </div>
-              <p className="text-[11px] text-muted truncate">
-                {event.artists.slice(0, 2).map((a: any) => a.name_en || a.name).join(', ')}
-                {event.artists.length > 2 && ` และอีก ${event.artists.length - 2}`}
-              </p>
-            </div>
+            <p className="text-[11px] text-muted truncate">
+              {event.artists.map((a: any) => a.name_en || a.name).join(' · ')}
+            </p>
           )}
 
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-[11px] text-muted">
