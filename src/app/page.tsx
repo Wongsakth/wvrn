@@ -1420,13 +1420,13 @@ function EventRow({
             <div className="flex items-center gap-1.5 mt-1">
               <div className="flex items-center">
                 {event.artists.slice(0, 4).map((a: any, i: number) => (
-                  <div key={a.id} style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 4 - i, position: 'relative' }}>
+                  <div key={a.id} style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 4 - i, position: 'relative', width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--surface-1)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {a.image_url
                       ? <img src={a.image_url} alt={a.name}
-                          style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--surface-1)', display: 'block' }} />
-                      : <div style={{ width: 22, height: 22, borderRadius: '50%', border: '1.5px solid var(--surface-1)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 500, color: 'var(--accent)' }}>
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', flexShrink: 0 }} />
+                      : <span style={{ fontSize: 8, fontWeight: 500, color: 'var(--accent)', lineHeight: 1 }}>
                           {(a.name_en || a.name).slice(0, 2)}
-                        </div>
+                        </span>
                     }
                   </div>
                 ))}
