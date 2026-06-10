@@ -9,7 +9,7 @@
 ───────────────────────────────────────── */
 
 /* ── Festival (default / dark) ── */
-html, [data-theme="festival"] {
+[data-theme="festival"] {
   --accent:       #FFD700;
   --accent-muted: rgba(255,215,0,.1);
   --accent-2:     #A78BFA;
@@ -118,8 +118,8 @@ html, [data-theme="festival"] {
 * { box-sizing: border-box; }
 
 body {
-  background: var(--surface-0);
-  color: var(--text-primary);
+  background: var(--surface-0, #06040F);
+  color: var(--text-primary, #F0EEF8);
   transition: background .25s, color .2s;
 }
 
