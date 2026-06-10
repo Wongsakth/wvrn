@@ -9,7 +9,7 @@
 ───────────────────────────────────────── */
 
 /* ── Festival (default / dark) ── */
-[data-theme="festival"] {
+html, [data-theme="festival"] {
   --accent:       #FFD700;
   --accent-muted: rgba(255,215,0,.1);
   --accent-2:     #A78BFA;
