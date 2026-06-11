@@ -19,7 +19,8 @@ export default function AboutPage() {
           <img src="/logo.png" alt="WVRN" className="w-10 h-10 rounded-xl object-cover" />
           <div>
             <p className="text-[20px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>WVRN</p>
-            <p className="text-[11px] text-muted tracking-widest">NEVER MISS A SHOW</p>
+            <p className="text-[11px] text-muted">Wide Vibe Radar Network</p>
+            <p className="text-[10px] text-muted tracking-widest opacity-60">NEVER MISS A SHOW</p>
           </div>
         </div>
 
