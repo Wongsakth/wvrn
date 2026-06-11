@@ -358,13 +358,27 @@ async function reportPhoto(photoId: string) {
     else { navigator.clipboard.writeText(url); toast.success('คัดลอก link แล้ว') }
   }
 
+  // Build ISO 8601 datetime with Thai timezone offset
+  const startDateTime = event.start_time
+    ? `${event.start_date}T${event.start_time}+07:00`
+    : `${event.start_date}T00:00:00+07:00`
+  const endDateTime = event.end_date
+    ? event.end_time
+      ? `${event.end_date}T${event.end_time}+07:00`
+      : `${event.end_date}T23:59:00+07:00`
+    : null
+
+  const eventUrl = `https://www.wvrn.app/events/${event.slug || event.id}`
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "MusicEvent",
     "name": event.title,
-    "startDate": event.start_date,
-    ...(event.end_date ? { "endDate": event.end_date } : {}),
-    "eventStatus": "https://schema.org/EventScheduled",
+    "startDate": startDateTime,
+    ...(endDateTime ? { "endDate": endDateTime } : {}),
+    "eventStatus": event.status === 'cancelled'
+      ? "https://schema.org/EventCancelled"
+      : "https://schema.org/EventScheduled",
     "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
     "location": {
       "@type": "Place",
@@ -375,23 +389,33 @@ async function reportPhoto(photoId: string) {
         "addressLocality": event.venue?.province ?? event.province ?? '',
         "addressCountry": "TH",
       },
+      ...(event.venue?.maps_url ? { "hasMap": event.venue.maps_url } : {}),
     },
     "offers": event.is_free
-      ? { "@type": "Offer", "price": "0", "priceCurrency": "THB", "availability": "https://schema.org/InStock" }
+      ? {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "THB",
+          "availability": "https://schema.org/InStock",
+          "url": eventUrl,
+        }
       : {
           "@type": "Offer",
-          "price": event.ticket_price_min ?? undefined,
+          ...(event.ticket_price_min != null ? { "price": String(event.ticket_price_min) } : {}),
           "priceCurrency": "THB",
-          "url": event.ticket_url ?? undefined,
+          "url": event.ticket_url ?? eventUrl,
           "availability": "https://schema.org/InStock",
         },
-    "performer": event.artists?.map((a: any) => ({
+    "performer": (event.artists ?? []).map((a: any) => ({
       "@type": "MusicGroup",
       "name": a.name_en || a.name,
+      ...(a.image_url ? { "image": a.image_url } : {}),
     })),
     ...(event.poster_url ? { "image": event.poster_url } : {}),
-    "url": `https://wvrn.vercel.app/events/${event.slug || event.id}`,
-    "organizer": { "@type": "Organization", "name": "WVRN", "url": "https://wvrn.vercel.app" },
+    "description": event.description ?? `${event.title} — คอนเสิร์ตและงานดนตรีสด`,
+    "url": eventUrl,
+    "organizer": { "@type": "Organization", "name": "WVRN", "url": "https://www.wvrn.app" },
+    "inLanguage": "th",
   }
 
   return (
