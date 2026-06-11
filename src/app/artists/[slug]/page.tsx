@@ -165,14 +165,7 @@ export default function ArtistProfilePage() {
       artist.website_url,
     ].filter(Boolean) } : {}),
     "numberOfEmployees": artist.follower_count > 0 ? undefined : undefined,
-    ...(events.length > 0 ? {
-      "event": events.slice(0, 5).map((ev: any) => ({
-        "@type": "MusicEvent",
-        "name": ev.title,
-        "startDate": ev.start_date,
-        "url": `https://www.wvrn.app/events/${ev.slug || ev.id}`,
-      }))
-    } : {}),
+    // event array ไม่ใส่ เพราะไม่มี location ครบ → Google จะ error
   }
 
   return (
