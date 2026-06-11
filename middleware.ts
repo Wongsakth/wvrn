@@ -3,25 +3,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // ── Rate Limiter (in-memory) ──────────────────────────
-// key: IP, value: { count, resetAt }
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
-function rateLimit(ip: string, limit: number, windowMs: number): boolean {
+function rateLimit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-
+  const entry = rateLimitMap.get(key)
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs })
-    return true // allowed
+    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs })
+    return true
   }
-
-  if (entry.count >= limit) return false // blocked
-
+  if (entry.count >= limit) return false
   entry.count++
-  return true // allowed
+  return true
 }
 
-// cleanup เป็นระยะ ป้องกัน memory leak
 setInterval(() => {
   const now = Date.now()
   for (const [key, val] of rateLimitMap.entries()) {
@@ -29,20 +24,32 @@ setInterval(() => {
   }
 }, 60_000)
 
+// ── Rate limit tiers ──────────────────────────────────
+// key prefix : limit : window (ms) : หมายเหตุ
+const RATE_RULES: [string, number, number][] = [
+  ['/api/line/',   10,  60_000],   // LINE notif    — 10/min   keyed ด้วย cron secret
+  ['/api/cron/',    5,  60_000],   // cron jobs     — 5/min    (มี CRON_SECRET อยู่แล้ว)
+  ['/api/',        60,  60_000],   // API ทั่วไป    — 60/min per IP
+]
+
 // ── Middleware ────────────────────────────────────────
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
-  // ── Rate limit: /api/line/* ──
-  // max 10 requests / 1 minute per IP
-  if (pathname.startsWith('/api/line/')) {
-    const allowed = rateLimit(`line:${ip}`, 10, 60_000)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'Too many requests', retryAfter: 60 },
-        { status: 429, headers: { 'Retry-After': '60' } }
-      )
+  // ── Rate limiting ────────────────────────────────────
+  if (pathname.startsWith('/api/')) {
+    const rule = RATE_RULES.find(([prefix]) => pathname.startsWith(prefix))
+    if (rule) {
+      const [prefix, limit, windowMs] = rule
+      // LINE/cron ใช้ IP + path เป็น key, general ใช้แค่ IP
+      const key = `${prefix}:${ip}`
+      if (!rateLimit(key, limit, windowMs)) {
+        return NextResponse.json(
+          { error: 'Too many requests', retryAfter: Math.ceil(windowMs / 1000) },
+          { status: 429, headers: { 'Retry-After': String(Math.ceil(windowMs / 1000)) } }
+        )
+      }
     }
   }
 
@@ -64,10 +71,7 @@ export async function middleware(req: NextRequest) {
   )
 
   const { data: { user } } = await sb.auth.getUser()
-
-  if (!user) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
+  if (!user) return NextResponse.redirect(new URL('/login', req.url))
 
   const { data: profile } = await sb
     .from('user_profiles')
@@ -84,5 +88,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/line/:path*'],
+  matcher: ['/admin/:path*', '/api/:path*'],
 }
