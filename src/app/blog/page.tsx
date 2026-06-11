@@ -3,6 +3,7 @@ import path from 'path'
 import matter from 'gray-matter'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import Navbar from '@/components/layout/Navbar'
 
 export const metadata: Metadata = {
   title: 'บทความคอนเสิร์ต | WVRN',
@@ -34,8 +35,12 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen pb-24 md:pb-8" style={{ background: 'var(--surface-0)' }}>
-      {/* Navbar placeholder — ใช้ Navbar component ของ WVRN */}
+      <Navbar />
       <div className="max-w-screen-md mx-auto px-4 sm:px-6 py-10">
+
+        <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] text-muted mb-6 hover:text-primary transition-colors">
+          ← หน้าหลัก
+        </Link>
 
         <div className="mb-8">
           <h1 className="text-[26px] font-medium text-primary mb-1">บทความ</h1>
