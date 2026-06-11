@@ -43,10 +43,13 @@ export default function Navbar() {
         style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(8px)' }}>
 
         {/* Logo + Tagline */}
-        <Link href="/" className="flex flex-col items-center sm:flex-row sm:items-center gap-0 sm:gap-2 mr-auto">
+        <Link href="/" title="Wide Vibe Radar Network" className="flex flex-col items-center sm:flex-row sm:items-center gap-0 sm:gap-2 mr-auto">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="WVRN" className="w-7 h-7 rounded-md object-cover" />
-            <span className="text-[17px] font-medium tracking-[4px]" style={{ color: 'var(--accent)' }}>WVRN</span>
+            <div className="flex flex-col">
+              <span className="text-[17px] font-medium tracking-[4px] leading-none" style={{ color: 'var(--accent)' }}>WVRN</span>
+              <span className="text-[8px] hidden sm:block" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>Wide Vibe Radar Network</span>
+            </div>
           </div>
           <span className="text-[9px] font-medium px-2 py-0.5 rounded-full mt-0.5 sm:mt-0"
             style={{
