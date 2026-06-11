@@ -150,8 +150,34 @@ export default function ArtistProfilePage() {
     { url: labelUrl,             icon: <Building2  size={16} />, label: labelName,  color: 'var(--text-muted)' },
   ].filter(s => s.url)
 
+  const artistJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MusicGroup",
+    "name": artist.name_en || artist.name,
+    "alternateName": artist.name !== artist.name_en ? artist.name : undefined,
+    "url": `https://www.wvrn.app/artists/${artist.slug || artist.id}`,
+    ...(artist.image_url ? { "image": artist.image_url } : {}),
+    ...(artist.bio ? { "description": artist.bio } : {}),
+    ...(artist.genres?.length ? { "genre": artist.genres } : {}),
+    ...(artist.instagram_url ? { "sameAs": [
+      artist.instagram_url,
+      artist.facebook_url,
+      artist.website_url,
+    ].filter(Boolean) } : {}),
+    "numberOfEmployees": artist.follower_count > 0 ? undefined : undefined,
+    ...(events.length > 0 ? {
+      "event": events.slice(0, 5).map((ev: any) => ({
+        "@type": "MusicEvent",
+        "name": ev.title,
+        "startDate": ev.start_date,
+        "url": `https://www.wvrn.app/events/${ev.slug || ev.id}`,
+      }))
+    } : {}),
+  }
+
   return (
     <div className="min-h-screen pb-24 md:pb-8" style={{ background: 'var(--surface-0)' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(artistJsonLd) }} />
       <Navbar />
 
       <div className="max-w-screen-lg mx-auto px-4 sm:px-6 lg:px-8 py-6">
