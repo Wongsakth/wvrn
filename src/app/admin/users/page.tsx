@@ -127,6 +127,12 @@ export default function AdminUsersPage() {
     return true
   })
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
+  const newToday = users.filter(u => u.created_at?.slice(0, 10) === todayStr).length
+  const newWeek  = users.filter(u => u.created_at && new Date(u.created_at) >= weekAgo).length
+  const lineConn = users.filter(u => u.line_user_id).length
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -134,6 +140,22 @@ export default function AdminUsersPage() {
           <h1 className="text-[20px] font-medium text-primary">จัดการ Users</h1>
           <p className="text-[12px] text-muted mt-0.5">{users.length} users · role ของฉัน: <span className="font-medium" style={{ color: roleConf(myRole).color }}>{roleConf(myRole).label}</span></p>
         </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        {[
+          { label: 'ทั้งหมด',      value: users.length, color: 'var(--accent)' },
+          { label: 'สมัครวันนี้',  value: newToday,     color: '#1D9E75' },
+          { label: '7 วันล่าสุด',  value: newWeek,      color: '#3B82F6' },
+          { label: 'เชื่อม LINE',  value: lineConn,     color: '#06C755' },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-3 text-center"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+            <p className="text-[22px] font-medium" style={{ color: s.color }}>{s.value}</p>
+            <p className="text-[11px] text-muted">{s.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -205,6 +227,19 @@ export default function AdminUsersPage() {
                   <div className="flex-1 min-w-0">
                     {name && <p className="text-[13px] font-medium text-primary truncate">{name}</p>}
                     <p className="text-[11px] text-muted truncate">{email}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                      {u.created_at && (
+                        <p className="text-[10px] text-muted">
+                          สมัคร: {new Date(u.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}
+                        </p>
+                      )}
+                      {u.line_user_id && (
+                        <p className="text-[10px]" style={{ color: '#06C755' }}>● LINE</p>
+                      )}
+                      {u.province && (
+                        <p className="text-[10px] text-muted">📍 {u.province}</p>
+                      )}
+                    </div>
                     {/* Linked info */}
                     {u.role === 'artist_manager' && (
                       <p className="text-[10px] mt-0.5" style={{ color: '#0C447C' }}>
