@@ -5,6 +5,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
+import ShareButtons from '@/components/blog/ShareButtons'
 
 interface Props { params: { slug: string } }
 
@@ -80,10 +81,14 @@ export default function BlogPost({ params }: Props) {
         <h1 className="text-[26px] font-medium text-primary mb-2 leading-tight">{post.data.title}</h1>
 
         {post.data.date && (
-          <p className="text-[12px] text-muted mb-8">
+          <p className="text-[12px] text-muted mb-4">
             {new Date(post.data.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         )}
+
+        <div className="mb-8">
+          <ShareButtons title={post.data.title} slug={params.slug} />
+        </div>
 
         {/* MDX Content */}
         <article className="prose prose-sm max-w-none"
@@ -96,6 +101,9 @@ export default function BlogPost({ params }: Props) {
 
         {/* Footer */}
         <div className="mt-12 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="mb-5">
+            <ShareButtons title={post.data.title} slug={params.slug} />
+          </div>
           <p className="text-[13px] text-muted mb-3">อ่านบทความเพิ่มเติม</p>
           <Link href="/blog" className="btn-accent text-[13px] py-2 px-5">ดูบทความทั้งหมด</Link>
         </div>
