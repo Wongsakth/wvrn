@@ -136,33 +136,22 @@ export default function VenuesAdminPage() {
         </button>
       </div>
 
-      {/* Stats + 2-Column Pie Charts */}
+      {/* Stats + Pie chart */}
       {!loading && (() => {
         const todayStr = new Date().toISOString().slice(0, 10)
         const weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
         const newToday = venues.filter(v => v.created_at?.slice(0, 10) === todayStr).length
         const newWeek  = venues.filter(v => v.created_at && new Date(v.created_at) >= weekAgo).length
 
-        // 1. เตรียมข้อมูลสถิติแยกตามจังหวัด (Province Pie Data)
+        // Province pie data
         const provMap: Record<string, number> = {}
         venues.forEach(v => { if (v.province) provMap[v.province] = (provMap[v.province] || 0) + 1 })
-        const pieDataProvince = Object.entries(provMap)
+        const pieData = Object.entries(provMap)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 8)
           .map(([name, value]) => ({ name, value }))
 
-        // 2. เตรียมข้อมูลสถิติแยกตามประเภทสถานที่ (Category/Type Pie Data)
-        const catMap: Record<string, number> = {}
-        venues.forEach(v => {
-          const catName = (v as any).category?.name_th || 'ไม่ระบุประเภท';
-          catMap[catName] = (catMap[catName] || 0) + 1
-        })
-        const pieDataCategory = Object.entries(catMap)
-          .sort((a, b) => b[1] - a[1])
-          .map(([name, value]) => ({ name, value }))
-
-        // พาเลทสีสากลสำหรับแบ่งพาร์ทกราฟ
-        const COLORS = ['#D4537E','#7F77DD','#1D9E75','#F59E0B','#3B82F6','#EC4899','#8B5CF6','#10B981','#6B7280','#14B8A6']
+        const COLORS = ['#D4537E','#7F77DD','#1D9E75','#F59E0B','#3B82F6','#EC4899','#8B5CF6','#10B981']
 
         return (
           <div className="mb-6">
@@ -181,53 +170,24 @@ export default function VenuesAdminPage() {
               ))}
             </div>
 
-            {/* 2-Column Responsive Charts Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Column Left: กราฟแยกตามจังหวัด */}
-              {pieDataProvince.length > 0 && (
-                <div className="rounded-xl p-4 flex flex-col justify-between" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                  <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามจังหวัด</p>
-                  <div className="w-full h-[220px] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={pieDataProvince} cx="50%" cy="50%" outerRadius={75}
-                          dataKey="value" nameKey="name" label={({ name, value }) => `${name} (${value})`}
-                          labelLine={false}>
-                          {pieDataProvince.map((_, i) => (
-                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-
-              {/* Column Right: กราฟแยกตามประเภทสถานที่ */}
-              {pieDataCategory.length > 0 && (
-                <div className="rounded-xl p-4 flex flex-col justify-between" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                  <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามประเภท (Type)</p>
-                  <div className="w-full h-[220px] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        {/* ปรับเป็น Donut Chart (โดยใส่ innerRadius) เพื่อให้หน้าเว็บดูมีมิติและไม่น่าเบื่อครับ */}
-                        <Pie data={pieDataCategory} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2}
-                          dataKey="value" nameKey="name" label={({ name, value }) => `${name} (${value})`}
-                          labelLine={false}>
-                          {pieDataCategory.map((_, i) => (
-                            <Cell key={i} fill={COLORS[(i + 2) % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-
-            </div>
+            {/* Pie chart */}
+            {pieData.length > 0 && (
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามจังหวัด</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" outerRadius={80}
+                      dataKey="value" nameKey="name" label={({ name, value }) => `${name} (${value})`}
+                      labelLine={false}>
+                      {pieData.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         )
       })()}
