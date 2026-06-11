@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
       const [uRes, aRes, vRes, pRes] = await Promise.all([
         sb.from('user_profiles').select('*').order('created_at', { ascending: false }),
         sb.from('artists').select('id,name,name_en').order('name'),
-        sb.from('venues').select('id,name').order('name'),,
+        sb.from('venues').select('id,name').order('name'),
         sb.from('profiles').select('id,line_user_id'),
       ])
       // merge line_user_id จาก profiles table
