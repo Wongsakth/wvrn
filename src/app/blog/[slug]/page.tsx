@@ -20,15 +20,29 @@ function getPost(slug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = getPost(params.slug)
   if (!post) return { title: 'ไม่พบบทความ | WVRN' }
+  const url = `https://www.wvrn.app/blog/${params.slug}`
   return {
     title:       `${post.data.title} | WVRN`,
     description: post.data.description ?? '',
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
       title:       post.data.title,
       description: post.data.description ?? '',
       type:        'article',
+      url,
       publishedTime: post.data.date,
-      images: post.data.cover ? [{ url: post.data.cover }] : [{ url: '/logo.png' }],
+      siteName: 'WVRN',
+      images: post.data.cover
+        ? [{ url: post.data.cover, width: 1200, height: 630 }]
+        : [{ url: 'https://www.wvrn.app/logo.png', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.data.title,
+      description: post.data.description ?? '',
+      images: post.data.cover ? [post.data.cover] : ['https://www.wvrn.app/logo.png'],
     },
   }
 }
