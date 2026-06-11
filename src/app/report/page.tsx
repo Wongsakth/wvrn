@@ -2,7 +2,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import {
@@ -92,7 +91,6 @@ useEffect(() => {
           กลับหน้าหลัก
         </button>
       </div>
-      <Footer />
     </div>
   )
 
@@ -239,7 +237,6 @@ useEffect(() => {
           </p>
         </div>
       </div>
-      <Footer />
     </div>
   )
 }
