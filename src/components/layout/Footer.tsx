@@ -27,6 +27,7 @@ export default function Footer() {
             <div className="flex gap-8 text-[12px]">
             <div className="flex flex-col gap-2">
               <span className="text-muted font-medium uppercase tracking-wide text-[10px]">ฟีเจอร์</span>
+              <Link href="/about" className="text-secondary hover:text-primary transition-colors">เกี่ยวกับ WVRN</Link>
               <Link href="/blog" className="text-secondary hover:text-primary transition-colors">บทความ</Link>
               <Link href="/" className="text-secondary hover:text-primary transition-colors">ปฏิทิน</Link>
               <Link href="/events" className="text-secondary hover:text-primary transition-colors">งาน</Link>
