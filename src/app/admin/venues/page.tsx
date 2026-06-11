@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { PROVINCES } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import type { Venue } from '@/types'
 
 const EMPTY = {
@@ -134,6 +135,62 @@ export default function VenuesAdminPage() {
           <Plus size={15} /> เพิ่มสถานที่
         </button>
       </div>
+
+      {/* Stats + Pie chart */}
+      {!loading && (() => {
+        const todayStr = new Date().toISOString().slice(0, 10)
+        const weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
+        const newToday = venues.filter(v => v.created_at?.slice(0, 10) === todayStr).length
+        const newWeek  = venues.filter(v => v.created_at && new Date(v.created_at) >= weekAgo).length
+
+        // Province pie data
+        const provMap: Record<string, number> = {}
+        venues.forEach(v => { if (v.province) provMap[v.province] = (provMap[v.province] || 0) + 1 })
+        const pieData = Object.entries(provMap)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([name, value]) => ({ name, value }))
+
+        const COLORS = ['#D4537E','#7F77DD','#1D9E75','#F59E0B','#3B82F6','#EC4899','#8B5CF6','#10B981']
+
+        return (
+          <div className="mb-6">
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              {[
+                { label: 'ทั้งหมด',      value: venues.length, color: 'var(--accent)' },
+                { label: 'เพิ่มวันนี้',  value: newToday,      color: '#1D9E75' },
+                { label: '7 วันล่าสุด',  value: newWeek,       color: '#3B82F6' },
+              ].map(s => (
+                <div key={s.label} className="rounded-xl p-3 text-center"
+                  style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                  <p className="text-[22px] font-medium" style={{ color: s.color }}>{s.value}</p>
+                  <p className="text-[11px] text-muted">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Pie chart */}
+            {pieData.length > 0 && (
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามจังหวัด</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" outerRadius={80}
+                      dataKey="value" nameKey="name" label={({ name, value }) => `${name} (${value})`}
+                      labelLine={false}>
+                      {pieData.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Search */}
       <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 mb-5"
