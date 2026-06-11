@@ -67,12 +67,19 @@ export default function AdminUsersPage() {
         const { data: p } = await sb.from('user_profiles').select('role').eq('id', user.id).single()
         setMyRole(p?.role ?? 'user')
       }
-      const [uRes, aRes, vRes] = await Promise.all([
+      const [uRes, aRes, vRes, pRes] = await Promise.all([
         sb.from('user_profiles').select('*').order('created_at', { ascending: false }),
         sb.from('artists').select('id,name,name_en').order('name'),
-        sb.from('venues').select('id,name').order('name'),
+        sb.from('venues').select('id,name').order('name'),,
+        sb.from('profiles').select('id,line_user_id'),
       ])
-      setUsers(uRes.data || [])
+      // merge line_user_id จาก profiles table
+      const profilesMap = new Map((pRes.data || []).map((p: any) => [p.id, p]))
+      const merged = (uRes.data || []).map((u: any) => ({
+        ...u,
+        line_user_id: profilesMap.get(u.id)?.line_user_id ?? null,
+      }))
+      setUsers(merged)
       setArtists(aRes.data || [])
       setVenues(vRes.data || [])
     } catch (e) { console.error(e) }
