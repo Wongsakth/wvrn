@@ -67,7 +67,7 @@ export default function EventsPage() {
             event_artists(artist:artists(id, name, name_en, image_url))
           `)
           .is('deleted_at', null)
-          .gte('start_date', new Date().toISOString().slice(0, 10))
+          .gte('start_date', format(new Date(), 'yyyy-MM-dd'))
           .order('start_date', { ascending: true })
 
         setEvents((data || []).map((ev: any) => ({
@@ -370,7 +370,8 @@ function EventRow({ ev, myType, isFollowed, featured }: {
   featured?: string
 }) {
   const start   = parseISO(ev.start_date)
-  const days    = differenceInDays(start, new Date())
+  const todayMid = new Date(); todayMid.setHours(0,0,0,0)
+  const days    = differenceInDays(start, todayMid)
   const poster  = ev.poster_url
   const [goingCount,      setGoingCount]      = useState<number | null>(null)
   const [interestedCount, setInterestedCount] = useState<number | null>(null)
@@ -444,9 +445,27 @@ function EventRow({ ev, myType, isFollowed, featured }: {
           <h3 className="font-semibold text-[14px] leading-tight truncate text-primary mb-0.5">{ev.title}</h3>
 
           {ev.artists?.length > 0 && (
-            <p className="text-[11px] text-muted truncate">
-              {ev.artists.map((a: any) => a.name_en || a.name).join(' · ')}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className="flex items-center">
+                {ev.artists.slice(0, 4).map((a: any, i: number) => (
+                  <div key={a.id} style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 4 - i, position: 'relative', width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--surface-1)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {a.image_url
+                      ? <img src={a.image_url} alt={a.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      : <span style={{ fontSize: 8, fontWeight: 500, color: 'var(--accent)', lineHeight: 1 }}>{(a.name_en || a.name).slice(0, 2)}</span>
+                    }
+                  </div>
+                ))}
+                {ev.artists.length > 4 && (
+                  <div style={{ marginLeft: -7, zIndex: 0, position: 'relative', width: 22, height: 22, borderRadius: '50%', border: '1.5px solid var(--surface-1)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                    +{ev.artists.length - 4}
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] text-muted truncate">
+                {ev.artists.slice(0, 2).map((a: any) => a.name_en || a.name).join(', ')}
+                {ev.artists.length > 2 && ` และอีก ${ev.artists.length - 2}`}
+              </p>
+            </div>
           )}
 
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-[11px] text-muted">
