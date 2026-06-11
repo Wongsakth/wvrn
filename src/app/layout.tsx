@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import { ThemeProvider } from '@/lib/theme'
 import { AuthProvider } from '@/lib/auth'
 import { Toaster } from 'react-hot-toast'
+import Footer from '@/components/layout/Footer'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             {children}
+            <Footer />
             <Toaster
               position="bottom-right"
               toastOptions={{
