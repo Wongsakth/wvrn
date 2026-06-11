@@ -24,17 +24,18 @@ export default function Footer() {
           </div>
 
           {/* Links */}
-          <div className="flex gap-8 text-[12px]">
+            <div className="flex gap-8 text-[12px]">
             <div className="flex flex-col gap-2">
-              <span className="text-muted font-medium uppercase tracking-wide text-[10px]">Platform</span>
+              <span className="text-muted font-medium uppercase tracking-wide text-[10px]">ฟีเจอร์</span>
               <Link href="/blog" className="text-secondary hover:text-primary transition-colors">บทความ</Link>
               <Link href="/" className="text-secondary hover:text-primary transition-colors">ปฏิทิน</Link>
+              <Link href="/events" className="text-secondary hover:text-primary transition-colors">งาน</Link>
               <Link href="/artists" className="text-secondary hover:text-primary transition-colors">ศิลปิน</Link>
               <Link href="/submit" className="text-secondary hover:text-primary transition-colors">แจ้งงาน</Link>
               <Link href="/report" className="text-secondary hover:text-primary transition-colors">แจ้งปัญหา</Link>
             </div>
             <div className="flex flex-col gap-2">
-              <span className="text-muted font-medium uppercase tracking-wide text-[10px]">Legal</span>
+              <span className="text-muted font-medium uppercase tracking-wide text-[10px]">ข้อกำหนด</span>
               <Link href="/privacy" className="text-secondary hover:text-primary transition-colors">นโยบายความเป็นส่วนตัว</Link>
               <Link href="/disclaimer" className="text-secondary hover:text-primary transition-colors">ข้อจำกัดความรับผิดชอบ</Link>
               <Link href="/terms" className="text-secondary hover:text-primary transition-colors">เงื่อนไขการใช้งาน</Link>
