@@ -6,6 +6,7 @@ import { Search, X, Music, MapPin, Calendar, Loader2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { th } from 'date-fns/locale'
 import { cn, genreTagClass } from '@/lib/utils'
+import { trackSearch } from '@/lib/analytics'
 
 type ResultType = 'all' | 'events' | 'artists' | 'venues'
 
@@ -64,7 +65,10 @@ export default function SearchPage() {
           <Search size={18} className="text-muted shrink-0" />
           <input
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={e => {
+              setQuery(e.target.value)
+              trackSearch(e.target.value, totalResults)
+            }}
             placeholder="ค้นหางาน ศิลปิน สถานที่..."
             autoFocus
             className="bg-transparent text-[16px] text-primary outline-none flex-1 placeholder:text-muted"
