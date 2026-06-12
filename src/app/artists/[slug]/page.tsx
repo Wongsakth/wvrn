@@ -10,8 +10,8 @@ async function getArtist(slug: string) {
   const decoded = decodeURIComponent(slug)
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded)
   const { data } = isUuid
-    ? await sb.from('artists').select('id,name,name_en,slug,image_url,bio,genres,instagram_url,facebook_url,website_url,follower_count').eq('id', decoded).single()
-    : await sb.from('artists').select('id,name,name_en,slug,image_url,bio,genres,instagram_url,facebook_url,website_url,follower_count').eq('slug', decoded).single()
+    ? await sb.from('artists').select('id,name,name_en,slug,image_url,bio,bio_final_th,bio_final_en,genres,instagram_url,facebook_url,website_url,follower_count').eq('id', decoded).single()
+    : await sb.from('artists').select('id,name,name_en,slug,image_url,bio,bio_final_th,bio_final_en,genres,instagram_url,facebook_url,website_url,follower_count').eq('slug', decoded).single()
   return data
 }
 
@@ -21,10 +21,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = artist.name_en || artist.name
   return {
     title: `${name} คอนเสิร์ต 2026 | WVRN`,
-    description: artist.bio ?? `ติดตาม ${name} และรับแจ้งเตือนคอนเสิร์ตก่อนใครที่ WVRN`,
+    description: artist.bio_final_th ?? artist.bio ?? `ติดตาม ${name} และรับแจ้งเตือนคอนเสิร์ตก่อนใครที่ WVRN`,
     openGraph: {
       title: `${name} คอนเสิร์ต 2026 | WVRN`,
-      description: artist.bio ?? `ติดตาม ${name} และรับแจ้งเตือนคอนเสิร์ตก่อนใครที่ WVRN`,
+      description: artist.bio_final_th ?? artist.bio ?? `ติดตาม ${name} และรับแจ้งเตือนคอนเสิร์ตก่อนใครที่ WVRN`,
       images: artist.image_url ? [{ url: artist.image_url }] : [{ url: '/logo.png' }],
     },
     alternates: {
@@ -58,7 +58,7 @@ export default async function ArtistPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <ArtistDetailClient />
+      <ArtistDetailClient bioTh={artist?.bio_final_th ?? null} bioEn={artist?.bio_final_en ?? null} />
     </>
   )
 }

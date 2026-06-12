@@ -23,7 +23,9 @@ function TikTokIcon({ size = 14 }: { size?: number }) {
   )
 }
 
-export default function ArtistProfilePage() {
+interface Props { bioTh?: string | null; bioEn?: string | null }
+
+export default function ArtistProfilePage({ bioTh, bioEn }: Props = {}) {
   const { slug }  = useParams<{ slug: string }>()
   const router    = useRouter()
   const { user }  = useAuth()
@@ -244,11 +246,13 @@ export default function ArtistProfilePage() {
             </div>
 
             {/* Bio */}
-            {artist.bio && (
+            {(bioTh || artist.bio) && (
               <div className="rounded-xl p-4"
                 style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
                 <h3 className="text-[11px] font-medium text-muted uppercase tracking-wide mb-2">เกี่ยวกับ</h3>
-                <p className="text-[13px] text-secondary leading-relaxed">{artist.bio}</p>
+                <p className="text-[13px] text-secondary leading-relaxed">
+                  {bioTh || artist.bio}
+                </p>
               </div>
             )}
 
