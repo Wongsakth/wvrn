@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 
 const RANGES = [
+  { label: 'วันนี้',  days: 1  },
   { label: '7 วัน',  days: 7  },
   { label: '30 วัน', days: 30 },
   { label: '90 วัน', days: 90 },
@@ -233,25 +234,6 @@ export default function AnalyticsDashboard() {
 
             {/* Top Provinces */}
             <Table title="🗺️ จังหวัดที่ใช้งานมากสุด" data={topProvinces} color="#06B6D4" />
-
-            {/* Today Stats */}
-            <div className="rounded-xl p-4 md:col-span-2 lg:col-span-3"
-              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-              <h3 className="text-[13px] font-medium text-primary mb-3">📅 วันนี้</h3>
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { label: 'Total',        value: todayStats.total         || 0, color: 'var(--accent)' },
-                  { label: 'Event Click',  value: todayStats.event_click   || 0, color: '#6366F1' },
-                  { label: 'ซื้อบัตร',    value: todayStats.ticket_click  || 0, color: '#10B981' },
-                  { label: 'Unique Users', value: todayStats.unique_users  || 0, color: '#8B5CF6' },
-                ].map(s => (
-                  <div key={s.label} className="text-center">
-                    <p className="text-[18px] font-medium" style={{ color: s.color }}>{s.value}</p>
-                    <p className="text-[10px] text-muted">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Device & OS */}
             <Table title="📱 Device" data={deviceData} color="#06B6D4" />
