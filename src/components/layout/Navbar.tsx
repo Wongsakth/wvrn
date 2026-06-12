@@ -45,10 +45,10 @@ export default function Navbar() {
         {/* Logo + Tagline */}
         <Link href="/" title="Wide Vibe Radar Network" className="flex flex-col items-center sm:flex-row sm:items-center gap-0 sm:gap-2 mr-auto">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="WVRN" className="w-7 h-7 md:w-10 md:h-10 rounded-md object-cover" />
-            <div className="flex flex-col">
-              <span className="text-[17px] md:text-[22px] font-medium tracking-[4px] leading-none" style={{ color: 'var(--accent)' }}>WVRN</span>
-              <span className="text-[8px] md:text-[9px] hidden sm:block" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>Wide Vibe Radar Network</span>
+            <img src="/logo.png" alt="WVRN" className="w-7 h-7 md:w-12 md:h-12 rounded-md object-cover" />
+            <div className="flex flex-col justify-center">
+              <span className="text-[17px] md:text-[22px] font-medium tracking-[4px] leading-tight" style={{ color: 'var(--accent)' }}>WVRN</span>
+              <span className="text-[8px] md:text-[9px] hidden sm:block leading-tight" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>Wide Vibe Radar Network</span>
             </div>
           </div>
           <span className="text-[9px] font-medium px-2 py-0.5 rounded-full mt-0.5 sm:mt-0"
