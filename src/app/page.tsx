@@ -555,7 +555,7 @@ const [showMap, setShowMap] = useState(false)
             <Search size={16} className="text-muted shrink-0" />
             <input
               value={search}
-              onChange={e => { setSearch(e.target.value); trackSearch(e.target.value) }}
+              onChange={e => { setSearch(e.target.value); trackSearch(e.target.value, filtered.length) }}
               placeholder={tab === 'artists' ? 'ค้นหาศิลปิน...' : tab === 'venues' ? 'ค้นหาสถานที่...' : 'ค้นหางาน ศิลปิน หรือสถานที่...'}
               className="bg-transparent outline-none text-[14px] flex-1 text-primary placeholder:text-muted"
             />
