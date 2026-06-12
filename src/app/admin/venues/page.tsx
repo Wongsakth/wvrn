@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { PROVINCES } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import type { Venue } from '@/types'
 
 const EMPTY = {
@@ -154,10 +154,10 @@ export default function VenuesAdminPage() {
         // 2. เตรียมข้อมูลสถิติแยกตามประเภทสถานที่ (Category/Type Pie Data)
         const catMap: Record<string, number> = {}
         venues.forEach(v => {
-          const catName = (v as any).category?.name_th || 'ไม่ระบุประเภท';
-          catMap[catName] = (catMap[catName] || 0) + 1
+          const catName = (v as any).category?.name_th
+          if (catName) catMap[catName] = (catMap[catName] || 0) + 1
         })
-        const pieDataCategory = Object.entries(catMap)
+        const barData = Object.entries(catMap)
           .sort((a, b) => b[1] - a[1])
           .map(([name, value]) => ({ name, value }))
 
@@ -205,25 +205,24 @@ export default function VenuesAdminPage() {
                 </div>
               )}
 
-              {/* Column Right: กราฟแยกตามประเภทสถานที่ */}
-              {pieDataCategory.length > 0 && (
-                <div className="rounded-xl p-4 flex flex-col justify-between" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                  <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามประเภท (Type)</p>
-                  <div className="w-full h-[220px] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        {/* ปรับเป็น Donut Chart (โดยใส่ innerRadius) เพื่อให้หน้าเว็บดูมีมิติและไม่น่าเบื่อครับ */}
-                        <Pie data={pieDataCategory} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2}
-                          dataKey="value" nameKey="name" label={({ name, value }) => `${name} (${value})`}
-                          labelLine={false}>
-                          {pieDataCategory.map((_, i) => (
-                            <Cell key={i} fill={COLORS[(i + 2) % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+              {/* Column Right: Horizontal Bar chart แยกตามประเภท */}
+              {barData.length > 0 && (
+                <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                  <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามประเภท</p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
+                      <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+                      <YAxis type="category" dataKey="name" width={100}
+                        tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                      <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
+                      <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                        {barData.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               )}
 
