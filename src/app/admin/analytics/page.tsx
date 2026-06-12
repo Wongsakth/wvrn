@@ -25,6 +25,11 @@ export default function AnalyticsDashboard() {
   const [ticketClicks,  setTicketClicks]  = useState<any[]>([])
   const [topProvinces,  setTopProvinces]  = useState<any[]>([])
   const [uniqueUsers,   setUniqueUsers]   = useState(0)
+  const [deviceData,    setDeviceData]    = useState<any[]>([])
+  const [osData,        setOsData]        = useState<any[]>([])
+  const [referrerData,  setReferrerData]  = useState<any[]>([])
+  const [zeroSearches,  setZeroSearches]  = useState<any[]>([])
+  const [todayStats,    setTodayStats]    = useState<any>({})
   const sb = createClient()
 
   useEffect(() => { load() }, [range])
@@ -33,7 +38,8 @@ export default function AnalyticsDashboard() {
     setLoading(true)
     const since = new Date(Date.now() - range * 86400000).toISOString()
 
-    const [all, events, artists, venues, searches, filters, tickets, provinces] = await Promise.all([
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0)
+    const [all, events, artists, venues, searches, filters, tickets, provinces, devices, oss, referrers, zeros, today] = await Promise.all([
       // Summary counts by type
       sb.from('analytics_events').select('event_type, user_id').gte('created_at', since),
       // Top events clicked
@@ -57,6 +63,24 @@ export default function AnalyticsDashboard() {
       // Provinces
       sb.from('analytics_events').select('province, user_id')
         .gte('created_at', since).not('province', 'is', null),
+      // Devices
+      sb.from('analytics_events').select('device')
+        .gte('created_at', since).not('device', 'is', null),
+      // OS
+      sb.from('analytics_events').select('os')
+        .gte('created_at', since).not('os', 'is', null),
+      // Referrers
+      sb.from('analytics_events').select('referrer')
+        .gte('created_at', since).not('referrer', 'is', null),
+      // Zero results searches
+      sb.from('analytics_events').select('value')
+        .eq('event_type', 'search')
+        .eq('search_result_count', 0)
+        .gte('created_at', since)
+        .not('value', 'is', null),
+      // Today stats
+      sb.from('analytics_events').select('event_type, user_id')
+        .gte('created_at', todayStart.toISOString()),
     ])
 
     // Summary
@@ -97,6 +121,23 @@ export default function AnalyticsDashboard() {
     // Unique users
     const uids = new Set((all.data || []).filter(r => r.user_id).map(r => r.user_id))
     setUniqueUsers(uids.size)
+
+    // Device breakdown
+    setDeviceData(countBy(devices.data || [], r => r.device))
+    // OS breakdown
+    setOsData(countBy(oss.data || [], r => r.os))
+    // Referrer breakdown
+    setReferrerData(countBy(referrers.data || [], r => r.referrer))
+    // Zero results searches
+    setZeroSearches(countBy(zeros.data || [], r => r.value?.toLowerCase()))
+
+    // Today stats
+    const todayCounts: Record<string, number> = {}
+    for (const row of (today.data || [])) {
+      todayCounts[row.event_type] = (todayCounts[row.event_type] || 0) + 1
+    }
+    const todayUids = new Set((today.data || []).filter(r => r.user_id).map(r => r.user_id))
+    setTodayStats({ ...todayCounts, unique_users: todayUids.size, total: today.data?.length || 0 })
 
     setLoading(false)
   }
@@ -192,6 +233,33 @@ export default function AnalyticsDashboard() {
 
             {/* Top Provinces */}
             <Table title="🗺️ จังหวัดที่ใช้งานมากสุด" data={topProvinces} color="#06B6D4" />
+
+            {/* Today Stats */}
+            <div className="rounded-xl p-4 md:col-span-2 lg:col-span-3"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+              <h3 className="text-[13px] font-medium text-primary mb-3">📅 วันนี้</h3>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { label: 'Total',        value: todayStats.total         || 0, color: 'var(--accent)' },
+                  { label: 'Event Click',  value: todayStats.event_click   || 0, color: '#6366F1' },
+                  { label: 'ซื้อบัตร',    value: todayStats.ticket_click  || 0, color: '#10B981' },
+                  { label: 'Unique Users', value: todayStats.unique_users  || 0, color: '#8B5CF6' },
+                ].map(s => (
+                  <div key={s.label} className="text-center">
+                    <p className="text-[18px] font-medium" style={{ color: s.color }}>{s.value}</p>
+                    <p className="text-[10px] text-muted">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Device & OS */}
+            <Table title="📱 Device" data={deviceData} color="#06B6D4" />
+            <Table title="💻 OS" data={osData} color="#8B5CF6" />
+            <Table title="🔗 Traffic Source" data={referrerData} color="#F59E0B" />
+
+            {/* Zero results searches */}
+            <Table title="🚫 ค้นหาแล้วไม่เจอ (Opportunity)" data={zeroSearches} color="#EF4444" />
 
             {/* Filters Used */}
             <div className="rounded-xl p-4"
