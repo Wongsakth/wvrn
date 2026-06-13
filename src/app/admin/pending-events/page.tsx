@@ -69,7 +69,11 @@ export default function PendingEventsPage() {
       .order('created_at', { ascending: false })
 
     if (sourceFilter !== 'all') {
-      query = query.eq('source_type', sourceFilter)
+      if (sourceFilter === 'google_news') {
+        query = query.ilike('source_type', 'google_news%')
+      } else {
+        query = query.eq('source_type', sourceFilter)
+      }
     }
 
     const { data } = await query.limit(50)
