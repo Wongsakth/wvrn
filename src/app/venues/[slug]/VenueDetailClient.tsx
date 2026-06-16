@@ -6,9 +6,8 @@ import Navbar from '@/components/layout/Navbar'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import {
-  MapPin, Clock, ChevronLeft, ChevronRight,
-  Loader2, Music, ExternalLink, Heart,
-  Users, Calendar,
+  MapPin, Clock, ChevronRight, Music, ExternalLink,
+  Heart, Users, Calendar, Star, Phone, Globe, ChevronDown,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { th } from 'date-fns/locale'
@@ -22,8 +21,36 @@ interface Props {
   slug: string
 }
 
+// ─── Opening Hours Helper ─────────────────────────────────
+const DAY_TH = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์']
+
+function getTodayHours(hours: string[] | null): string | null {
+  if (!hours?.length) return null
+  const today = DAY_TH[new Date().getDay()]
+  const line  = hours.find(h => h.startsWith(today))
+  if (!line) return null
+  return line.replace(`${today}: `, '')
+}
+
+function isOpenNow(hours: string[] | null): boolean | null {
+  if (!hours?.length) return null
+  const todayHours = getTodayHours(hours)
+  if (!todayHours || todayHours === 'ปิดทำการ') return false
+  // parse เวลาเปิด-ปิดแบบง่าย
+  try {
+    const now = new Date()
+    const [openStr, closeStr] = todayHours.split('–')
+    const [oh, om] = openStr.trim().split(':').map(Number)
+    const [ch, cm] = closeStr.trim().split(':').map(Number)
+    const nowMins  = now.getHours() * 60 + now.getMinutes()
+    const openMins = oh * 60 + (om || 0)
+    let closeMins  = ch * 60 + (cm || 0)
+    if (closeMins < openMins) closeMins += 24 * 60 // past midnight
+    return nowMins >= openMins && nowMins < closeMins
+  } catch { return null }
+}
+
 export default function VenueDetailClient({ venue, initialEvents, slug }: Props) {
-  const router  = useRouter()
   const { user } = useAuth()
   const sb = createClient()
 
@@ -32,50 +59,41 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
   const [followed,   setFollowed]   = useState(false)
   const [followers,  setFollowers]  = useState(0)
   const [showPast,   setShowPast]   = useState(false)
-  const [pastLoaded, setPastLoaded] = useState(false)
+  const [showHours,  setShowHours]  = useState(false)
 
-  // Load past events + followers (ไม่ urgent — load หลัง render)
+  const hours   = venue.opening_hours as string[] | null
+  const openNow = isOpenNow(hours)
+  const todayHours = getTodayHours(hours)
+
   useEffect(() => {
     if (!venue) return
     const today = new Date().toISOString().slice(0, 10)
-
     Promise.all([
       sb.from('events')
         .select('id,title,slug,start_date,start_time,is_free,ticket_price_min,ticket_price_max,poster_url,status,event_artists(artist:artists(id,name,slug,image_url))')
-        .eq('venue_id', venue.id)
-        .is('deleted_at', null)
-        .lt('start_date', today)
-        .order('start_date', { ascending: false })
-        .limit(20),
-      sb.from('venue_follows')
-        .select('user_id', { count: 'exact' })
-        .eq('venue_id', venue.id),
+        .eq('venue_id', venue.id).is('deleted_at', null)
+        .lt('start_date', today).order('start_date', { ascending: false }).limit(20),
+      sb.from('venue_follows').select('user_id', { count: 'exact' }).eq('venue_id', venue.id),
     ]).then(([pastRes, followRes]) => {
       setPastEvents((pastRes.data || []).map((ev: any) => ({
         ...ev,
         artists: ev.event_artists?.map((ea: any) => ea.artist).filter(Boolean) ?? [],
       })))
       setFollowers(followRes.count ?? 0)
-      setPastLoaded(true)
     })
   }, [venue?.id])
 
-  // Check follow status
   useEffect(() => {
     if (!user || !venue) { setFollowed(false); return }
-    sb.from('venue_follows')
-      .select('venue_id')
-      .eq('user_id', user.id)
-      .eq('venue_id', venue.id)
-      .maybeSingle()
+    sb.from('venue_follows').select('venue_id')
+      .eq('user_id', user.id).eq('venue_id', venue.id).maybeSingle()
       .then(({ data }) => setFollowed(!!data))
   }, [user, venue?.id])
 
   async function toggleFollow() {
     if (!user) { toast.error('กรุณา Login ก่อนครับ'); window.location.href = '/login'; return }
     const prev = followed
-    setFollowed(!prev)
-    setFollowers(v => prev ? v - 1 : v + 1)
+    setFollowed(!prev); setFollowers(v => prev ? v - 1 : v + 1)
     try {
       if (prev) {
         await sb.from('venue_follows').delete().eq('user_id', user.id).eq('venue_id', venue.id)
@@ -85,8 +103,7 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
         toast.success(`ติดตาม ${venue.name} แล้ว 📍`)
       }
     } catch {
-      setFollowed(prev)
-      setFollowers(v => prev ? v + 1 : v - 1)
+      setFollowed(prev); setFollowers(v => prev ? v + 1 : v - 1)
       toast.error('เกิดข้อผิดพลาด')
     }
   }
@@ -94,10 +111,8 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
   return (
     <div className="min-h-screen pb-24 md:pb-8" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
-
       <div className="max-w-screen-lg mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <BackButton />
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* ── Left: Venue Info ── */}
@@ -110,7 +125,10 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
                 style={{ background: 'linear-gradient(135deg, var(--accent-muted), var(--surface-2))' }}>
                 {venue.image_url ? (
                   <>
-                    <img src={venue.image_url} alt={venue.name} className="w-full h-full object-cover" />
+                    <img src={venue.image_url} alt={venue.name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                      onError={e => { e.currentTarget.style.display = 'none' }} />
                     <div className="absolute inset-0"
                       style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)' }} />
                   </>
@@ -123,36 +141,85 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
               </div>
 
               <div className="p-4">
-                {/* h1 สำหรับ SEO */}
                 <h1 className="text-[20px] font-medium text-primary mb-1">{venue.name}</h1>
 
+                {/* Province */}
                 {venue.province && (
-                  <div className="flex items-center gap-1.5 text-[13px] text-muted mb-3">
+                  <div className="flex items-center gap-1.5 text-[13px] text-muted mb-2">
                     <MapPin size={13} />
                     {venue.province}
                     {venue.address && <span className="truncate">· {venue.address}</span>}
                   </div>
                 )}
 
-                <div className="flex gap-3 mb-4">
+                {/* Rating */}
+                {venue.rating && (
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Star size={13} style={{ color: '#F59E0B', fill: '#F59E0B' }} />
+                    <span className="text-[13px] font-medium text-primary">{Number(venue.rating).toFixed(1)}</span>
+                    {venue.rating_count && (
+                      <span className="text-[11px] text-muted">({venue.rating_count.toLocaleString()} รีวิว)</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div className="flex flex-wrap gap-3 mb-4">
                   {venue.capacity && (
                     <div className="flex items-center gap-1.5 text-[12px] text-muted">
-                      <Users size={12} />
-                      {venue.capacity.toLocaleString()} คน
+                      <Users size={12} />{venue.capacity.toLocaleString()} คน
                     </div>
                   )}
                   <div className="flex items-center gap-1.5 text-[12px] text-muted">
-                    <Heart size={12} />
-                    {followers.toLocaleString()} ติดตาม
+                    <Heart size={12} />{followers.toLocaleString()} ติดตาม
                   </div>
                   <div className="flex items-center gap-1.5 text-[12px] text-muted">
-                    <Calendar size={12} />
-                    {events.length} งาน
+                    <Calendar size={12} />{events.length} งาน
                   </div>
                 </div>
 
+                {/* Opening Hours */}
+                {hours?.length ? (
+                  <div className="mb-3 rounded-xl overflow-hidden"
+                    style={{ border: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+                    <button
+                      onClick={() => setShowHours(v => !v)}
+                      className="w-full flex items-center justify-between px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <Clock size={13} style={{ color: openNow === true ? '#1D9E75' : openNow === false ? '#E24B4A' : 'var(--text-muted)' }} />
+                        <span className="text-[12px] font-medium"
+                          style={{ color: openNow === true ? '#1D9E75' : openNow === false ? '#E24B4A' : 'var(--text-secondary)' }}>
+                          {openNow === true ? 'เปิดอยู่ตอนนี้' : openNow === false ? 'ปิดอยู่ตอนนี้' : 'เวลาทำการ'}
+                        </span>
+                        {todayHours && openNow !== null && (
+                          <span className="text-[11px] text-muted">· {todayHours}</span>
+                        )}
+                      </div>
+                      <ChevronDown size={13} className={`text-muted transition-transform ${showHours ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showHours && (
+                      <div className="px-3 pb-3 flex flex-col gap-1"
+                        style={{ borderTop: '1px solid var(--border)' }}>
+                        {hours.map((line, i) => {
+                          const [day, time] = line.split(': ')
+                          const isToday = line.startsWith(DAY_TH[new Date().getDay()])
+                          return (
+                            <div key={i} className="flex justify-between text-[11px] pt-1"
+                              style={{ color: isToday ? 'var(--text-primary)' : 'var(--text-muted)',
+                                       fontWeight: isToday ? 500 : 400 }}>
+                              <span>{day}</span>
+                              <span>{time}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
+                {/* Follow */}
                 <button onClick={toggleFollow}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[14px] font-medium transition-all mb-3"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[14px] font-medium transition-all mb-2"
                   style={{
                     background: followed ? 'var(--accent-muted)' : 'var(--accent)',
                     color:      followed ? 'var(--accent)' : 'var(--surface-0)',
@@ -162,14 +229,31 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
                   {followed ? 'ติดตามอยู่' : 'ติดตาม'}
                 </button>
 
-                {venue.maps_url && (
-                  <a href={venue.maps_url} target="_blank" rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all"
-                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                    <ExternalLink size={13} />
-                    เปิดใน Google Maps
-                  </a>
-                )}
+                {/* Action links */}
+                <div className="flex flex-col gap-2">
+                  {venue.maps_url && (
+                    <a href={venue.maps_url} target="_blank" rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all"
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                      <ExternalLink size={13} />เปิดใน Google Maps
+                    </a>
+                  )}
+                  {venue.phone && (
+                    <a href={`tel:${venue.phone}`}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all"
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                      <Phone size={13} />{venue.phone}
+                    </a>
+                  )}
+                  {venue.website && (
+                    <a href={venue.website} target="_blank" rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] transition-all truncate"
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                      <Globe size={13} />
+                      <span className="truncate">{venue.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -197,8 +281,7 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
 
             {pastEvents.length > 0 && (
               <div className="mt-2">
-                <button
-                  onClick={() => setShowPast(v => !v)}
+                <button onClick={() => setShowPast(v => !v)}
                   className="flex items-center gap-2 text-[13px] text-muted hover:text-primary transition-colors mb-3">
                   <ChevronRight size={14} className={showPast ? 'rotate-90 transition-transform' : 'transition-transform'} />
                   งานที่ผ่านมา ({pastEvents.length})
@@ -219,8 +302,7 @@ export default function VenueDetailClient({ venue, initialEvents, slug }: Props)
 
 function EventRow({ ev, isPast = false }: { ev: any; isPast?: boolean }) {
   return (
-    <div
-      onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
+    <div onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
       className="rounded-xl overflow-hidden cursor-pointer transition-all"
       style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', opacity: isPast ? 0.6 : 1 }}
       onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}
