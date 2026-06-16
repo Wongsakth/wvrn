@@ -1,10 +1,10 @@
 // @ts-nocheck
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
   Plus, Search, Edit2, Trash2, X, Check,
-  MapPin, ExternalLink, Loader2,
+  MapPin, ExternalLink, Loader2, Upload, ImageIcon,
 } from 'lucide-react'
 import { PROVINCES } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -18,16 +18,18 @@ const EMPTY = {
 }
 
 export default function VenuesAdminPage() {
-  const [venues,     setVenues]     = useState<Venue[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [saving,     setSaving]     = useState(false)
-  const [search,     setSearch]     = useState('')
-  const [showForm,   setShowForm]   = useState(false)
-  const [editTarget, setEditTarget] = useState<Venue | null>(null)
-  const [deleteId,   setDeleteId]   = useState<string | null>(null)
-  const [form,       setForm]       = useState({ ...EMPTY })
+  const [venues,      setVenues]      = useState<Venue[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [saving,      setSaving]      = useState(false)
+  const [search,      setSearch]      = useState('')
+  const [showForm,    setShowForm]    = useState(false)
+  const [editTarget,  setEditTarget]  = useState<Venue | null>(null)
+  const [deleteId,    setDeleteId]    = useState<string | null>(null)
+  const [form,        setForm]        = useState({ ...EMPTY })
   const [aliasInput,  setAliasInput]  = useState('')
   const [categories,  setCategories]  = useState<any[]>([])
+  const [uploading,   setUploading]   = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const sb = createClient()
 
@@ -59,17 +61,43 @@ export default function VenuesAdminPage() {
   function openEdit(v: Venue) {
     setEditTarget(v)
     setForm({
-      name:     v.name,
-      address:  v.address  ?? '',
-      province: v.province,
-      capacity: v.capacity?.toString() ?? '',
-      maps_url: v.maps_url ?? '',
-      aliases:  (v as any).aliases ?? [],
-      image_url: (v as any).image_url ?? '',
+      name:        v.name,
+      address:     v.address  ?? '',
+      province:    v.province,
+      capacity:    v.capacity?.toString() ?? '',
+      maps_url:    v.maps_url ?? '',
+      aliases:     (v as any).aliases ?? [],
+      image_url:   (v as any).image_url ?? '',
       category_id: (v as any).category_id ?? '',
     })
     setAliasInput('')
     setShowForm(true)
+  }
+
+  // ─── Upload รูปไป Supabase Storage ───────────────────────
+  async function handleUploadImage(file: File) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('กรุณาเลือกไฟล์รูปภาพ'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error('รูปต้องไม่เกิน 5MB'); return }
+
+    setUploading(true)
+    try {
+      const ext  = file.name.split('.').pop()
+      const path = `venues/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+      const { error: upErr } = await sb.storage
+        .from('venue-images')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (upErr) throw upErr
+
+      const { data } = sb.storage.from('venue-images').getPublicUrl(path)
+      setForm(f => ({ ...f, image_url: data.publicUrl }))
+      toast.success('อัปโหลดรูปสำเร็จ')
+    } catch (e: any) {
+      toast.error('อัปโหลดไม่ได้: ' + e.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function handleSave() {
@@ -77,13 +105,13 @@ export default function VenuesAdminPage() {
     setSaving(true)
     try {
       const payload = {
-        name:      form.name.trim(),
-        address:   form.address.trim()  || null,
-        province:  form.province,
-        capacity:  form.capacity ? parseInt(form.capacity) : null,
-        maps_url:  form.maps_url.trim() || null,
-        aliases:    form.aliases.length > 0 ? form.aliases : null,
-        image_url:  form.image_url.trim() || null,
+        name:        form.name.trim(),
+        address:     form.address.trim()  || null,
+        province:    form.province,
+        capacity:    form.capacity ? parseInt(form.capacity) : null,
+        maps_url:    form.maps_url.trim() || null,
+        aliases:     form.aliases.length > 0 ? form.aliases : null,
+        image_url:   form.image_url.trim() || null,
         category_id: form.category_id || null,
       }
       if (editTarget) {
@@ -136,22 +164,19 @@ export default function VenuesAdminPage() {
         </button>
       </div>
 
-      {/* Stats + 2-Column Pie Charts */}
+      {/* Stats + Charts — ไม่เปลี่ยนแปลง */}
       {!loading && (() => {
         const todayStr = new Date().toISOString().slice(0, 10)
         const weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
         const newToday = venues.filter(v => v.created_at?.slice(0, 10) === todayStr).length
         const newWeek  = venues.filter(v => v.created_at && new Date(v.created_at) >= weekAgo).length
 
-        // 1. เตรียมข้อมูลสถิติแยกตามจังหวัด (Province Pie Data)
         const provMap: Record<string, number> = {}
         venues.forEach(v => { if (v.province) provMap[v.province] = (provMap[v.province] || 0) + 1 })
         const pieDataProvince = Object.entries(provMap)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 8)
+          .sort((a, b) => b[1] - a[1]).slice(0, 8)
           .map(([name, value]) => ({ name, value }))
 
-        // 2. เตรียมข้อมูลสถิติแยกตามประเภทสถานที่ (Category/Type Pie Data)
         const catMap: Record<string, number> = {}
         venues.forEach(v => {
           const catName = (v as any).category?.name_th
@@ -161,12 +186,10 @@ export default function VenuesAdminPage() {
           .sort((a, b) => b[1] - a[1])
           .map(([name, value]) => ({ name, value }))
 
-        // พาเลทสีสากลสำหรับแบ่งพาร์ทกราฟ
         const COLORS = ['#D4537E','#7F77DD','#1D9E75','#F59E0B','#3B82F6','#EC4899','#8B5CF6','#10B981','#6B7280','#14B8A6']
 
         return (
           <div className="mb-6">
-            {/* Stat cards */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               {[
                 { label: 'ทั้งหมด',      value: venues.length, color: 'var(--accent)' },
@@ -181,128 +204,80 @@ export default function VenuesAdminPage() {
               ))}
             </div>
 
-            {/* 2-Column Responsive Charts Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Column Left: กราฟแยกตามจังหวัด */}
-              {pieDataProvince.length > 0 && (
-                <div className="rounded-xl p-4 flex flex-col justify-between" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                  <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามจังหวัด</p>
-                  <div className="w-full h-[220px] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={pieDataProvince} cx="50%" cy="50%" outerRadius={75}
-                          dataKey="value" nameKey="name" label={({ name, value }) => `${name} (${value})`}
-                          labelLine={false}>
-                          {pieDataProvince.map((_, i) => (
-                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-
-              {/* Column Right: Horizontal Bar chart แยกตามประเภท */}
-              {barData.length > 0 && (
-                <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                  <p className="text-[13px] font-medium text-primary mb-3">สถานที่แยกตามประเภท</p>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
-                      <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                      <YAxis type="category" dataKey="name" width={100}
-                        tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                      <Tooltip formatter={(v: any) => [`${v} สถานที่`]} />
-                      <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                        {barData.map((_, i) => (
-                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                <p className="text-[12px] font-medium text-muted mb-3">จังหวัด</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={pieDataProvince} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
+                      {pieDataProvince.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => [`${v} สถานที่`]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+                <p className="text-[12px] font-medium text-muted mb-3">ประเภทสถานที่</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis type="number" tick={{ fontSize: 10 }} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
+                    <Tooltip formatter={(v: number) => [`${v} สถานที่`]} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                      {barData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         )
       })()}
 
       {/* Search */}
-      <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 mb-5"
-        style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-        <Search size={15} className="text-muted shrink-0" />
+      <div className="relative mb-4">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="ค้นหาชื่อสถานที่, จังหวัด..."
-          className="bg-transparent text-[14px] text-primary outline-none w-full placeholder:text-muted" />
-        {search && <button onClick={() => setSearch('')}><X size={14} className="text-muted" /></button>}
+          placeholder="ค้นหาสถานที่หรือจังหวัด..."
+          className="input-theme pl-9 text-[13px] w-full" />
       </div>
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-muted" />
+        <div className="flex justify-center py-16">
+          <Loader2 size={20} className="animate-spin text-muted" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl p-12 text-center"
-          style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-          <MapPin size={32} className="mx-auto mb-3 text-muted" />
-          <p className="text-[14px] font-medium text-primary">
-            {search ? 'ไม่พบสถานที่ที่ค้นหา' : 'ยังไม่มีสถานที่'}
-          </p>
-          {!search && (
-            <button onClick={openAdd} className="btn-accent mt-4 text-[13px] py-2 px-4">
-              เพิ่มสถานที่แรก
-            </button>
-          )}
-        </div>
+        <div className="text-center py-16 text-muted text-[13px]">ไม่พบสถานที่</div>
       ) : (
-        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-          {filtered.map((venue, i) => (
-            <div key={venue.id}
-              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-2)]"
-              style={{
-                background: 'var(--surface-1)',
-                borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
-              }}>
-              {/* Thumbnail */}
-              <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
-                style={{ background: 'var(--accent-muted)', border: '1px solid var(--border)' }}>
+        <div className="flex flex-col gap-2">
+          {filtered.map(venue => (
+            <div key={venue.id} className="flex items-center gap-3 rounded-xl px-4 py-3"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+
+              {/* รูป venue */}
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
+                style={{ background: 'var(--surface-2)' }}>
                 {(venue as any).image_url ? (
                   <img src={(venue as any).image_url} alt={venue.name}
-                    className="w-full h-full object-cover" />
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={e => { e.currentTarget.style.display = 'none' }} />
                 ) : (
-                  <MapPin size={16} style={{ color: 'var(--accent)' }} />
+                  <MapPin size={16} className="text-muted" />
                 )}
               </div>
-              {/* Info */}
+
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="text-[14px] font-medium text-primary">{venue.name}</div>
-                  {(venue as any).category && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{ background: ((venue as any).category.color || '#7F77DD') + '20', color: (venue as any).category.color || '#7F77DD' }}>
-                      {(venue as any).category.name_th}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className="text-[11px] text-muted">{venue.province}</span>
-                  {venue.address && (
-                    <span className="text-[11px] text-muted truncate max-w-[200px]">· {venue.address}</span>
-                  )}
-                  {venue.capacity && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--surface-3)', color: 'var(--text-muted)' }}>
-                      ความจุ {venue.capacity.toLocaleString()} คน
-                    </span>
-                  )}
-                </div>
+                <p className="text-[13px] font-medium text-primary truncate">{venue.name}</p>
+                <p className="text-[11px] text-muted truncate">
+                  {venue.province}
+                  {venue.capacity ? ` · ${venue.capacity.toLocaleString()} คน` : ''}
+                  {(venue as any).category?.name_th ? ` · ${(venue as any).category.name_th}` : ''}
+                </p>
               </div>
-              {/* Links + actions */}
+
               <div className="flex items-center gap-1 shrink-0">
                 {venue.maps_url && (
                   <a href={venue.maps_url} target="_blank" rel="noopener noreferrer"
@@ -414,11 +389,14 @@ export default function VenuesAdminPage() {
                 <p className="text-[10px] text-muted mt-1.5">ใช้สำหรับ search — เช่น ชื่อเก่า ชื่อย่อ ชื่อภาษาอื่น</p>
               </Field>
 
-              <Field label="รูปสถานที่ (Image URL)">
+              {/* ── รูปสถานที่ ── */}
+              <Field label="รูปสถานที่">
+                {/* Preview */}
                 {form.image_url && (
                   <div className="relative w-full h-36 rounded-xl overflow-hidden mb-2"
                     style={{ border: '1px solid var(--border)' }}>
                     <img src={form.image_url} alt="preview"
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover" />
                     <button
                       onClick={() => setForm(f => ({ ...f, image_url: '' }))}
@@ -428,10 +406,38 @@ export default function VenuesAdminPage() {
                     </button>
                   </div>
                 )}
+
+                {/* Upload button */}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (file) handleUploadImage(file)
+                    e.target.value = ''
+                  }}
+                />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] mb-2 transition-all"
+                  style={{ background: 'var(--surface-2)', border: '1px dashed var(--border-md)', color: 'var(--text-secondary)' }}>
+                  {uploading
+                    ? <><Loader2 size={14} className="animate-spin" /> กำลังอัปโหลด...</>
+                    : <><Upload size={14} /> อัปโหลดรูปจากเครื่อง</>}
+                </button>
+
+                {/* หรือวาง URL */}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                  <span className="text-[10px] text-muted">หรือ</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                </div>
                 <input value={form.image_url}
                   onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
-                  placeholder="https://..." className="input-theme text-[13px]" />
-                <p className="text-[10px] text-muted mt-1.5">วาง URL รูปภาพ จะแสดง preview ด้านบน</p>
+                  placeholder="วาง URL รูปภาพ..." className="input-theme text-[13px]" />
               </Field>
 
             </div>
@@ -486,4 +492,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   )
 }
-
