@@ -30,13 +30,16 @@ async function getUpcomingEvents(artistId: string) {
   const today = new Date().toISOString().slice(0, 10)
   const { data } = await sb
     .from('events')
-    .select('id,title,slug,start_date,start_time,is_free,ticket_price_min,ticket_price_max,ticket_url,poster_url,status,venue:venues(id,name,province)')
+    .select('id,title,slug,start_date,start_time,is_free,ticket_price_min,ticket_price_max,ticket_url,poster_url,status,venue:venues(id,name,province),event_artists!inner(artist_id)')
     .eq('event_artists.artist_id', artistId)
     .gte('start_date', today)
     .is('deleted_at', null)
     .order('start_date', { ascending: true })
     .limit(20)
-  return data || []
+  return (data || []).map((ev: any) => {
+    const { event_artists, ...rest } = ev
+    return rest
+  })
 }
 
 // ─── generateMetadata ─────────────────────────────────────
