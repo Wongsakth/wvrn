@@ -544,11 +544,11 @@ export default function EventsAdminPage() {
       {/* ── Active tabs ── */}
       {activeTab !== 'trash' && (
         <>
-          {/* Filter + Sort bar */}
-          <div className="flex flex-wrap gap-2 mb-3">
+          {/* Filter + Sort bar — 1 แถว */}
+          <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
             {/* Search */}
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-48"
-              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-0"
+              style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', minWidth: 160 }}>
               <Search size={13} className="text-muted shrink-0" />
               <input value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="ค้นหาชื่องาน, ศิลปิน..."
@@ -558,46 +558,45 @@ export default function EventsAdminPage() {
 
             {/* Status filter */}
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-              className="input-theme text-[12px] py-2 px-3 rounded-xl"
-              style={{ minWidth: 110 }}>
-              <option value="">สถานะทั้งหมด</option>
+              className="input-theme text-[12px] py-2 px-2 rounded-xl shrink-0"
+              style={{ maxWidth: 110 }}>
+              <option value="">สถานะ</option>
               {STATUS_OPTIONS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
 
             {/* Province filter */}
             <select value={filterProvince} onChange={e => setFilterProvince(e.target.value)}
-              className="input-theme text-[12px] py-2 px-3 rounded-xl"
-              style={{ minWidth: 130 }}>
-              <option value="">จังหวัดทั้งหมด</option>
+              className="input-theme text-[12px] py-2 px-2 rounded-xl shrink-0"
+              style={{ maxWidth: 120 }}>
+              <option value="">จังหวัด</option>
               {provinceOptions.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
 
             {/* Featured filter */}
             <select value={filterFeatured} onChange={e => setFilterFeatured(e.target.value)}
-              className="input-theme text-[12px] py-2 px-3 rounded-xl"
-              style={{ minWidth: 120 }}>
-              <option value="">Featured ทั้งหมด</option>
-              <option value="yes">⭐ มี Featured</option>
+              className="input-theme text-[12px] py-2 px-2 rounded-xl shrink-0"
+              style={{ maxWidth: 110 }}>
+              <option value="">Featured</option>
+              <option value="yes">⭐ มี</option>
               <option value="partner">⭐ Partner</option>
-              <option value="wvrn_picks">⚡ WVRN Picks</option>
+              <option value="wvrn_picks">⚡ Picks</option>
             </select>
 
             {/* Sort */}
             <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
-              className="input-theme text-[12px] py-2 px-3 rounded-xl"
-              style={{ minWidth: 130 }}>
-              <option value="date_desc">วันที่ ใหม่→เก่า</option>
-              <option value="date_asc">วันที่ เก่า→ใหม่</option>
-              <option value="title">ชื่อ A→Z</option>
+              className="input-theme text-[12px] py-2 px-2 rounded-xl shrink-0"
+              style={{ maxWidth: 120 }}>
+              <option value="date_desc">ใหม่→เก่า</option>
+              <option value="date_asc">เก่า→ใหม่</option>
+              <option value="title">A→Z</option>
             </select>
 
             {/* Clear filters */}
             {hasFilter && (
               <button onClick={() => { setFilterStatus(''); setFilterProvince(''); setFilterMonth(''); setFilterFeatured('') }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] transition-colors"
+                className="flex items-center gap-1 px-2.5 py-2 rounded-xl text-[12px] shrink-0 transition-colors"
                 style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                <X size={12} /> ล้าง filter
-              </button>
+                <X size={12} /> ล้าง
             )}
           </div>
 
