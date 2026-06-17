@@ -597,6 +597,7 @@ export default function EventsAdminPage() {
                 className="flex items-center gap-1 px-2.5 py-2 rounded-xl text-[12px] shrink-0 transition-colors"
                 style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <X size={12} /> ล้าง
+              </button>
             )}
           </div>
 
