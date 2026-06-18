@@ -159,9 +159,12 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
 
       setSetlists(prev => prev.map((s, i) => i !== idx ? s : {
         ...s,
-        songs: data.songs.map((title: string, j: number) => ({
-          song_title: title, order_num: j + 1,
-          is_cover: false, is_encore: false,
+        songs: data.songs.map((s: any, j: number) => ({
+          song_title: typeof s === 'string' ? s : s.title,
+          order_num: j + 1,
+          is_cover: false,
+          is_encore: s.is_encore ?? false,
+          duration_sec: s.duration_sec ?? 250,
         })),
         source: 'ai_prediction',
         is_prediction: true,
@@ -357,7 +360,7 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
                         <input
                           value={formatDuration(song.duration_sec)}
                           onChange={e => updateSong(idx, songIdx, 'duration_sec', parseDuration(e.target.value))}
-                          placeholder="3:30"
+                          placeholder="4:10"
                           className="w-12 bg-transparent text-[11px] text-muted outline-none text-center shrink-0"
                         />
 

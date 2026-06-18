@@ -61,8 +61,9 @@ Past Setlists: ${pastSetlistText}
 - ถ้าไม่รู้จักศิลปินนี้เลย ให้ใส่ songs เป็น array ว่าง [] และ confidence เป็น 0
 - ห้ามสุ่มชื่อเพลงที่ไม่ใช่ของศิลปินนี้มาใส่
 
-ตอบด้วย JSON เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON:
-{"songs":["เพลง1","เพลง2","เพลง3"],"encore":["เพลง encore"],"confidence":0.8,"reasoning":"เหตุผล"}`
+ตอบด้วย JSON เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON
+songs เป็น array of object พร้อม duration_sec (วินาที) ถ้าไม่รู้ใส่ 250:
+{"songs":[{"title":"เพลง1","duration_sec":215},{"title":"เพลง2","duration_sec":198}],"encore":[{"title":"เพลง encore","duration_sec":230}],"confidence":0.8,"reasoning":"เหตุผล"}`
 
     // 4. Call Gemini
     const geminiRes = await fetch(
@@ -107,9 +108,15 @@ Past Setlists: ${pastSetlistText}
 
     if (!parsed) throw new Error('Cannot parse Gemini response: ' + raw.slice(0, 200))
 
+    // รองรับทั้ง format เก่า (string[]) และใหม่ (object[])
+    const normalizeSong = (s: any, isEncore = false) => {
+      if (typeof s === 'string') return { title: s.replace(' [encore]', ''), duration_sec: 250, is_encore: isEncore || s.includes('[encore]') }
+      return { title: s.title || s, duration_sec: s.duration_sec || 250, is_encore: isEncore }
+    }
+
     const allSongs = [
-      ...(parsed.songs || []),
-      ...(parsed.encore || []).map((s: string) => `${s} [encore]`),
+      ...(parsed.songs || []).map((s: any) => normalizeSong(s, false)),
+      ...(parsed.encore || []).map((s: any) => normalizeSong(s, true)),
     ]
 
     if (allSongs.length === 0 || parsed.confidence === 0) {
