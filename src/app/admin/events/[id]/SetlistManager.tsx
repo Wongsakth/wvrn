@@ -264,8 +264,26 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
 
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-medium text-primary">{sl.artist_name}</p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] text-muted">{sl.songs.length} เพลง</span>
+                {(() => {
+                  const totalSec = sl.songs.reduce((sum, s) => sum + (s.duration_sec || 0), 0)
+                  if (!totalSec) return null
+                  const m = Math.floor(totalSec / 60)
+                  const h = Math.floor(m / 60)
+                  const rem = m % 60
+                  const label = h > 0 ? `${h}ชม. ${rem}นาที` : `${m} นาที`
+                  const isLong = totalSec > 3600
+                  return (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                      style={{
+                        background: isLong ? 'rgba(245,158,11,.1)' : 'rgba(29,158,117,.1)',
+                        color: isLong ? '#D97706' : '#1D9E75',
+                      }}>
+                      ⏱ {label}{isLong ? ' · Concert ใหญ่' : ''}
+                    </span>
+                  )
+                })()}
                 {sl.is_prediction && (
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
                     style={{ background: 'rgba(124,58,237,.1)', color: '#7C3AED' }}>
