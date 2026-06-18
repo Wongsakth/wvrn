@@ -55,6 +55,12 @@ export async function POST(req: NextRequest) {
 Past Setlists: ${pastSetlistText}
 ข่าวล่าสุด: ${newsText}
 
+กฎสำคัญ:
+- ใส่เฉพาะเพลงที่ ${artistName} เป็นคนร้อง/เล่นจริงๆ เท่านั้น
+- ถ้าไม่แน่ใจว่าเพลงนั้นเป็นของ ${artistName} จริง ห้ามใส่
+- ถ้าไม่รู้จักศิลปินนี้เลย ให้ใส่ songs เป็น array ว่าง [] และ confidence เป็น 0
+- ห้ามสุ่มชื่อเพลงที่ไม่ใช่ของศิลปินนี้มาใส่
+
 ตอบด้วย JSON เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON:
 {"songs":["เพลง1","เพลง2","เพลง3"],"encore":["เพลง encore"],"confidence":0.8,"reasoning":"เหตุผล"}`
 
@@ -68,7 +74,7 @@ Past Setlists: ${pastSetlistText}
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 1500,
+            maxOutputTokens: 3000,
             responseMimeType: 'application/json', // บังคับ JSON output
           },
         }),
@@ -106,7 +112,9 @@ Past Setlists: ${pastSetlistText}
       ...(parsed.encore || []).map((s: string) => `${s} [encore]`),
     ]
 
-    if (allSongs.length === 0) throw new Error('AI ไม่สามารถทำนาย setlist ได้ ลองใหม่อีกครั้ง')
+    if (allSongs.length === 0 || parsed.confidence === 0) {
+      throw new Error(`AI ไม่รู้จักศิลปิน "${artistName}" ดีพอ กรุณาใส่ setlist เองครับ`)
+    }
 
     return NextResponse.json({
       songs: allSongs,
