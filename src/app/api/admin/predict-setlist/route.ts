@@ -1,5 +1,4 @@
 // app/api/admin/predict-setlist/route.ts
-// AI Setlist Prediction — ดึง past setlists แล้วให้ Gemini ทำนาย
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const sb = getSupabase()
 
-    // ── 1. ดึง past setlists ของศิลปินนี้จาก DB ────────────
+    // 1. Past setlists
     const { data: pastSetlists } = await sb
       .from('setlists')
       .select('notes, setlist_songs(song_title, order_num, is_encore)')
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(5)
 
-    // ── 2. ดึง artist news เพื่อ context ──────────────────
+    // 2. Artist news
     const { data: news } = await sb
       .from('artist_news')
       .select('title, published_at')
@@ -34,7 +33,6 @@ export async function POST(req: NextRequest) {
       .order('published_at', { ascending: false })
       .limit(10)
 
-    // ── 3. สร้าง prompt ────────────────────────────────────
     const pastSetlistText = pastSetlists?.length
       ? pastSetlists.map((sl, i) => {
           const songs = (sl.setlist_songs ?? [])
@@ -49,32 +47,18 @@ export async function POST(req: NextRequest) {
       ? news.map(n => `- ${n.title}`).join('\n')
       : 'ไม่มีข้อมูล news'
 
-    const prompt = `คุณเป็นผู้เชี่ยวชาญด้านดนตรีไทย วิเคราะห์และทำนาย setlist สำหรับคอนเสิร์ตนี้
+    // 3. Prompt — บังคับ JSON output เข้มขึ้น
+    const prompt = `คุณเป็นผู้เชี่ยวชาญด้านดนตรีไทย ทำนาย setlist สำหรับคอนเสิร์ตนี้
 
 ศิลปิน: ${artistName}
 งาน: ${eventTitle}
+Past Setlists: ${pastSetlistText}
+ข่าวล่าสุด: ${newsText}
 
-Past Setlists ของศิลปิน:
-${pastSetlistText}
+ตอบด้วย JSON เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON:
+{"songs":["เพลง1","เพลง2","เพลง3"],"encore":["เพลง encore"],"confidence":0.8,"reasoning":"เหตุผล"}`
 
-ข่าวล่าสุด:
-${newsText}
-
-กรุณาทำนาย setlist ที่น่าจะเล่นในคอนเสิร์ตนี้ โดย:
-1. ดูจาก pattern ของ past setlists
-2. เพลง hit ที่คนนิยม
-3. อัลบั้มล่าสุดที่มีในข่าว
-4. เพลงที่เหมาะกับ encore
-
-ตอบเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
-{
-  "songs": ["ชื่อเพลง 1", "ชื่อเพลง 2", ...],
-  "encore": ["ชื่อเพลง encore 1", ...],
-  "confidence": 0.75,
-  "reasoning": "เหตุผลสั้นๆ"
-}`
-
-    // ── 4. Call Gemini ─────────────────────────────────────
+    // 4. Call Gemini
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -82,21 +66,47 @@ ${newsText}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 1000 },
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 1500,
+            responseMimeType: 'application/json', // บังคับ JSON output
+          },
         }),
       }
     )
 
     const geminiData = await geminiRes.json()
-    const raw = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-    const clean = raw.replace(/```json|```/g, '').trim()
-    const parsed = JSON.parse(clean)
 
-    // รวม songs + encore
+    // debug log
+    console.log('Gemini response:', JSON.stringify(geminiData).slice(0, 500))
+
+    const raw = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    if (!raw) {
+      // check for errors from Gemini
+      const errMsg = geminiData?.error?.message || geminiData?.promptFeedback?.blockReason || 'No response from Gemini'
+      throw new Error(errMsg)
+    }
+
+    // parse — try multiple strategies
+    let parsed: any = null
+    const strategies = [
+      () => JSON.parse(raw),
+      () => JSON.parse(raw.replace(/```json|```/g, '').trim()),
+      () => { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('no JSON found') },
+    ]
+
+    for (const strategy of strategies) {
+      try { parsed = strategy(); break } catch { continue }
+    }
+
+    if (!parsed) throw new Error('Cannot parse Gemini response: ' + raw.slice(0, 200))
+
     const allSongs = [
       ...(parsed.songs || []),
       ...(parsed.encore || []).map((s: string) => `${s} [encore]`),
     ]
+
+    if (allSongs.length === 0) throw new Error('AI ไม่สามารถทำนาย setlist ได้ ลองใหม่อีกครั้ง')
 
     return NextResponse.json({
       songs: allSongs,
@@ -105,7 +115,7 @@ ${newsText}
     })
 
   } catch (e: any) {
-    console.error('predict-setlist error:', e)
+    console.error('predict-setlist error:', e.message)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
