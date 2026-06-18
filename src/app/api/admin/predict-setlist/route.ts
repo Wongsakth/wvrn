@@ -75,7 +75,7 @@ songs เป็น array of object พร้อม duration_sec (วินาท
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 3000,
+            maxOutputTokens: 8192,
             responseMimeType: 'application/json', // บังคับ JSON output
           },
         }),
