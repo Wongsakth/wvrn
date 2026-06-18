@@ -700,6 +700,10 @@ export default function EventsAdminPage() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                      <a href={`/admin/events/${ev.id}`}
+                        className="icon-btn w-8 h-8 flex items-center justify-center" title="Setlist">
+                        <Music size={13} />
+                      </a>
                       <button onClick={() => openEdit(ev)} className="icon-btn w-8 h-8" title="แก้ไข">
                         <Edit2 size={13} />
                       </button>
