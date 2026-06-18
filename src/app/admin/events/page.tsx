@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import {
   Plus, Search, X, Edit2, Trash2, Check, RotateCcw,
   CalendarDays, Clock, MapPin, Loader2, ChevronUp, ChevronDown,
-  Star, Zap, TrendingUp, Calendar, Filter,
+  Star, Zap, TrendingUp, Calendar, Filter, Music,
 } from 'lucide-react'
 import { cn, PROVINCES, formatThaiDate, statusLabel, genreTagClass } from '@/lib/utils'
 import toast from 'react-hot-toast'
