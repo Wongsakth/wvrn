@@ -45,8 +45,22 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
   const [predicting,  setPredicting]  = useState<string | null>(null)
   const [expanded,    setExpanded]    = useState<string | null>(null)
   const [editSong,    setEditSong]    = useState<{setlistIdx: number; songIdx: number} | null>(null)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [songCache,   setSongCache]   = useState<Record<string, string[]>>({}) // artistId → songs
 
   const sb = createClient()
+
+  // ดึงชื่อเพลงทั้งหมดของศิลปินนี้จาก past setlists
+  async function loadSongSuggestions(artistId: string) {
+    if (songCache[artistId]) return // cache แล้ว
+    const { data } = await sb
+      .from('setlist_songs')
+      .select('song_title, setlist:setlists!inner(artist_id)')
+      .eq('setlist.artist_id', artistId)
+      .order('song_title')
+    const songs = [...new Set((data || []).map((s: any) => s.song_title))].sort()
+    setSongCache(prev => ({ ...prev, [artistId]: songs }))
+  }
 
   // ─── Load setlists ────────────────────────────────────────
   async function load() {
@@ -159,12 +173,9 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
 
       setSetlists(prev => prev.map((s, i) => i !== idx ? s : {
         ...s,
-        songs: data.songs.map((s: any, j: number) => ({
-          song_title: typeof s === 'string' ? s : s.title,
-          order_num: j + 1,
-          is_cover: false,
-          is_encore: s.is_encore ?? false,
-          duration_sec: s.duration_sec ?? 250,
+        songs: data.songs.map((title: string, j: number) => ({
+          song_title: title, order_num: j + 1,
+          is_cover: false, is_encore: false,
         })),
         source: 'ai_prediction',
         is_prediction: true,
@@ -302,7 +313,7 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
           </div>
 
           {/* Song list */}
-          {expanded === sl.artist_id && (
+          {expanded === sl.artist_id && (loadSongSuggestions(sl.artist_id), true) && (
             <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-2)' }}>
 
               {/* Notes */}
@@ -327,15 +338,38 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
 
                         {/* Song title */}
                         {editSong?.setlistIdx === idx && editSong?.songIdx === songIdx ? (
-                          <input
-                            value={song.song_title}
-                            onChange={e => updateSong(idx, songIdx, 'song_title', e.target.value)}
-                            onBlur={() => setEditSong(null)}
-                            onKeyDown={e => { if (e.key === 'Enter') setEditSong(null) }}
-                            className="flex-1 bg-transparent text-[13px] text-primary outline-none border-b"
-                            style={{ borderColor: 'var(--accent)' }}
-                            autoFocus
-                          />
+                          <div className="flex-1 relative">
+                            <input
+                              value={song.song_title}
+                              onChange={e => {
+                                updateSong(idx, songIdx, 'song_title', e.target.value)
+                                const q = e.target.value.toLowerCase()
+                                const cache = songCache[sl.artist_id] || []
+                                setSuggestions(q.length >= 1 ? cache.filter(s => s.toLowerCase().includes(q)).slice(0, 8) : [])
+                              }}
+                              onBlur={() => { setTimeout(() => { setEditSong(null); setSuggestions([]) }, 150) }}
+                              onKeyDown={e => { if (e.key === 'Enter') { setEditSong(null); setSuggestions([]) } }}
+                              className="w-full bg-transparent text-[13px] text-primary outline-none border-b"
+                              style={{ borderColor: 'var(--accent)' }}
+                              autoFocus
+                            />
+                            {suggestions.length > 0 && (
+                              <div className="absolute left-0 top-full mt-1 z-50 rounded-xl overflow-hidden shadow-lg"
+                                style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', minWidth: 200 }}>
+                                {suggestions.map(s => (
+                                  <button key={s}
+                                    onMouseDown={() => {
+                                      updateSong(idx, songIdx, 'song_title', s)
+                                      setSuggestions([])
+                                      setEditSong(null)
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-[12px] text-primary hover:bg-[var(--surface-2)] transition-colors">
+                                    {s}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="flex-1 text-[13px] text-primary truncate cursor-pointer"
                             onClick={() => setEditSong({ setlistIdx: idx, songIdx })}>
@@ -360,7 +394,7 @@ export default function SetlistManager({ eventId, eventTitle, artists }: Props) 
                         <input
                           value={formatDuration(song.duration_sec)}
                           onChange={e => updateSong(idx, songIdx, 'duration_sec', parseDuration(e.target.value))}
-                          placeholder="4:10"
+                          placeholder="3:30"
                           className="w-12 bg-transparent text-[11px] text-muted outline-none text-center shrink-0"
                         />
 
