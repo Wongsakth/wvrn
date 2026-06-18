@@ -15,7 +15,6 @@ import TicketSaleWidget from '@/components/events/TicketSaleWidget'
 import { createClient } from '@/lib/supabase'
 import { cn, formatPrice, statusLabel, genreTagClass, googleCalendarUrl } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import SetlistManager from './SetlistManager'
 
 export default function EventDetailPage() {
   const { id }   = useParams<{ id: string }>()
@@ -237,23 +236,6 @@ export default function EventDetailPage() {
                 endDate={event.end_date}
               />
             )}
-
-            {/* ── Setlist Manager (admin) ── */}
-            {event.artists?.length > 0 && (
-              <div className="rounded-xl p-4"
-                style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                <SetlistManager
-                  eventId={event.id}
-                  eventTitle={event.title}
-                  artists={event.artists.map((a: any) => ({
-                    id: a.id,
-                    name: a.name,
-                    image_url: a.image_url,
-                  }))}
-                />
-              </div>
-            )}
-
           </div>
 
           {/* ── Right / Sidebar ── */}
