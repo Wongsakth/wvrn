@@ -57,6 +57,61 @@ import type {
 type TabMode = 'all' | 'artists' | 'venues' | 'following'
 type AttendStatus = 'going' | 'attended' | null
 
+
+// ─── VibeBanner ──────────────────────────────────────────
+const VIBE_SLIDES = [
+  {
+    icon: '🎵',
+    text: 'เรดาร์คอนเสิร์ตไทย',
+    sub: 'รวมทุกงานดนตรี ทุกสถานที่ ทั่วประเทศ',
+  },
+  {
+    icon: '📍',
+    text: '1,300+ งาน · 546 ศิลปิน',
+    sub: '867 สถานที่ อัปเดตทุกวัน',
+  },
+  {
+    icon: '🔔',
+    text: 'ติดตามศิลปินที่ชอบ',
+    sub: 'รับแจ้งเตือนก่อนใคร ไม่พลาดทุกโชว์',
+  },
+  {
+    icon: '🆓',
+    text: 'งานฟรีก็มี',
+    sub: 'คอนเสิร์ตฟรีทั่วไทย เช็คได้เลยตอนนี้',
+  },
+]
+
+function VibeBanner() {
+  const [cur, setCur] = useState(0)
+
+  useEffect(() => {
+    const t = setInterval(() => setCur(c => (c + 1) % VIBE_SLIDES.length), 3500)
+    return () => clearInterval(t)
+  }, [])
+
+  const slide = VIBE_SLIDES[cur]
+
+  return (
+    <div className="flex items-center justify-center gap-3 py-2 px-4"
+      style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border)' }}>
+      <span className="text-[14px]">{slide.icon}</span>
+      <div className="flex items-center gap-1.5 text-[12px]">
+        <span className="font-medium text-primary">{slide.text}</span>
+        <span className="text-muted hidden sm:inline">—</span>
+        <span className="text-muted hidden sm:inline">{slide.sub}</span>
+      </div>
+      <div className="flex gap-1 ml-2">
+        {VIBE_SLIDES.map((_, i) => (
+          <button key={i} onClick={() => setCur(i)}
+            className="w-1.5 h-1.5 rounded-full transition-all"
+            style={{ background: i === cur ? 'var(--accent)' : 'var(--border)' }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const sb = createClient()
   const { user, loading: authLoading, province } = useAuth()
@@ -504,6 +559,9 @@ const [showMap, setShowMap] = useState(false)
   return (
     <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}>
       <Navbar />
+
+      {/* ── Vibe Banner ── */}
+      <VibeBanner />
 
       <main className="max-w-screen-xl mx-auto px-4 py-4">
 
