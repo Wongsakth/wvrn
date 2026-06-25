@@ -15,6 +15,7 @@ const EMPTY = {
   name: '', address: '', province: 'กรุงเทพมหานคร',
   capacity: '', maps_url: '', aliases: [] as string[], image_url: '',
   category_id: '' as string,
+  website: '', phone: '', facebook_url: '',
 }
 
 export default function VenuesAdminPage() {
@@ -69,6 +70,9 @@ export default function VenuesAdminPage() {
       aliases:     (v as any).aliases ?? [],
       image_url:   (v as any).image_url ?? '',
       category_id: (v as any).category_id ?? '',
+      website:     (v as any).website ?? '',
+      phone:       (v as any).phone ?? '',
+      facebook_url:(v as any).facebook_url ?? '',
     })
     setAliasInput('')
     setShowForm(true)
@@ -113,6 +117,9 @@ export default function VenuesAdminPage() {
         aliases:     form.aliases.length > 0 ? form.aliases : null,
         image_url:   form.image_url.trim() || null,
         category_id: form.category_id || null,
+        website:     (form as any).website?.trim() || null,
+        phone:       (form as any).phone?.trim() || null,
+        facebook_url:(form as any).facebook_url?.trim() || null,
       }
       if (editTarget) {
         const { error } = await sb.from('venues').update(payload).eq('id', editTarget.id)
@@ -344,6 +351,18 @@ export default function VenuesAdminPage() {
               <Field label="ลิงก์ Google Maps">
                 <input value={form.maps_url} onChange={e => setForm(f => ({ ...f, maps_url: e.target.value }))}
                   placeholder="https://maps.google.com/..." className="input-theme text-[13px]" />
+              </Field>
+              <Field label="เว็บไซต์">
+                <input value={(form as any).website || ''} onChange={e => setForm(f => ({ ...f, website: e.target.value } as any))}
+                  placeholder="https://venue.com" className="input-theme text-[13px]" />
+              </Field>
+              <Field label="Facebook Page">
+                <input value={(form as any).facebook_url || ''} onChange={e => setForm(f => ({ ...f, facebook_url: e.target.value } as any))}
+                  placeholder="https://facebook.com/venuename" className="input-theme text-[13px]" />
+              </Field>
+              <Field label="เบอร์โทรศัพท์">
+                <input value={(form as any).phone || ''} onChange={e => setForm(f => ({ ...f, phone: e.target.value } as any))}
+                  placeholder="02-xxx-xxxx" className="input-theme text-[13px]" />
               </Field>
 
               <Field label="ชื่อเรียกอื่น (Aliases)">
