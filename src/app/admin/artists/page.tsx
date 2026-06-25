@@ -234,39 +234,22 @@ export default function ArtistsAdminPage() {
   }
 
   async function rewriteBio() {
-    const combined = [bioSource1, bioSource2].filter(Boolean).join('\n\n---\n\n')
-    if (!combined.trim()) { toast.error('กรุณาใส่ข้อมูลอย่างน้อย 1 source'); return }
+    if (!bioSource1.trim()) { toast.error('กรุณาใส่ข้อมูลอย่างน้อย 1 source'); return }
     setRewriting(true)
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `คุณเป็นนักเขียนคอนเทนต์ดนตรีไทย เขียน bio ศิลปินภาษาไทยจากข้อมูลด้านล่าง
-
-กฎสำคัญ:
-- เขียนใหม่ด้วยภาษาของตัวเอง ห้าม copy ทั้งยวง
-- กระชับ ไม่เกิน 3-4 ประโยค
-- เน้นจุดเด่น ความสำเร็จ และเอกลักษณ์ของศิลปิน
-- ภาษาไทยที่อ่านง่าย เป็นธรรมชาติ
-- ห้ามขึ้นต้นด้วยชื่อศิลปิน
-
-ศิลปิน: ${form.name}${form.name_en ? ` (${form.name_en})` : ''}
-
-ข้อมูล:
-${combined}
-
-ตอบแค่ bio ภาษาไทยเท่านั้น ไม่มีคำนำหรือคำลงท้าย` }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
-          }),
-        }
-      )
+      const res = await fetch('/api/admin/rewrite-bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistName: form.name,
+          artistNameEn: form.name_en,
+          source1: bioSource1,
+          source2: bioSource2,
+        }),
+      })
       const data = await res.json()
-      const bio = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-      if (!bio) throw new Error('AI ไม่ตอบกลับ')
-      setForm(f => ({ ...f, bio_final_th: bio }))
+      if (!res.ok) throw new Error(data.error || 'Rewrite ไม่สำเร็จ')
+      setForm(f => ({ ...f, bio_final_th: data.bio }))
       toast.success('Rewrite สำเร็จ!')
     } catch (e: any) { toast.error('Rewrite ไม่ได้: ' + e.message) }
     finally { setRewriting(false) }
