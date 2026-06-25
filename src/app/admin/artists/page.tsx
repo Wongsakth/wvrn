@@ -44,7 +44,7 @@ export default function ArtistsAdminPage() {
   const [filterGenre,  setFilterGenre]  = useState('')
   const [filterNat,    setFilterNat]    = useState('')
   const [filterBio,    setFilterBio]    = useState('')
-  const [sortBy,       setSortBy]       = useState<'name'|'followers'|'recent'>('name')
+  const [sortBy,       setSortBy]       = useState<'name'|'followers'|'recent'|'upcoming'>('name')
 
   // form
   const [showForm,     setShowForm]     = useState(false)
@@ -145,6 +145,12 @@ export default function ArtistsAdminPage() {
 
     if (sortBy === 'followers') list.sort((a, b) => (b.follower_count || 0) - (a.follower_count || 0))
     else if (sortBy === 'recent') list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+    else if (sortBy === 'upcoming') list.sort((a, b) => {
+      const today = new Date().toISOString().slice(0, 10)
+      const countA = (a.last_event || []).filter((ea: any) => ea.event?.start_date >= today).length
+      const countB = (b.last_event || []).filter((ea: any) => ea.event?.start_date >= today).length
+      return countB - countA
+    })
     else list.sort((a, b) => a.name.localeCompare(b.name))
 
     return list
@@ -431,6 +437,7 @@ export default function ArtistsAdminPage() {
               <option value="name">ชื่อ A→Z</option>
               <option value="followers">Followers</option>
               <option value="recent">เพิ่มล่าสุด</option>
+              <option value="upcoming">งานกำลังจะมา</option>
             </select>
 
             {hasFilter && (
