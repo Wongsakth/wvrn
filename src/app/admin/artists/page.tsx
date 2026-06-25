@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
   Plus, Search, Edit2, Trash2, X, Check, RotateCcw,
-  Music, Instagram, Facebook, Loader2,
+  Music, Instagram, Facebook, Loader2, Sparkles,
   Globe, Building2, Star, Calendar, Filter,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -16,7 +16,7 @@ import {
 } from 'recharts'
 
 const EMPTY_FORM = {
-  name: '', name_en: '', bio: '', image_url: '',
+  name: '', name_en: '', bio: '', bio_final_th: '', image_url: '',
   genres: [] as Genre[], facebook_url: '', instagram_url: '',
   tiktok_url: '', website_url: '', label_url: '',
   label_id: '' as string | null, nationality: 'TH' as string,
@@ -52,6 +52,9 @@ export default function ArtistsAdminPage() {
   const [deleteId,     setDeleteId]     = useState<string|null>(null)
   const [form,         setForm]         = useState({ ...EMPTY_FORM })
   const [dupSuggestions, setDupSuggestions] = useState<any[]>([])
+  const [bioSource1,   setBioSource1]   = useState('')
+  const [bioSource2,   setBioSource2]   = useState('')
+  const [rewriting,    setRewriting]    = useState(false)
 
   const sb = createClient()
   const dupTimer = useRef<any>(null)
@@ -161,7 +164,7 @@ export default function ArtistsAdminPage() {
   }
 
   // ─── Actions ─────────────────────────────────────────────
-  function openAdd() { setEditTarget(null); setForm({ ...EMPTY_FORM }); setDupSuggestions([]); setShowForm(true) }
+  function openAdd() { setEditTarget(null); setForm({ ...EMPTY_FORM }); setDupSuggestions([]); setBioSource1(''); setBioSource2(''); setShowForm(true) }
 
   function openEdit(a: any) {
     setEditTarget(a)
@@ -184,7 +187,7 @@ export default function ArtistsAdminPage() {
     try {
       const payload = {
         name: form.name.trim(), name_en: form.name_en.trim() || null,
-        bio: form.bio.trim() || null, image_url: form.image_url || null,
+        bio: form.bio.trim() || null, bio_final_th: (form.bio_final_th || '').trim() || null, image_url: form.image_url || null,
         genres: form.genres, facebook_url: form.facebook_url.trim() || null,
         instagram_url: form.instagram_url.trim() || null, tiktok_url: form.tiktok_url.trim() || null,
         website_url: form.website_url.trim() || null, label_url: form.label_url.trim() || null,
@@ -228,6 +231,45 @@ export default function ArtistsAdminPage() {
     await sb.from('artists').update({ is_featured: newVal }).eq('id', a.id)
     setArtists(prev => prev.map(x => x.id === a.id ? { ...x, is_featured: newVal } : x))
     toast.success(newVal ? `⭐ ${a.name} เป็น Top Artist` : 'ยกเลิก Top Artist')
+  }
+
+  async function rewriteBio() {
+    const combined = [bioSource1, bioSource2].filter(Boolean).join('\n\n---\n\n')
+    if (!combined.trim()) { toast.error('กรุณาใส่ข้อมูลอย่างน้อย 1 source'); return }
+    setRewriting(true)
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `คุณเป็นนักเขียนคอนเทนต์ดนตรีไทย เขียน bio ศิลปินภาษาไทยจากข้อมูลด้านล่าง
+
+กฎสำคัญ:
+- เขียนใหม่ด้วยภาษาของตัวเอง ห้าม copy ทั้งยวง
+- กระชับ ไม่เกิน 3-4 ประโยค
+- เน้นจุดเด่น ความสำเร็จ และเอกลักษณ์ของศิลปิน
+- ภาษาไทยที่อ่านง่าย เป็นธรรมชาติ
+- ห้ามขึ้นต้นด้วยชื่อศิลปิน
+
+ศิลปิน: ${form.name}${form.name_en ? ` (${form.name_en})` : ''}
+
+ข้อมูล:
+${combined}
+
+ตอบแค่ bio ภาษาไทยเท่านั้น ไม่มีคำนำหรือคำลงท้าย` }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
+          }),
+        }
+      )
+      const data = await res.json()
+      const bio = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+      if (!bio) throw new Error('AI ไม่ตอบกลับ')
+      setForm(f => ({ ...f, bio_final_th: bio }))
+      toast.success('Rewrite สำเร็จ!')
+    } catch (e: any) { toast.error('Rewrite ไม่ได้: ' + e.message) }
+    finally { setRewriting(false) }
   }
 
   function toggleGenre(g: string) {
@@ -589,8 +631,32 @@ export default function ArtistsAdminPage() {
                   onChange={url => setForm(f => ({ ...f, image_url: url }))} aspect="1:1" />
               </FormField>
               <FormField label="Bio">
-                <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-                  placeholder="ประวัติศิลปิน..." className="input-theme text-[13px] resize-none" rows={3} />
+                <div className="flex flex-col gap-2">
+                  {/* ผลลัพธ์ bio_final_th */}
+                  <textarea value={form.bio_final_th || ''} onChange={e => setForm(f => ({ ...f, bio_final_th: e.target.value }))}
+                    placeholder="Bio ที่แสดงบนหน้าเว็บ (แก้ได้เลย หรือ Rewrite ด้วย AI)"
+                    className="input-theme text-[13px] resize-none" rows={4}
+                    style={{ borderColor: form.bio_final_th ? 'rgba(29,158,117,.4)' : undefined }} />
+                  {/* Divider */}
+                  <div className="flex items-center gap-2">
+                    <div style={{ flex:1, height:1, background:'var(--border)' }} />
+                    <span className="text-[10px] text-muted">AI Rewrite จาก Source</span>
+                    <div style={{ flex:1, height:1, background:'var(--border)' }} />
+                  </div>
+                  <textarea value={bioSource1} onChange={e => setBioSource1(e.target.value)}
+                    placeholder="Source 1 — วาง bio จากแหล่งแรก (Wikipedia, เว็บค่าย ฯลฯ)"
+                    className="input-theme text-[12px] resize-none" rows={3} />
+                  <textarea value={bioSource2} onChange={e => setBioSource2(e.target.value)}
+                    placeholder="Source 2 — วาง bio จากแหล่งที่สอง (ไม่บังคับ)"
+                    className="input-theme text-[12px] resize-none" rows={2} />
+                  <button onClick={rewriteBio} disabled={rewriting}
+                    className="flex items-center justify-center gap-2 py-2 rounded-xl text-[12px] font-medium transition-all"
+                    style={{ background: 'rgba(124,58,237,.08)', color: '#7C3AED', border: '1px solid rgba(124,58,237,.2)' }}>
+                    {rewriting
+                      ? <><Loader2 size={12} className="animate-spin" /> กำลัง Rewrite...</>
+                      : <><Sparkles size={12} /> AI Rewrite จาก Source</>}
+                  </button>
+                </div>
               </FormField>
               <FormField label="Social Media">
                 <div className="flex flex-col gap-2">
