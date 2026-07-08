@@ -603,30 +603,6 @@ const [showMap, setShowMap] = useState(false)
             })}
           </div>
 
-          {/* Row 2: Search — full width */}
-          <div className="flex items-center gap-3 rounded-xl px-4 py-3"
-            style={{
-              background: 'var(--surface-1)',
-              border: '1.5px solid var(--border)',
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-          >
-            <Search size={16} className="text-muted shrink-0" />
-            <input
-              value={search}
-              onChange={e => { setSearch(e.target.value); trackSearch(e.target.value, filtered.length) }}
-              placeholder={tab === 'artists' ? 'ค้นหาศิลปิน...' : tab === 'venues' ? 'ค้นหาสถานที่...' : 'ค้นหางาน ศิลปิน หรือสถานที่...'}
-              className="bg-transparent outline-none text-[14px] flex-1 text-primary placeholder:text-muted"
-            />
-            {search && (
-              <button onClick={() => setSearch('')}
-                className="shrink-0 text-muted hover:text-primary transition-colors">
-                <X size={14} />
-              </button>
-            )}
-          </div>
         </div>
 
         {/* 2-COLUMN LAYOUT */}
@@ -778,6 +754,31 @@ const [showMap, setShowMap] = useState(false)
               🎵 <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>คอนเสิร์ตใกล้ฉัน</span>
               {' '}— {totalCount.toLocaleString()} งานทั่วไทย อัปเดตทุกวัน
             </p>
+
+            {/* Search box — อยู่เหนือ filter bar */}
+            <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-3"
+              style={{
+                background: 'var(--surface-1)',
+                border: '1.5px solid var(--border)',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+            >
+              <Search size={16} className="text-muted shrink-0" />
+              <input
+                value={search}
+                onChange={e => { setSearch(e.target.value); trackSearch(e.target.value, filtered.length) }}
+                placeholder={tab === 'artists' ? 'ค้นหาศิลปิน...' : tab === 'venues' ? 'ค้นหาสถานที่...' : 'ค้นหางาน ศิลปิน หรือสถานที่...'}
+                className="bg-transparent outline-none text-[14px] flex-1 text-primary placeholder:text-muted"
+              />
+              {search && (
+                <button onClick={() => setSearch('')}
+                  className="shrink-0 text-muted hover:text-primary transition-colors">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
             <FilterBar
               filters={filters}
