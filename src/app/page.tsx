@@ -1689,40 +1689,6 @@ function ArtistsTab({ followedIds, onFollowToggle, searchQuery = '' }: { followe
 
   return (
     <div>
-      {/* Category filter badges */}
-      {!loading && categories.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none mb-3 pb-1">
-          <button
-            onClick={() => setActiveCat('')}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] transition-all shrink-0 border"
-            style={{
-              background: !activeCat ? 'var(--accent-muted)' : 'var(--surface-1)',
-              color: !activeCat ? 'var(--accent)' : 'var(--text-secondary)',
-              borderColor: !activeCat ? 'var(--accent)' : 'var(--border)',
-              fontWeight: !activeCat ? 500 : 400,
-            }}>
-            ทั้งหมด
-          </button>
-          {categories.map(c => {
-            const count = venues.filter(v => v.category_id === c.id).length
-            if (count === 0) return null
-            return (
-              <button key={c.id}
-                onClick={() => setActiveCat(activeCat === c.id ? '' : c.id)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] transition-all shrink-0 border"
-                style={{
-                  background: activeCat === c.id ? 'var(--accent-muted)' : 'var(--surface-1)',
-                  color: activeCat === c.id ? 'var(--accent)' : 'var(--text-secondary)',
-                  borderColor: activeCat === c.id ? 'var(--accent)' : 'var(--border)',
-                  fontWeight: activeCat === c.id ? 500 : 400,
-                }}>
-                {c.name_th || c.name}
-                <span className="text-[10px] opacity-60">({count})</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -1776,7 +1742,7 @@ function ArtistsTab({ followedIds, onFollowToggle, searchQuery = '' }: { followe
 // ── VenuesTab ──────────────────────────────────────────────
 function VenuesTab({ followedVenueIds, onFollowToggle, searchQuery = '' }: { followedVenueIds: Set<string>; onFollowToggle: (id: string) => void; searchQuery?: string }) {
   const [venues,     setVenues]     = useState<any[]>([])
-  const [categories, setCategories] = useState<any[]>([])
+  const [venueCategories, setVenueCategories] = useState<any[]>([])
   const [activeCat,  setActiveCat]  = useState<string>('')
   const [loading,    setLoading]    = useState(true)
   const search = searchQuery
@@ -1800,7 +1766,7 @@ function VenuesTab({ followedVenueIds, onFollowToggle, searchQuery = '' }: { fol
         const countB = venues.filter((v: any) => v.category_id === b.id).length
         return countB - countA
       })
-      setCategories(sorted)
+      setVenueCategories(sorted)
       setLoading(false)
     })
   }, [])
@@ -1840,6 +1806,39 @@ function VenuesTab({ followedVenueIds, onFollowToggle, searchQuery = '' }: { fol
 
   return (
     <div>
+      {/* Category filter badges — เฉพาะ VenuesTab */}
+      {!loading && venueCategories.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none mb-3 pb-1">
+          <button onClick={() => setActiveCat('')}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] transition-all shrink-0 border"
+            style={{
+              background: !activeCat ? 'var(--accent-muted)' : 'var(--surface-1)',
+              color: !activeCat ? 'var(--accent)' : 'var(--text-secondary)',
+              borderColor: !activeCat ? 'var(--accent)' : 'var(--border)',
+              fontWeight: !activeCat ? 500 : 400,
+            }}>
+            ทั้งหมด
+          </button>
+          {venueCategories.map(c => {
+            const count = venues.filter(v => v.category_id === c.id).length
+            if (count === 0) return null
+            return (
+              <button key={c.id}
+                onClick={() => setActiveCat(activeCat === c.id ? '' : c.id)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] transition-all shrink-0 border"
+                style={{
+                  background: activeCat === c.id ? 'var(--accent-muted)' : 'var(--surface-1)',
+                  color: activeCat === c.id ? 'var(--accent)' : 'var(--text-secondary)',
+                  borderColor: activeCat === c.id ? 'var(--accent)' : 'var(--border)',
+                  fontWeight: activeCat === c.id ? 500 : 400,
+                }}>
+                {c.name_th || c.name}
+                <span className="text-[10px] opacity-60">({count})</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
