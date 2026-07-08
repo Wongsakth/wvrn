@@ -8,6 +8,15 @@ import {
   Star, Zap, TrendingUp, Calendar, Filter, Music,
 } from 'lucide-react'
 import { cn, PROVINCES, formatThaiDate, statusLabel, genreTagClass } from '@/lib/utils'
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
+  useSortable, arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import toast from 'react-hot-toast'
 import type { Event, Artist, Venue, EventStatus, EventType, Genre } from '@/types'
 import ImageUpload from '@/components/ImageUpload'
@@ -41,7 +50,6 @@ const TIME_OPTIONS = Array.from({ length: 24 * 2 }, (_, i) => {
   return `${h}:${m}`
 })
 
-// Time options ทุก 10 นาที 00:00 - 23:50
 const TIME_OPTIONS_10 = Array.from({ length: 24 * 6 }, (_, i) => {
   const h = Math.floor(i / 6).toString().padStart(2, '0')
   const m = ((i % 6) * 10).toString().padStart(2, '0')
@@ -81,6 +89,54 @@ const STATUS_LABEL: Record<string, string> = {
 const PIE_COLORS = ['#1D9E75','#F59E0B','#E24B4A','#6B7280','#D4537E']
 
 // ─── Main Component ───────────────────────────────────────
+
+// ─── Sortable Artist Row ──────────────────────────────────
+function SortableArtistRow({
+  id, idx, name, time, minTime,
+  onTimeChange, onRemove,
+}: {
+  id: string; idx: number; name: string; time: string; minTime: string
+  onTimeChange: (v: string) => void; onRemove: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  }
+  const timeOpts = TIME_OPTIONS_10.filter(t => !minTime || t >= minTime)
+
+  return (
+    <div ref={setNodeRef} style={style}
+      className="flex items-center gap-2 text-[12px] px-2 py-1.5 rounded-lg select-none"
+      style2={{ background: isDragging ? 'var(--surface-2)' : 'transparent', border: isDragging ? '1px solid var(--border)' : '1px solid transparent' }}>
+      {/* Drag handle */}
+      <span {...attributes} {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted shrink-0 touch-none"
+        style={{ lineHeight: 1 }}>
+        ⠿
+      </span>
+      {/* Number */}
+      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0"
+        style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>{idx + 1}</span>
+      {/* Name */}
+      <span className="flex-1 text-primary truncate min-w-0">{name}</span>
+      {/* Time dropdown */}
+      <select value={time} onChange={e => onTimeChange(e.target.value)}
+        className="input-theme text-[11px] py-1 px-1 rounded-lg shrink-0"
+        style={{ width: 72 }}>
+        <option value="">เวลา</option>
+        {timeOpts.map(t => <option key={t} value={t}>{t}</option>)}
+      </select>
+      {/* Remove */}
+      <button onClick={onRemove} className="icon-btn w-6 h-6 shrink-0" style={{ color: '#E24B4A' }}>
+        <X size={11} />
+      </button>
+    </div>
+  )
+}
+
 export default function EventsAdminPage() {
   const [events,        setEvents]        = useState<any[]>([])
   const [deletedEvents, setDeletedEvents] = useState<any[]>([])
@@ -115,6 +171,25 @@ export default function EventsAdminPage() {
   const [creating,       setCreating]       = useState(false)
 
   const sb = createClient()
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    setForm(f => {
+      const oldIdx = f.artist_ids.indexOf(active.id as string)
+      const newIdx = f.artist_ids.indexOf(over.id as string)
+      const newIds = arrayMove(f.artist_ids, oldIdx, newIdx)
+      const newOrders: Record<string, number> = {}
+      newIds.forEach((id, i) => { newOrders[id] = i + 1 })
+      return { ...f, artist_ids: newIds, artist_orders: newOrders }
+    })
+  }
 
   // ─── Load ────────────────────────────────────────────────
   async function load() {
@@ -810,38 +885,28 @@ export default function EventsAdminPage() {
                     placeholder="พิมพ์ชื่อศิลปิน..." className="input-theme text-[13px] mb-2" />
                 </Field>
                 {form.artist_ids.length > 0 && (
-                  <div className="flex flex-col gap-1 mb-2 p-2 rounded-lg" style={{ background: 'var(--surface-0)', border: '1px solid var(--border)' }}>
-                    {form.artist_ids.map((id, idx) => {
-                      const a = artists.find(x => x.id === id)
-                      return a ? (
-                        <div key={id} className="flex items-center gap-2 text-[12px]">
-                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0"
-                            style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>{idx + 1}</span>
-                          <span className="flex-1 text-primary">{a.name}</span>
-                          <select
-                            value={form.artist_times[id] || ''}
-                            onChange={e => setForm(f => ({ ...f, artist_times: { ...f.artist_times, [id]: e.target.value } }))}
-                            className="input-theme text-[11px] py-1 px-1 rounded-lg"
-                            style={{ minWidth: 72 }}>
-                            <option value="">เวลา</option>
-                            {TIME_OPTIONS_10.filter(t => {
-                              if (idx === 0) return true
-                              // ป้องกันเลือกเวลาก่อนศิลปินคนก่อน
-                              const prevId = form.artist_ids[idx - 1]
-                              const prevTime = form.artist_times[prevId]
-                              if (!prevTime) return true
-                              return t >= prevTime
-                            }).map(t => (
-                              <option key={t} value={t}>{t}</option>
-                            ))}
-                          </select>
-                          <button onClick={() => moveArtist(id, 'up')} className="icon-btn w-6 h-6" disabled={idx === 0}><ChevronUp size={11} /></button>
-                          <button onClick={() => moveArtist(id, 'down')} className="icon-btn w-6 h-6" disabled={idx === form.artist_ids.length - 1}><ChevronDown size={11} /></button>
-                          <button onClick={() => toggleArtist(id)} className="icon-btn w-6 h-6" style={{ color: '#E24B4A' }}><X size={11} /></button>
-                        </div>
-                      ) : null
-                    })}
-                  </div>
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={form.artist_ids} strategy={verticalListSortingStrategy}>
+                      <div className="flex flex-col gap-1 mb-2 p-2 rounded-lg" style={{ background: 'var(--surface-0)', border: '1px solid var(--border)' }}>
+                        {form.artist_ids.map((id, idx) => {
+                          const a = artists.find(x => x.id === id)
+                          if (!a) return null
+                          const prevId = form.artist_ids[idx - 1]
+                          const minTime = prevId ? (form.artist_times[prevId] || '') : ''
+                          return (
+                            <SortableArtistRow
+                              key={id} id={id} idx={idx}
+                              name={a.name}
+                              time={form.artist_times[id] || ''}
+                              minTime={minTime}
+                              onTimeChange={v => setForm(f => ({ ...f, artist_times: { ...f.artist_times, [id]: v } }))}
+                              onRemove={() => toggleArtist(id)}
+                            />
+                          )
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
                 <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
                   {artists.filter(a => !form.artist_ids.includes(a.id) && (a.name.toLowerCase().includes(artistSearch.toLowerCase()) || a.name_en?.toLowerCase().includes(artistSearch.toLowerCase()))).slice(0, 20).map(a => (
