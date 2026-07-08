@@ -41,6 +41,13 @@ const TIME_OPTIONS = Array.from({ length: 24 * 2 }, (_, i) => {
   return `${h}:${m}`
 })
 
+// Time options ทุก 10 นาที 00:00 - 23:50
+const TIME_OPTIONS_10 = Array.from({ length: 24 * 6 }, (_, i) => {
+  const h = Math.floor(i / 6).toString().padStart(2, '0')
+  const m = ((i % 6) * 10).toString().padStart(2, '0')
+  return `${h}:${m}`
+})
+
 const EMPTY_FORM = {
   title: '', description: '', event_type: 'concert' as EventType,
   status: 'confirmed' as EventStatus, start_date: '', end_date: '',
@@ -811,8 +818,23 @@ export default function EventsAdminPage() {
                           <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0"
                             style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>{idx + 1}</span>
                           <span className="flex-1 text-primary">{a.name}</span>
-                          <input value={form.artist_times[id] || ''} onChange={e => setForm(f => ({ ...f, artist_times: { ...f.artist_times, [id]: e.target.value } }))}
-                            placeholder="เวลา" className="input-theme text-[11px] w-16 py-1 px-2" />
+                          <select
+                            value={form.artist_times[id] || ''}
+                            onChange={e => setForm(f => ({ ...f, artist_times: { ...f.artist_times, [id]: e.target.value } }))}
+                            className="input-theme text-[11px] py-1 px-1 rounded-lg"
+                            style={{ minWidth: 72 }}>
+                            <option value="">เวลา</option>
+                            {TIME_OPTIONS_10.filter(t => {
+                              if (idx === 0) return true
+                              // ป้องกันเลือกเวลาก่อนศิลปินคนก่อน
+                              const prevId = form.artist_ids[idx - 1]
+                              const prevTime = form.artist_times[prevId]
+                              if (!prevTime) return true
+                              return t >= prevTime
+                            }).map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
                           <button onClick={() => moveArtist(id, 'up')} className="icon-btn w-6 h-6" disabled={idx === 0}><ChevronUp size={11} /></button>
                           <button onClick={() => moveArtist(id, 'down')} className="icon-btn w-6 h-6" disabled={idx === form.artist_ids.length - 1}><ChevronDown size={11} /></button>
                           <button onClick={() => toggleArtist(id)} className="icon-btn w-6 h-6" style={{ color: '#E24B4A' }}><X size={11} /></button>
