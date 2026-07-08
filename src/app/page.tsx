@@ -514,7 +514,10 @@ const [showMap, setShowMap] = useState(false)
         const q = search.toLowerCase()
         const matched =
           ev.title?.toLowerCase().includes(q) ||
-          ev.artists?.some((a: any) => a.name?.toLowerCase().includes(q)) ||
+          ev.artists?.some((a: any) =>
+            a.name?.toLowerCase().includes(q) ||
+            a.name_en?.toLowerCase().includes(q)
+          ) ||
           ev.venue?.name?.toLowerCase().includes(q)
         if (!matched) return false
       }
