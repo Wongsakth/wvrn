@@ -153,32 +153,36 @@ function FeaturedRow({ label, color, events, cols, aspectRatio, fontSize }: {
   label: string; color: string; events: any[]; cols: number; aspectRatio: string
   fontSize: { title: number; venue: number; price: number; day: number; mon: number; pad: string }
 }) {
-  const [page, setPage] = useState(0)
+  const [cur, setCur] = useState(0)
   if (events.length === 0) return null
-  const pages   = Math.ceil(events.length / cols)
-  const visible = events.slice(page * cols, page * cols + cols)
+
+  // auto rotate ทุก 4 วินาที
+  useEffect(() => {
+    if (events.length <= cols) return
+    const t = setInterval(() => setCur(c => (c + 1) % events.length), 4000)
+    return () => clearInterval(t)
+  }, [events.length, cols])
+
+  // แสดง cols card เสมอ วนซ้ำ
+  const visible = Array.from({ length: cols }, (_, i) => events[(cur + i) % events.length])
 
   return (
     <div className="mb-5">
       <div className="flex items-center justify-between mb-2.5">
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color }}>{label}</span>
-        {pages > 1 && (
+        {events.length > cols && (
           <div className="flex items-center gap-1.5">
-            {Array.from({ length: pages }).map((_, i) => (
-              <button key={i} onClick={() => setPage(i)}
+            {events.map((_, i) => (
+              <button key={i} onClick={() => setCur(i)}
                 className="w-1.5 h-1.5 rounded-full transition-all"
-                style={{ background: i === page ? color : 'var(--border)' }} />
+                style={{ background: i === cur ? color : 'var(--border)' }} />
             ))}
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-              className="text-muted text-[14px] px-0.5 disabled:opacity-30">‹</button>
-            <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page === pages - 1}
-              className="text-muted text-[14px] px-0.5 disabled:opacity-30">›</button>
           </div>
         )}
       </div>
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(cols, visible.length)}, 1fr)` }}>
-        {visible.map(ev => (
-          <FeaturedCard key={ev.id} ev={ev} accentColor={color} aspectRatio={aspectRatio} fontSize={fontSize} />
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+        {visible.map((ev, i) => (
+          <FeaturedCard key={ev.id + i} ev={ev} accentColor={color} aspectRatio={aspectRatio} fontSize={fontSize} />
         ))}
       </div>
     </div>
