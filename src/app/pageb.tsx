@@ -112,6 +112,110 @@ function VibeBanner() {
   )
 }
 
+
+// ─── FeaturedSlider ───────────────────────────────────────
+function FeaturedSlider({ events, likedIds, toggleLike, attendance, toggleAttendance, followedIds, isLoggedIn }: {
+  events: any[]; likedIds: Set<string>; toggleLike: (id: string) => void
+  attendance: Map<string, string>; toggleAttendance: (id: string) => void
+  followedIds: Set<string>; isLoggedIn: boolean
+}) {
+  const [cur, setCur] = useState(0)
+  const partners = events.filter(e => e.featured_type === 'partner')
+  const picks    = events.filter(e => e.featured_type === 'wvrn_picks')
+  const featured = [...partners, ...picks]
+  if (featured.length === 0) return null
+
+  const ev     = featured[cur]
+  const start  = parseISO(ev.start_date)
+  const poster = ev.poster_url
+
+  return (
+    <div className="mb-4">
+      {/* Slide card */}
+      <div
+        className="rounded-2xl overflow-hidden cursor-pointer relative"
+        style={{
+          border: ev.featured_type === 'partner' ? '1.5px solid #EF9F27' : '1.5px solid #7C3AED',
+        }}
+        onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}>
+
+        {/* Banner */}
+        <div style={{
+          background: ev.featured_type === 'partner' ? '#EF9F27' : '#7C3AED',
+          padding: '4px 14px', display: 'flex', alignItems: 'center', gap: 6
+        }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: ev.featured_type === 'partner' ? '#412402' : '#EEEDFE', letterSpacing: '.06em' }}>
+            {ev.featured_type === 'partner' ? '⭐ EVENT PARTNER' : '⚡ WVRN PICKS'}
+          </span>
+          <span style={{ fontSize: 10, color: ev.featured_type === 'partner' ? '#633806' : '#CECBF6', marginLeft: 'auto' }}>
+            {ev.featured_type === 'partner' ? 'WVRN Partner' : 'แนะนำโดย WVRN'}
+          </span>
+        </div>
+
+        {/* Hero poster */}
+        <div style={{ position: 'relative', height: 160, background: 'var(--surface-2)', overflow: 'hidden' }}>
+          {poster
+            ? <img src={poster} alt={ev.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <div style={{ width: '100%', height: '100%', background: ev.featured_type === 'partner' ? 'linear-gradient(135deg,#1a0a2e,#3d1a5e)' : 'linear-gradient(135deg,#1a0a3e,#2d1a6e)' }} />
+          }
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 55%)' }} />
+          <div style={{ position: 'absolute', bottom: 12, left: 14, right: 50 }}>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.3 }}>{ev.title}</p>
+            {ev.artists?.length > 0 && (
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,.75)', margin: '3px 0 0' }}>
+                {ev.artists.slice(0, 4).map((a: any) => a.name_en || a.name).join(' · ')}
+              </p>
+            )}
+          </div>
+          {/* Date badge */}
+          <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,.6)', borderRadius: 10, padding: '6px 10px', textAlign: 'center', backdropFilter: 'blur(4px)' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: ev.featured_type === 'partner' ? '#EF9F27' : '#A78BFA', lineHeight: 1 }}>{format(start, 'd')}</div>
+            <div style={{ fontSize: 9, color: ev.featured_type === 'partner' ? '#EF9F27' : '#A78BFA', textTransform: 'uppercase', opacity: .8 }}>{format(start, 'MMM')}</div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ background: 'var(--surface-1)', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '0.5px solid var(--border)' }}>
+          <div>
+            {ev.venue?.name && (
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapPin size={11} /> {ev.venue.name}
+              </span>
+            )}
+            <span style={{ fontSize: 12, fontWeight: 600, color: ev.featured_type === 'partner' ? '#EF9F27' : '#7C3AED' }}>
+              {ev.is_free ? 'ฟรี' : ev.ticket_price_min ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : 'TBA'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {ev.ticket_url && (
+              <a href={ev.ticket_url} target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{ background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Ticket size={13} /> ซื้อบัตร
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Dots + counter */}
+      {featured.length > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <button onClick={() => setCur(c => (c - 1 + featured.length) % featured.length)}
+            className="text-muted hover:text-primary text-[16px] px-1">‹</button>
+          {featured.map((_, i) => (
+            <button key={i} onClick={() => setCur(i)}
+              className="w-1.5 h-1.5 rounded-full transition-all"
+              style={{ background: i === cur ? 'var(--accent)' : 'var(--border)' }} />
+          ))}
+          <button onClick={() => setCur(c => (c + 1) % featured.length)}
+            className="text-muted hover:text-primary text-[16px] px-1">›</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function HomePage() {
   const sb = createClient()
   const { user, loading: authLoading, province } = useAuth()
@@ -567,6 +671,19 @@ const [showMap, setShowMap] = useState(false)
       <VibeBanner />
 
       <main className="max-w-screen-xl mx-auto px-4 py-4">
+
+        {/* ── Featured Slider (Partner + Picks) ── */}
+        {tab === 'all' && !loading && (
+          <FeaturedSlider
+            events={upcomingEvents}
+            likedIds={likedIds}
+            toggleLike={toggleLike}
+            attendance={attendance}
+            toggleAttendance={toggleAttendance}
+            followedIds={followedIds}
+            isLoggedIn={isLoggedIn}
+          />
+        )}
 
         {/* TOOLBAR - Tabs + Search */}
         <div className="flex flex-col gap-2 mb-4">
