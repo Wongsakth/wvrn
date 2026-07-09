@@ -114,34 +114,34 @@ function VibeBanner() {
 
 
 // ─── FeaturedCard ─────────────────────────────────────────
-function FeaturedCard({ ev, accentColor }: { ev: any; accentColor: string }) {
+function FeaturedCard({ ev, accentColor, aspectRatio, fontSize }: {
+  ev: any; accentColor: string; aspectRatio: string
+  fontSize: { title: number; venue: number; price: number; day: number; mon: number; pad: string }
+}) {
   const start = parseISO(ev.start_date)
   return (
     <div onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
       className="rounded-2xl overflow-hidden cursor-pointer flex flex-col hover:scale-[1.01] transition-transform"
-      style={{ border: `1.5px solid ${accentColor}` }}>
-      {/* Poster — portrait full */}
-      <div style={{ position: 'relative', aspectRatio: '3/4', background: 'var(--surface-2)', overflow: 'hidden' }}>
+      style={{ border: `0.5px solid ${accentColor}80` }}>
+      <div style={{ position: 'relative', aspectRatio, background: 'var(--surface-2)', overflow: 'hidden' }}>
         {ev.poster_url
           ? <img src={ev.poster_url} alt={ev.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1a0a2e,#3d1a5e)' }} />
         }
-        {/* Date badge */}
-        <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,.65)', borderRadius: 8, padding: '4px 8px', textAlign: 'center', backdropFilter: 'blur(4px)' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: accentColor, lineHeight: 1 }}>{format(start, 'd')}</div>
-          <div style={{ fontSize: 8, color: accentColor, textTransform: 'uppercase', opacity: .85 }}>{format(start, 'MMM', { locale: th })}</div>
+        <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,.65)', borderRadius: 7, padding: '4px 7px', textAlign: 'center' }}>
+          <div style={{ fontSize: fontSize.day, fontWeight: 700, lineHeight: 1, color: accentColor }}>{format(start, 'd')}</div>
+          <div style={{ fontSize: fontSize.mon, textTransform: 'uppercase', opacity: .85, color: accentColor }}>{format(start, 'MMM', { locale: th })}</div>
         </div>
       </div>
-      {/* Info */}
-      <div style={{ background: 'var(--surface-1)', padding: '10px 12px', flex: 1, borderTop: `1px solid ${accentColor}40` }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px', lineHeight: 1.3,
+      <div style={{ padding: fontSize.pad, flex: 1, background: 'var(--surface-1)', borderTop: `0.5px solid ${accentColor}40` }}>
+        <p style={{ fontSize: fontSize.title, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: 'var(--text-primary)',
           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.title}</p>
         {ev.venue?.name && (
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <MapPin size={10} /> {ev.venue.name}
+          <p style={{ fontSize: fontSize.venue, color: 'var(--text-muted)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <MapPin size={fontSize.venue} /> {ev.venue.name}
           </p>
         )}
-        <p style={{ fontSize: 12, fontWeight: 600, color: accentColor, margin: 0 }}>
+        <p style={{ fontSize: fontSize.price, fontWeight: 600, color: accentColor, margin: 0 }}>
           {ev.is_free ? 'ฟรี' : ev.ticket_price_min ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : 'TBA'}
         </p>
       </div>
@@ -149,7 +149,10 @@ function FeaturedCard({ ev, accentColor }: { ev: any; accentColor: string }) {
   )
 }
 
-function FeaturedRow({ label, color, events, cols }: { label: string; color: string; events: any[]; cols: number }) {
+function FeaturedRow({ label, color, events, cols, aspectRatio, fontSize }: {
+  label: string; color: string; events: any[]; cols: number; aspectRatio: string
+  fontSize: { title: number; venue: number; price: number; day: number; mon: number; pad: string }
+}) {
   const [page, setPage] = useState(0)
   if (events.length === 0) return null
   const pages   = Math.ceil(events.length / cols)
@@ -157,8 +160,8 @@ function FeaturedRow({ label, color, events, cols }: { label: string; color: str
 
   return (
     <div className="mb-5">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color }}>{label}</span>
+      <div className="flex items-center justify-between mb-2.5">
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color }}>{label}</span>
         {pages > 1 && (
           <div className="flex items-center gap-1.5">
             {Array.from({ length: pages }).map((_, i) => (
@@ -174,7 +177,9 @@ function FeaturedRow({ label, color, events, cols }: { label: string; color: str
         )}
       </div>
       <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(cols, visible.length)}, 1fr)` }}>
-        {visible.map(ev => <FeaturedCard key={ev.id} ev={ev} accentColor={color} />)}
+        {visible.map(ev => (
+          <FeaturedCard key={ev.id} ev={ev} accentColor={color} aspectRatio={aspectRatio} fontSize={fontSize} />
+        ))}
       </div>
     </div>
   )
@@ -185,10 +190,14 @@ function FeaturedSlider({ events }: { events: any[] }) {
   const partners = events.filter(e => e.featured_type === 'partner')
   const picks    = events.filter(e => e.featured_type === 'wvrn_picks')
   if (partners.length === 0 && picks.length === 0) return null
+
+  const partnerFont = { title: 14.3, venue: 12, price: 13.2, day: 16.5, mon: 8.8, pad: '11px 12px' }
+  const picksFont   = { title: 13,   venue: 11, price: 12,   day: 15,   mon: 8,   pad: '10px 11px' }
+
   return (
     <div className="mb-2">
-      <FeaturedRow label="⭐ Event Partner" color="#EF9F27" events={partners} cols={2} />
-      <FeaturedRow label="⚡ WVRN Picks"   color="#7C3AED" events={picks}    cols={3} />
+      <FeaturedRow label="⭐ Event Partner" color="#EF9F27" events={partners} cols={2} aspectRatio="3/2" fontSize={partnerFont} />
+      <FeaturedRow label="⚡ WVRN Picks"   color="#7C3AED" events={picks}    cols={3} aspectRatio="3/4" fontSize={picksFont} />
     </div>
   )
 }
@@ -639,7 +648,7 @@ const [showMap, setShowMap] = useState(false)
     : []
 
   const eventsToShow = (isLoggedIn ? upcomingEvents : guestVisible)
-    .filter(ev => !ev.featured_type || (ev.featured_type !== 'partner' && ev.featured_type !== 'wvrn_picks'))
+    .filter(ev => ev.featured_type !== 'partner' && ev.featured_type !== 'wvrn_picks')
     .slice(0, displayCount)
 
   return (
