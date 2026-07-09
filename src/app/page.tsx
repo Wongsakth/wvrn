@@ -112,6 +112,87 @@ function VibeBanner() {
   )
 }
 
+
+// ─── FeaturedCard ─────────────────────────────────────────
+function FeaturedCard({ ev, accentColor }: { ev: any; accentColor: string }) {
+  const start = parseISO(ev.start_date)
+  return (
+    <div onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
+      className="rounded-2xl overflow-hidden cursor-pointer flex flex-col hover:scale-[1.01] transition-transform"
+      style={{ border: `1.5px solid ${accentColor}` }}>
+      {/* Poster — portrait full */}
+      <div style={{ position: 'relative', aspectRatio: '3/4', background: 'var(--surface-2)', overflow: 'hidden' }}>
+        {ev.poster_url
+          ? <img src={ev.poster_url} alt={ev.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1a0a2e,#3d1a5e)' }} />
+        }
+        {/* Date badge */}
+        <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,.65)', borderRadius: 8, padding: '4px 8px', textAlign: 'center', backdropFilter: 'blur(4px)' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: accentColor, lineHeight: 1 }}>{format(start, 'd')}</div>
+          <div style={{ fontSize: 8, color: accentColor, textTransform: 'uppercase', opacity: .85 }}>{format(start, 'MMM', { locale: th })}</div>
+        </div>
+      </div>
+      {/* Info */}
+      <div style={{ background: 'var(--surface-1)', padding: '10px 12px', flex: 1, borderTop: `1px solid ${accentColor}40` }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px', lineHeight: 1.3,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.title}</p>
+        {ev.venue?.name && (
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <MapPin size={10} /> {ev.venue.name}
+          </p>
+        )}
+        <p style={{ fontSize: 12, fontWeight: 600, color: accentColor, margin: 0 }}>
+          {ev.is_free ? 'ฟรี' : ev.ticket_price_min ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : 'TBA'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function FeaturedRow({ label, color, events, cols }: { label: string; color: string; events: any[]; cols: number }) {
+  const [page, setPage] = useState(0)
+  if (events.length === 0) return null
+  const pages   = Math.ceil(events.length / cols)
+  const visible = events.slice(page * cols, page * cols + cols)
+
+  return (
+    <div className="mb-5">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color }}>{label}</span>
+        {pages > 1 && (
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: pages }).map((_, i) => (
+              <button key={i} onClick={() => setPage(i)}
+                className="w-1.5 h-1.5 rounded-full transition-all"
+                style={{ background: i === page ? color : 'var(--border)' }} />
+            ))}
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+              className="text-muted text-[14px] px-0.5 disabled:opacity-30">‹</button>
+            <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page === pages - 1}
+              className="text-muted text-[14px] px-0.5 disabled:opacity-30">›</button>
+          </div>
+        )}
+      </div>
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(cols, visible.length)}, 1fr)` }}>
+        {visible.map(ev => <FeaturedCard key={ev.id} ev={ev} accentColor={color} />)}
+      </div>
+    </div>
+  )
+}
+
+// ─── FeaturedSlider ───────────────────────────────────────
+function FeaturedSlider({ events }: { events: any[] }) {
+  const partners = events.filter(e => e.featured_type === 'partner')
+  const picks    = events.filter(e => e.featured_type === 'wvrn_picks')
+  if (partners.length === 0 && picks.length === 0) return null
+  return (
+    <div className="mb-2">
+      <FeaturedRow label="⭐ Event Partner" color="#EF9F27" events={partners} cols={2} />
+      <FeaturedRow label="⚡ WVRN Picks"   color="#7C3AED" events={picks}    cols={3} />
+    </div>
+  )
+}
+
 export default function HomePage() {
   const sb = createClient()
   const { user, loading: authLoading, province } = useAuth()
@@ -557,7 +638,9 @@ const [showMap, setShowMap] = useState(false)
       )
     : []
 
-  const eventsToShow = (isLoggedIn ? upcomingEvents : guestVisible).slice(0, displayCount)
+  const eventsToShow = (isLoggedIn ? upcomingEvents : guestVisible)
+    .filter(ev => !ev.featured_type || (ev.featured_type !== 'partner' && ev.featured_type !== 'wvrn_picks'))
+    .slice(0, displayCount)
 
   return (
     <div className="min-h-screen text-primary" style={{ background: 'var(--surface-0)' }}>
@@ -567,6 +650,11 @@ const [showMap, setShowMap] = useState(false)
       <VibeBanner />
 
       <main className="max-w-screen-xl mx-auto px-4 py-4">
+
+        {/* ── Featured Slider (Partner + Picks) ── */}
+        {tab === 'all' && !loading && (
+          <FeaturedSlider events={upcomingEvents} />
+        )}
 
         {/* TOOLBAR - Tabs + Search */}
         <div className="flex flex-col gap-2 mb-4">
