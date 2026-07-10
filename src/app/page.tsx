@@ -200,8 +200,8 @@ function FeaturedSlider({ events }: { events: any[] }) {
 
   return (
     <div className="mb-2">
-      <FeaturedRow label="⭐ Event Partner" color="#EF9F27" events={partners} cols={2} aspectRatio="3/2" fontSize={partnerFont} />
-      <FeaturedRow label="⚡ WVRN Picks"   color="#7C3AED" events={picks}    cols={3} aspectRatio="3/4" fontSize={picksFont} />
+      <FeaturedRow label="⭐ Event Partner" color="#EF9F27" events={partners} cols={2} aspectRatio="16/9" fontSize={partnerFont} />
+      <FeaturedRow label="⚡ WVRN Picks"   color="#7C3AED" events={picks}    cols={3} aspectRatio="1/1" fontSize={picksFont} />
     </div>
   )
 }
