@@ -20,6 +20,141 @@ import BackButton from '@/components/ui/BackButton'
 import { track } from '@/lib/analytics'
 
 
+// ─── RelatedEventsBanner ─────────────────────────────────
+function RelatedEventsBanner({ event }: { event: any }) {
+  const [related,   setRelated]   = useState<any[]>([])
+  const [cur,       setCur]       = useState(0)
+  const [animating, setAnimating] = useState(false)
+  const sb = createClient()
+
+  useEffect(() => {
+    async function load() {
+      const today = new Date().toISOString().slice(0, 10)
+      const { data } = await sb
+        .from('events')
+        .select('id,title,slug,start_date,poster_url,province,category_id,venue_id,is_free,ticket_price_min,venue:venues(name),event_artists(artist:artists(id,name))')
+        .neq('id', event.id)
+        .gte('start_date', today)
+        .is('deleted_at', null)
+        .limit(100)
+
+      if (!data) return
+
+      const artistIds = new Set((event.artists || []).map((a: any) => a.id))
+
+      // score algorithm
+      const scored = data.map((ev: any) => {
+        let score = 0
+        const evArtistIds = (ev.event_artists || []).map((ea: any) => ea.artist?.id).filter(Boolean)
+
+        // 1. ศิลปินเหมือนกัน +3 ต่อคน
+        evArtistIds.forEach((id: string) => { if (artistIds.has(id)) score += 3 })
+        // 2. category เหมือนกัน +2
+        if (event.category_id && ev.category_id === event.category_id) score += 2
+        // 3. venue เดียวกัน +2
+        if (event.venue_id && ev.venue_id === event.venue_id) score += 2
+        // 4. province เดียวกัน +1
+        if (event.province && ev.province === event.province) score += 1
+        // 5. เดือนเดียวกัน +1
+        if (event.start_date?.slice(0,7) === ev.start_date?.slice(0,7)) score += 1
+
+        return { ...ev, _score: score }
+      })
+
+      const top = scored
+        .filter((ev: any) => ev._score > 0)
+        .sort((a: any, b: any) => b._score - a._score || new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+        .slice(0, 6)
+
+      setRelated(top)
+    }
+    if (event?.id) load()
+  }, [event?.id])
+
+  useEffect(() => {
+    if (related.length <= 1) return
+    const t = setInterval(() => {
+      setAnimating(true)
+      setTimeout(() => { setCur(c => (c + 1) % related.length); setAnimating(false) }, 350)
+    }, 4500)
+    return () => clearInterval(t)
+  }, [related.length])
+
+  if (related.length === 0) return null
+
+  const ev = related[cur]
+  const start = parseISO(ev.start_date)
+
+  return (
+    <div className="mb-4 rounded-2xl overflow-hidden cursor-pointer"
+      style={{ border: '1px solid var(--border)', background: 'var(--surface-1)' }}
+      onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}>
+
+      {/* Header label */}
+      <div className="px-4 py-2 flex items-center justify-between"
+        style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted">งานที่เกี่ยวข้อง</span>
+        {related.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            {related.map((_, i) => (
+              <button key={i}
+                onClick={e => { e.stopPropagation(); setAnimating(true); setTimeout(() => { setCur(i); setAnimating(false) }, 350) }}
+                className="rounded-full transition-all duration-300"
+                style={{
+                  width: i === cur ? 16 : 5, height: 5,
+                  background: i === cur ? 'var(--accent)' : 'var(--border)',
+                }} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Slide content */}
+      <div style={{
+        opacity: animating ? 0 : 1,
+        transform: animating ? 'translateX(-10px)' : 'translateX(0)',
+        transition: 'opacity 0.3s ease, transform 0.3s ease',
+        display: 'flex', alignItems: 'stretch',
+      }}>
+        {/* Poster */}
+        {ev.poster_url && (
+          <div style={{ width: 90, flexShrink: 0, overflow: 'hidden' }}>
+            <img src={ev.poster_url} alt={ev.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          </div>
+        )}
+        {/* Info */}
+        <div style={{ flex: 1, padding: '12px 14px', minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.3,
+            overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+            {ev.title}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', marginBottom: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+              <CalendarRange size={11} />
+              {format(start, 'd MMM yyyy', { locale: th })}
+            </span>
+            {ev.venue?.name && (
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                <MapPin size={11} /> {ev.venue.name}
+              </span>
+            )}
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 600, color: ev.is_free ? '#5DCAA5' : 'var(--accent)' }}>
+            {ev.is_free ? 'ฟรี' : ev.ticket_price_min ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : 'TBA'}
+          </span>
+        </div>
+        {/* Date badge */}
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '0 16px', background: 'var(--accent-muted)', borderLeft: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>{format(start, 'd')}</span>
+          <span style={{ fontSize: 10, color: 'var(--accent)', opacity: .7, textTransform: 'uppercase' }}>{format(start, 'MMM', { locale: th })}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function VenueCard({ venue }: { venue: any }) {
   const [expanded, setExpanded] = useState(false)
   const catColor = venue.category?.color || 'var(--accent)'
@@ -427,6 +562,9 @@ async function reportPhoto(photoId: string) {
 
         {/* Back */}
 <BackButton />
+
+        {/* Related Events Banner */}
+        {event && <RelatedEventsBanner event={event} />}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
