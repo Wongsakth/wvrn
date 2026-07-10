@@ -153,17 +153,28 @@ function FeaturedRow({ label, color, events, cols, aspectRatio, fontSize }: {
   label: string; color: string; events: any[]; cols: number; aspectRatio: string
   fontSize: { title: number; venue: number; price: number; day: number; mon: number; pad: string }
 }) {
-  const [cur, setCur] = useState(0)
+  const [cur, setCur]         = useState(0)
+  const [animating, setAnimating] = useState(false)
+  const [direction, setDirection] = useState<'left'|'right'>('left')
   if (events.length === 0) return null
+
+  function goTo(next: number, dir: 'left'|'right' = 'left') {
+    if (animating) return
+    setDirection(dir)
+    setAnimating(true)
+    setTimeout(() => {
+      setCur(next)
+      setAnimating(false)
+    }, 300)
+  }
 
   // auto rotate ทุก 4 วินาที
   useEffect(() => {
     if (events.length <= cols) return
-    const t = setInterval(() => setCur(c => (c + 1) % events.length), 4000)
+    const t = setInterval(() => goTo((cur + 1) % events.length, 'left'), 4000)
     return () => clearInterval(t)
-  }, [events.length, cols])
+  }, [events.length, cols, cur])
 
-  // แสดง cols card เสมอ วนซ้ำ
   const visible = Array.from({ length: cols }, (_, i) => events[(cur + i) % events.length])
 
   return (
@@ -173,14 +184,25 @@ function FeaturedRow({ label, color, events, cols, aspectRatio, fontSize }: {
         {events.length > cols && (
           <div className="flex items-center gap-1.5">
             {events.map((_, i) => (
-              <button key={i} onClick={() => setCur(i)}
-                className="w-1.5 h-1.5 rounded-full transition-all"
-                style={{ background: i === cur ? color : 'var(--border)' }} />
+              <button key={i} onClick={() => goTo(i, i > cur ? 'left' : 'right')}
+                className="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                style={{ background: i === cur ? color : 'var(--border)', transform: i === cur ? 'scale(1.4)' : 'scale(1)' }} />
             ))}
           </div>
         )}
       </div>
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+      <div
+        className="grid gap-3"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          opacity: animating ? 0 : 1,
+          transform: animating
+            ? `translateX(${direction === 'left' ? '-12px' : '12px'})`
+            : 'translateX(0)',
+          transition: animating
+            ? 'opacity 0.25s ease, transform 0.25s ease'
+            : 'opacity 0.3s ease, transform 0.3s ease',
+        }}>
         {visible.map((ev, i) => (
           <FeaturedCard key={ev.id + i} ev={ev} accentColor={color} aspectRatio={aspectRatio} fontSize={fontSize} />
         ))}
