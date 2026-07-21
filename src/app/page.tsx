@@ -135,14 +135,16 @@ function FeaturedCard({ ev, accentColor, aspectRatio, fontSize }: {
       </div>
       <div style={{ padding: fontSize.pad, flex: 1, background: 'var(--surface-1)', borderTop: `0.5px solid ${accentColor}40` }}>
         <p style={{ fontSize: fontSize.title, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: 'var(--text-primary)',
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.title}</p>
-        {ev.venue?.name && (
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {typeof ev.title === 'string' ? ev.title : ''}
+        </p>
+        {typeof ev.venue?.name === 'string' && (
           <p style={{ fontSize: fontSize.venue, color: 'var(--text-muted)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
             <MapPin size={fontSize.venue} /> {ev.venue.name}
           </p>
         )}
         <p style={{ fontSize: fontSize.price, fontWeight: 600, color: accentColor, margin: 0 }}>
-          {ev.is_free ? 'ฟรี' : ev.ticket_price_min ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : 'TBA'}
+          {ev.is_free ? 'ฟรี' : ev.ticket_price_min != null ? `฿${Number(ev.ticket_price_min).toLocaleString()}` : 'TBA'}
         </p>
       </div>
     </div>
