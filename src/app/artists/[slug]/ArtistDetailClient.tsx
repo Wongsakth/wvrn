@@ -33,7 +33,10 @@ export default function ArtistDetailClient({ artist, initialEvents }: Props) {
   const { user } = useAuth()
   const sb = createClient()
 
-  const [events,   setEvents]   = useState<any[]>(initialEvents)
+  const today = new Date().toISOString().slice(0, 10)
+  const upcoming = initialEvents.filter(ev => ev.start_date >= today).sort((a, b) => a.start_date.localeCompare(b.start_date))
+  const past     = initialEvents.filter(ev => ev.start_date <  today).sort((a, b) => b.start_date.localeCompare(a.start_date))
+  const [showPast, setShowPast] = useState(false)
   const [followed, setFollowed] = useState(false)
   const [news,     setNews]     = useState<any[]>([])
   const [lightbox, setLightbox] = useState(false)
@@ -199,10 +202,10 @@ export default function ArtistDetailClient({ artist, initialEvents }: Props) {
               <div className="flex items-center gap-2 mb-3">
                 <Music size={16} style={{ color: 'var(--accent)' }} />
                 <h2 className="text-[16px] font-medium text-primary">งานที่กำลังจะมา</h2>
-                <span className="text-[12px] text-muted">{events.length} งาน</span>
+                <span className="text-[12px] text-muted">{upcoming.length} งาน</span>
               </div>
 
-              {events.length === 0 ? (
+              {upcoming.length === 0 ? (
                 <div className="rounded-xl p-10 text-center"
                   style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
                   <Music size={32} className="mx-auto mb-3 text-muted" />
@@ -211,7 +214,7 @@ export default function ArtistDetailClient({ artist, initialEvents }: Props) {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {events.map(ev => (
+                  {upcoming.map(ev => (
                     <div key={ev.id}
                       onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
                       className="rounded-xl overflow-hidden cursor-pointer transition-all"
@@ -254,6 +257,52 @@ export default function ArtistDetailClient({ artist, initialEvents }: Props) {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Past Events */}
+              {past.length > 0 && (
+                <div className="mt-4">
+                  <button onClick={() => setShowPast(v => !v)}
+                    className="flex items-center gap-2 text-[13px] text-muted hover:text-primary transition-colors mb-3">
+                    <span>{showPast ? '▾' : '▸'}</span>
+                    งานที่ผ่านมา ({past.length})
+                  </button>
+                  {showPast && (
+                    <div className="flex flex-col gap-3">
+                      {past.map(ev => (
+                        <div key={ev.id}
+                          onClick={() => { window.location.href = `/events/${ev.slug || ev.id}` }}
+                          className="rounded-xl overflow-hidden cursor-pointer transition-all"
+                          style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', opacity: 0.6 }}
+                          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                          onMouseLeave={e => (e.currentTarget.style.opacity = '0.6')}>
+                          <div className="flex">
+                            <div className="flex flex-col items-center justify-center px-4 py-4 shrink-0"
+                              style={{ background: 'var(--surface-2)', borderRight: '1px solid var(--border)', minWidth: 60 }}>
+                              <span className="text-[20px] font-medium leading-none text-muted">
+                                {format(parseISO(ev.start_date), 'd')}
+                              </span>
+                              <span className="text-[9px] uppercase mt-0.5 text-muted opacity-70">
+                                {format(parseISO(ev.start_date), 'MMM', { locale: th })}
+                              </span>
+                            </div>
+                            <div className="flex-1 px-4 py-3 min-w-0">
+                              <p className="text-[14px] font-medium text-primary mb-1 line-clamp-1">{ev.title}</p>
+                              {ev.venue && (
+                                <span className="flex items-center gap-1 text-[11px] text-muted">
+                                  <MapPin size={10} />{ev.venue.name}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end justify-center px-4 py-3 shrink-0">
+                              <ChevronRight size={14} className="text-muted" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

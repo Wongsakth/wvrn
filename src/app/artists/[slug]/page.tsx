@@ -25,17 +25,15 @@ async function getArtist(slug: string) {
   return data
 }
 
-async function getUpcomingEvents(artistId: string) {
+async function getArtistEvents(artistId: string) {
   const sb = getSupabase()
-  const today = new Date().toISOString().slice(0, 10)
   const { data } = await sb
     .from('events')
     .select('id,title,slug,start_date,start_time,is_free,ticket_price_min,ticket_price_max,ticket_url,poster_url,status,venue:venues(id,name,province),event_artists!inner(artist_id)')
     .eq('event_artists.artist_id', artistId)
-    .gte('start_date', today)
     .is('deleted_at', null)
-    .order('start_date', { ascending: true })
-    .limit(20)
+    .order('start_date', { ascending: false })
+    .limit(200)
   return (data || []).map((ev: any) => {
     const { event_artists, ...rest } = ev
     return rest
@@ -136,7 +134,7 @@ export default async function ArtistPage({ params }: Props) {
   const artist = await getArtist(params.slug)
   if (!artist) notFound()
 
-  const events = await getUpcomingEvents(artist.id)
+  const events = await getArtistEvents(artist.id)
 
   return (
     <>
