@@ -64,12 +64,18 @@ export default function ArtistsAdminPage() {
     setLoading(true)
     try {
       const { data, error } = await sb.from('artists')
-        .select('*, label:labels(id,name), event_count:event_artists(count), last_event:event_artists(event:events(start_date))')
+        .select('*, label:labels(id,name), event_count:event_artists!inner(count), last_event:event_artists(event:events(start_date))')
         .is('deleted_at', null)
         .order('is_featured', { ascending: false })
         .order('name')
       if (error) throw error
-      setArtists(data || [])
+      // เรียงตาม event count มากสุดก่อน (default)
+      const sorted = (data || []).sort((a: any, b: any) => {
+        const countA = a.event_count?.[0]?.count ?? 0
+        const countB = b.event_count?.[0]?.count ?? 0
+        return countB - countA
+      })
+      setArtists(sorted)
     } catch (e: any) { toast.error('โหลดไม่ได้: ' + e.message) }
     finally { setLoading(false) }
   }
