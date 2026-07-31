@@ -32,12 +32,15 @@ async function getArtistEvents(artistId: string) {
     .select('id,title,slug,start_date,start_time,is_free,ticket_price_min,ticket_price_max,ticket_url,poster_url,status,venue:venues(id,name,province),event_artists!inner(artist_id)')
     .eq('event_artists.artist_id', artistId)
     .is('deleted_at', null)
+    .neq('status', 'cancelled')
     .order('start_date', { ascending: false })
     .limit(200)
-  return (data || []).map((ev: any) => {
-    const { event_artists, ...rest } = ev
-    return rest
-  })
+  return (data || [])
+    .filter((ev: any) => !ev.deleted_at)
+    .map((ev: any) => {
+      const { event_artists, ...rest } = ev
+      return rest
+    })
 }
 
 // ─── generateMetadata ─────────────────────────────────────
